@@ -1,0 +1,7 @@
+node_modules
+build
+.DS_Store
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/settings.json
+.env
