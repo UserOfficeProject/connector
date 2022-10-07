@@ -57,7 +57,7 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
       password: sciCatPassword,
     };
 
-    // NOTE: We are logging in every time when
+    // NOTE: We login every time when there is new message to get the access_token
     const loginResponse = await fetch(
       `${sciCatBaseUrl}${sciCatLoginEndpoint}`,
       {
