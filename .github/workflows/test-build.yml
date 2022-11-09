@@ -8,9 +8,6 @@ on:
       - master
       - staging
 
-env:
-  NODE_VERSION: 16.x
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -23,7 +20,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      - name: Use Node.js ${ NODE_VERSION }
+      - env:
+          NODE_VERSION: 16.x
+        name: Use Node.js ${ NODE_VERSION }
         uses: actions/setup-node@v3
         with:
           node-version: ${ NODE_VERSION }
