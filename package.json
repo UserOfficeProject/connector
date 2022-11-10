@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "tsc && node ./build/index.js",
+    "test": "echo no tests added yet",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
     "build": "rm -rf ./build && tsc",
     "lint": "tsc --noEmit && eslint . --ext .js,.ts --quiet",
