@@ -12,7 +12,5 @@ export type CreateProposalDto = {
   abstract: string;
   startTime?: Date;
   endTime?: Date;
-  createdBy: string;
-  updatedBy: string;
   MeasurementPeriodList: any[];
 };

@@ -45,8 +45,6 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
       abstract: proposalMessage.abstract,
       ownerGroup: 'ess',
       accessGroups: [],
-      createdBy: 'proposalIngestor',
-      updatedBy: 'proposalIngestor',
       startTime: new Date(),
       endTime: new Date(),
       MeasurementPeriodList: [],
@@ -102,18 +100,20 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
         proposalId: proposalData.proposalId,
       });
 
+      const url = `${sciCatBaseUrl}/Proposals/${proposalData.proposalId}`;
       // NOTE: Create proposal in scicat
-      const createProposalResponse = await fetch(
-        `${sciCatBaseUrl}/Proposals/${proposalData.proposalId}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(proposalData),
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${sciCatAccessToken}`,
-          },
-        }
-      );
+      const createProposalResponse = await fetch(url, {
+        method: 'PATCH',
+        body: JSON.stringify(proposalData),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      });
+
+      console.log('Patch', url);
+      console.log('Proposal data', proposalData);
+      console.log('createProposalResponse', createProposalResponse);
 
       if (!createProposalResponse.ok) {
         throw new Error(createProposalResponse.statusText);
@@ -123,8 +123,9 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
         proposalId: proposalData.proposalId,
       });
     } else {
+      const url = `${sciCatBaseUrl}/Proposals`;
       // NOTE: Create proposal in scicat
-      const createProposalResponse = await fetch(`${sciCatBaseUrl}/Proposals`, {
+      const createProposalResponse = await fetch(url, {
         method: 'POST',
         body: JSON.stringify(proposalData),
         headers: {
@@ -132,6 +133,10 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
           Authorization: `Bearer ${sciCatAccessToken}`,
         },
       });
+
+      console.log('POST', url);
+      console.log('Proposal data', proposalData);
+      console.log('createProposalResponse', createProposalResponse);
 
       if (!createProposalResponse.ok) {
         throw new Error(createProposalResponse.statusText);
