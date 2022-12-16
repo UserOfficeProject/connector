@@ -102,32 +102,30 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
 
       const url = `${sciCatBaseUrl}/Proposals/${proposalData.proposalId}`;
       // NOTE: Create proposal in scicat
-      const createProposalResponse = await fetch(
-        url,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(proposalData),
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${sciCatAccessToken}`,
-          },
-        }
-      );
+      const createProposalResponse = await fetch(url, {
+        method: 'PATCH',
+        body: JSON.stringify(proposalData),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      });
 
-      console.log("Patch", url);
-      console.log("Proposal data", proposalData);
-      console.log("createProposalResponse", createProposalResponse);
-      
+      console.log('Patch', url);
+      console.log('Proposal data', proposalData);
+      console.log('createProposalResponse', createProposalResponse);
+
       if (!createProposalResponse.ok) {
         throw new Error(createProposalResponse.statusText);
       }
-      
+
       logger.logInfo('Proposal was updated in scicat', {
         proposalId: proposalData.proposalId,
       });
     } else {
+      const url = `${sciCatBaseUrl}/Proposals`;
       // NOTE: Create proposal in scicat
-      const createProposalResponse = await fetch(`${sciCatBaseUrl}/Proposals`, {
+      const createProposalResponse = await fetch(url, {
         method: 'POST',
         body: JSON.stringify(proposalData),
         headers: {
@@ -135,10 +133,10 @@ const handleProposalStatusChange: ConsumerCallback = async (type, message) => {
           Authorization: `Bearer ${sciCatAccessToken}`,
         },
       });
-      
-      console.log("POST", url);
-      console.log("Proposal data", proposalData);
-      console.log("createProposalResponse", createProposalResponse);
+
+      console.log('POST', url);
+      console.log('Proposal data', proposalData);
+      console.log('createProposalResponse', createProposalResponse);
 
       if (!createProposalResponse.ok) {
         throw new Error(createProposalResponse.statusText);
