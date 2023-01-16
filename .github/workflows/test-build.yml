@@ -55,5 +55,5 @@ jobs:
         with:
           push: true
           tags: |
-            dmsc/duo-consumer-service:${{ github.head_ref }}
-            ghcr.io/userofficeproject/user-office-consumer-service:${{ github.head_ref }}
+            dmsc/connector:${{ github.head_ref }}
+            ghcr.io/userofficeproject/connector:${{ github.head_ref }}

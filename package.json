@@ -1,7 +1,7 @@
 {
-  "name": "user-office-consumer-service",
+  "name": "connector",
   "version": "0.0.1",
-  "description": "User Office message consumer service",
+  "description": "Connector service",
   "main": "src/index.ts",
   "scripts": {
     "start": "tsc && node ./build/index.js",
@@ -12,8 +12,7 @@
     "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet"
   },
   "keywords": [
-    "UOS",
-    "consumer",
+    "connector",
     "service"
   ],
   "author": "SWAP",

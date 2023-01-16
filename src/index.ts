@@ -22,7 +22,7 @@ async function bootstrap() {
     logger.logException('Unhandled NODE exception', error);
   });
 
-  logger.logInfo(`Running message consumer service at localhost:${PORT}`, {});
+  logger.logInfo(`Running connector service at localhost:${PORT}`, {});
 
   startQueueHandling();
 }
