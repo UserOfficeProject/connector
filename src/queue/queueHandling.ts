@@ -1,3 +1,4 @@
+import { logger } from '@user-office-software/duo-logger';
 import { RabbitMQMessageBroker } from '@user-office-software/duo-message-broker';
 import { container } from 'tsyringe';
 
@@ -8,11 +9,19 @@ import { sciCatConsumerCallback } from './consumers/scicat/sciCatConsumerCallbac
 const connect = async () => {
   const rabbitMq = new RabbitMQMessageBroker();
 
-  await rabbitMq.setup({
-    hostname: process.env.RABBITMQ_HOSTNAME,
-    username: process.env.RABBITMQ_USERNAME,
-    password: process.env.RABBITMQ_PASSWORD,
-  });
+  await rabbitMq
+    .setup({
+      hostname: process.env.RABBITMQ_HOSTNAME,
+      username: process.env.RABBITMQ_USERNAME,
+      password: process.env.RABBITMQ_PASSWORD,
+    })
+    .then(() => {
+      logger.logInfo('Connected to RabbitMQ', {
+        hostname: process.env.RABBITMQ_HOSTNAME,
+        username: process.env.RABBITMQ_USERNAME,
+        password: '********',
+      });
+    });
 
   return rabbitMq;
 };

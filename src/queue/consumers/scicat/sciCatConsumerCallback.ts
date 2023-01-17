@@ -2,7 +2,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../models/Event';
-import { handleProposalStatusChange } from './sciCatMessageHandlers';
+import { upsertProposalInScicat } from './upsertProposalInScicat';
 
 const sciCatConsumerCallback: ConsumerCallback = async (
   type,
@@ -20,11 +20,11 @@ const sciCatConsumerCallback: ConsumerCallback = async (
 const sciCatHandlers: Map<Event, ConsumerCallback> = new Map();
 sciCatHandlers.set(
   Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
-  handleProposalStatusChange
+  upsertProposalInScicat
 );
 sciCatHandlers.set(
   Event.PROPOSAL_STATUS_CHANGED_BY_USER,
-  handleProposalStatusChange
+  upsertProposalInScicat
 );
 
 export { sciCatConsumerCallback };
