@@ -10,3 +10,8 @@ export interface QueueConsumer {
   ): void;
   isReady(): boolean;
 }
+
+export interface KafkaQueueConsumer {
+  start(kafka: any, consumerCallback: any): void;
+  isReady(): boolean;
+}
