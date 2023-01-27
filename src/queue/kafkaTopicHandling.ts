@@ -7,19 +7,19 @@ const connect = async () => {
 
   kafka
     .setup({
-      clientId: 'create-client',
-      brokers: ['dasd'],
-      ssl: true,
+      clientId: process.env.KAFKA_CLIENTID || 'create-client',
+      brokers: [`${process.env.KAFKA_BROKERS}:9092`],
+      ssl: false,
       sasl: {
         mechanism: 'plain',
-        username: 'my-username',
-        password: 'my-password',
+        username: process.env.KAFKA_USERNAME || 'test',
+        password: process.env.KAFKA_PASSWORD || 'test',
       },
     })
     .then(() => {
       logger.logInfo('Connected to Kafka', {
-        hostname: process.env.RABBITMQ_HOSTNAME,
-        username: process.env.RABBITMQ_USERNAME,
+        hostname: process.env.KAFKA_BROKERS,
+        username: process.env.KAFKA_USERNAME,
         password: '********',
       });
     });
@@ -30,7 +30,7 @@ const connect = async () => {
 const startKafkaTopicHandling = async (): Promise<void> => {
   const kafkaConsumer = await connect();
   const topicSciChatConsumer = new TopicSciChatConsumer(kafkaConsumer);
-  topicSciChatConsumer.start();
+  topicSciChatConsumer.start('create-notification');
 };
 
 export default startKafkaTopicHandling;

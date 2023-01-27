@@ -1,4 +1,4 @@
-import { cleanEnv, str } from 'envalid';
+import { bool, cleanEnv, str } from 'envalid';
 
 function validateEnv() {
   cleanEnv(process.env, {
@@ -6,7 +6,6 @@ function validateEnv() {
     RABBITMQ_USERNAME: str(),
     RABBITMQ_PASSWORD: str(),
     KAFKA_CLIENTID: str(),
-    KAFKA_SASL_MECHANISM: str(),
     KAFKA_BROKERS: str(),
     KAFKA_USERNAME: str(),
     KAFKA_PASSWORD: str(),

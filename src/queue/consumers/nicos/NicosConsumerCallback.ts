@@ -5,8 +5,9 @@ export const TopicConsumerCallback = async ({
   partition,
   message,
 }: EachMessagePayload) => {
-  console.log('Posted messages: ', {
-    value: message.value?.toString(),
+  const messageValue = JSON.parse(message.value?.toString() as string);
+  console.log('Consumer messages: ', {
+    value: messageValue,
     partition: partition.toString(),
     topic: topic.toString(),
   });

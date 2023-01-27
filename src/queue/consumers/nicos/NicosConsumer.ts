@@ -3,10 +3,10 @@ import { TopicConsumerCallback } from './NicosConsumerCallback';
 
 export class TopicSciChatConsumer {
   constructor(private _consumer: ConsumerService) {}
-  async start() {
+  async start(topic: string) {
     this._consumer.consume(
       'create-client',
-      { topics: ['create-notification'], fromBeginning: true },
+      { topics: [topic], fromBeginning: true },
       { eachMessage: TopicConsumerCallback }
     );
   }
