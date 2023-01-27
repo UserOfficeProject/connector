@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import { RabbitMQConsumer } from '../queue/consumers/scicat/SciCatConsumer';
+import getRabbitMqMessageBroker from '../queue/messageBroker/getRabbitMqMessageBroker';
 import { configureConsoleLogger } from './logger/configureConsoleLogger';
 import { Tokens } from './Tokens';
-import { mapClass, mapValue } from './utils';
+import { mapValue } from './utils';
 
-mapClass(Tokens.SciCatConsumer, RabbitMQConsumer);
 mapValue(Tokens.ConfigureLogger, configureConsoleLogger);
+mapValue(Tokens.ProvideMessageBroker, getRabbitMqMessageBroker);

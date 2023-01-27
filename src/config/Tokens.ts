@@ -1,5 +1,5 @@
 // This file contains unique tokens for each dependency
 export const Tokens = {
-  SciCatConsumer: Symbol('SciCatConsumer'),
+  ProvideMessageBroker: Symbol('MessageBroker'),
   ConfigureLogger: Symbol('ConfigureLogger'),
 };

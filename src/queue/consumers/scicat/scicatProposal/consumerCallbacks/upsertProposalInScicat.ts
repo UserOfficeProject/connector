@@ -1,21 +1,13 @@
 import { logger } from '@user-office-software/duo-logger';
-import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 import fetch from 'node-fetch';
 
-import { ProposalMessageData } from '../../../models/ProposalMessage';
-import { CreateProposalDto } from '../../../models/SciCatProposalDto';
-
-const proposalTriggeringStatuses =
-  process.env.SCICAT_PROPOSAL_TRIGGERING_STATUSES?.split(', ');
+import { CreateProposalDto } from '../../../../../models/SciCatProposalDto';
+import { ValidProposalMessageData } from '../ScicatProposalQueueConsumer';
 
 const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
 const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
 const sciCatUsername = process.env.SCICAT_USERNAME;
 const sciCatPassword = process.env.SCICAT_PASSWORD;
-
-type ValidProposalMessageData = Required<
-  Pick<ProposalMessageData, 'title' | 'proposer' | 'abstract' | 'shortCode'>
->;
 
 const getSciCatAccessToken = async () => {
   const loginCredentials = {
@@ -43,53 +35,6 @@ const getSciCatAccessToken = async () => {
   }
 
   return sciCatAccessToken;
-};
-
-const containsTriggeringStatus = (proposalMessage: ProposalMessageData) => {
-  if (!proposalMessage.newStatus || !proposalTriggeringStatuses) {
-    return false;
-  }
-
-  // NOTE: If new status is not one of the triggering statuses
-  if (proposalTriggeringStatuses.indexOf(proposalMessage.newStatus) === -1) {
-    return false;
-  }
-
-  return true;
-};
-
-const validateProposalMessage = (
-  proposalMessage: ProposalMessageData
-): ValidProposalMessageData => {
-  if (!proposalMessage.title) {
-    throw new Error('Proposal title is missing');
-  }
-
-  if (!proposalMessage.proposer) {
-    throw new Error('Proposal proposer is missing');
-  }
-
-  if (!proposalMessage.proposer.firstName) {
-    throw new Error('Proposal proposer first name is missing');
-  }
-
-  if (!proposalMessage.proposer.lastName) {
-    throw new Error('Proposal proposer last name is missing');
-  }
-
-  if (!proposalMessage.proposer.email) {
-    throw new Error('Proposal proposer email is missing');
-  }
-
-  if (!proposalMessage.abstract) {
-    throw new Error('Proposal abstract is missing');
-  }
-
-  if (!proposalMessage.shortCode) {
-    throw new Error('Proposal short code is missing');
-  }
-
-  return proposalMessage as ValidProposalMessageData;
 };
 
 const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
@@ -197,40 +142,28 @@ const checkProposalExists = async (
   }
 };
 
-const upsertProposalInScicat: ConsumerCallback = async (type, message) => {
-  try {
-    if (!containsTriggeringStatus(message as ProposalMessageData)) {
-      return;
-    }
+const upsertProposalInScicat = async (
+  proposalMessage: ValidProposalMessageData
+) => {
+  const sciCatAccessToken = await getSciCatAccessToken();
 
-    const proposalMessage = validateProposalMessage(
-      message as ProposalMessageData
-    );
+  const proposalExists = await checkProposalExists(
+    proposalMessage.shortCode,
+    sciCatAccessToken
+  );
 
-    const sciCatAccessToken = await getSciCatAccessToken();
+  if (proposalExists) {
+    logger.logInfo('Proposal already exists, updating...', {
+      proposalId: proposalMessage.shortCode,
+    });
 
-    const proposalExists = await checkProposalExists(
-      proposalMessage.shortCode,
-      sciCatAccessToken
-    );
+    updateProposal(proposalMessage, sciCatAccessToken);
+  } else {
+    logger.logInfo('Proposal does not exist yet, creating...', {
+      proposalId: proposalMessage.shortCode,
+    });
 
-    if (proposalExists) {
-      logger.logInfo('Proposal already exists, updating...', {
-        proposalId: proposalMessage.shortCode,
-      });
-
-      updateProposal(proposalMessage, sciCatAccessToken);
-    } else {
-      logger.logInfo('Proposal does not exist yet, creating...', {
-        proposalId: proposalMessage.shortCode,
-      });
-
-      createProposal(proposalMessage, sciCatAccessToken);
-    }
-  } catch (error) {
-    logger.logException('Error while upserting proposal: ', error);
-
-    throw error;
+    createProposal(proposalMessage, sciCatAccessToken);
   }
 };
 
