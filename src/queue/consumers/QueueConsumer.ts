@@ -34,20 +34,5 @@ export abstract class QueueConsumer {
         throw error;
       }
     });
-
-    // createChatroom({
-    //   proposalPk: 1,
-    //   shortCode: '397159',
-    //   title: 'Proposal for testing shipment',
-    //   abstract: 'This proposal is created ',
-    //   members: [],
-    //   newStatus: 'ALLOCATED',
-    //   proposer: {
-    //     firstName: 'Carl',
-    //     lastName: 'Carlsson',
-    //     email: 'Javon4@hotmail.com',
-    //     id: '1',
-    //   },
-    // });
   }
 }

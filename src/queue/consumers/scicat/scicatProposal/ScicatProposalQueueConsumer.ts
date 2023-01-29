@@ -3,10 +3,11 @@ import {
   Queue,
 } from '@user-office-software/duo-message-broker';
 
+import { createChatroom } from './consumerCallbacks/createChatroom';
+import { upsertProposalInScicat } from './consumerCallbacks/upsertProposalInScicat';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../QueueConsumer';
-import { createChatroom } from './consumerCallbacks/createChatroom';
 
 const proposalTriggeringStatuses =
   process.env.SCICAT_PROPOSAL_TRIGGERING_STATUSES?.split(', ');
@@ -82,7 +83,7 @@ export class ScicatProposalQueueConsumer extends QueueConsumer {
       message as ProposalMessageData
     );
 
-    //upsertProposalInScicat(proposalMessage);
+    upsertProposalInScicat(proposalMessage);
     createChatroom(proposalMessage);
   };
 }
