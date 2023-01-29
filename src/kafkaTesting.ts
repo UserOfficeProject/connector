@@ -22,9 +22,10 @@ async function bootstrap() {
     logger.logException('Unhandled NODE exception', error);
   });
 
-  logger.logInfo(`Running connector service at localhost:${PORT}`, {});
+  logger.logInfo(`Running kafka producer service at localhost:${PORT}`, {});
 
-  await producerConnect();
+  //Connect and send messages on every {interval} milliseconds
+  await producerConnect({ interval: 5000 });
 }
 
 bootstrap();

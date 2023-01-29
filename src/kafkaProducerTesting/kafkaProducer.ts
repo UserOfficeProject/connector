@@ -1,5 +1,6 @@
 import { Kafka, Producer, ProducerRecord, SASLOptions } from 'kafkajs';
 import { ProduceType, SetupConfig } from '../models/KafkaTypes';
+import { logger } from '@user-office-software/duo-logger';
 
 export default class ProducerService {
   private kafka: Kafka;
@@ -15,9 +16,9 @@ export default class ProducerService {
   }
   async connect() {
     try {
-      console.log('connecting--');
+      console.log('producer connecting ....');
       await this.producer.connect();
-      console.log('connected--');
+      console.log('producer connected ....');
     } catch (e) {
       console.error(e);
     }
@@ -60,12 +61,10 @@ export class ProduceService {
   }
 }
 
-export const producerConnect = async () => {
+export const producerConnect = async ({ interval = 5000, num = 1 }) => {
   const producer = new ProducerService();
   const produce = new ProduceService(producer);
 
-  const INTERVAL = 3000;
-  let num = 1;
   await producer.setup({
     clientId: process.env.KAFKA_CLIENTID || 'create-client',
     brokers: [`${process.env.KAFKA_BROKERS}:9092`],
@@ -76,18 +75,22 @@ export const producerConnect = async () => {
       password: process.env.KAFKA_PASSWORD || 'test',
     },
   });
-  await producer.connect();
-  setInterval(
-    () =>
-      produce.create({
+  await producer
+    .connect()
+    .catch((err) => logger.logError('producer connection error', err));
+  setInterval(() => {
+    produce
+      .create({
         topic: 'create-notification',
         topicMessage: {
-          proposal: `scicat proposal ${num++}`,
+          proposal: `scicat proposal ${num}`,
           instrument: 'scicat instrument',
           source: 'NICOS',
           message: 'some messages goes here',
         },
-      }),
-    INTERVAL
-  );
+      })
+      .then(() => logger.logInfo(`Message sent ${num}`, {}))
+      .catch();
+    num++;
+  }, interval);
 };

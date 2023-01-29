@@ -9,19 +9,21 @@ const connect = async () => {
     .setup({
       clientId: process.env.KAFKA_CLIENTID || 'create-client',
       brokers: [`${process.env.KAFKA_BROKERS}:9092`],
-      ssl: false,
-      sasl: {
-        mechanism: 'plain',
-        username: process.env.KAFKA_USERNAME || 'test',
-        password: process.env.KAFKA_PASSWORD || 'test',
-      },
+      // ssl: false,
+      // sasl: {
+      //   mechanism: 'plain',
+      //   username: process.env.KAFKA_USERNAME || 'test',
+      //   password: process.env.KAFKA_PASSWORD || 'test',
+      // },
     })
     .then(() => {
-      logger.logInfo('Connected to Kafka', {
-        hostname: process.env.KAFKA_BROKERS,
-        username: process.env.KAFKA_USERNAME,
-        password: '********',
+      logger.logInfo('Consumer setup configured', {
+        clientId: process.env.KAFKA_CLIENTID,
+        brokers: [`${process.env.KAFKA_BROKERS}:9092`],
       });
+    })
+    .catch((err) => {
+      logger.logError('Consumer setup configure error ', err);
     });
 
   return kafka;

@@ -1,4 +1,4 @@
-import { bool, cleanEnv, str } from 'envalid';
+import { cleanEnv, str } from 'envalid';
 
 function validateEnv() {
   cleanEnv(process.env, {
@@ -9,6 +9,8 @@ function validateEnv() {
     KAFKA_BROKERS: str(),
     KAFKA_USERNAME: str(),
     KAFKA_PASSWORD: str(),
+    SCICHAT_USER: str(),
+    SCICHAT_PASSWORD: str(),
     SCICAT_BASE_URL: str(),
     SCICAT_LOGIN_ENDPOINT: str(),
     SCICAT_USERNAME: str(),

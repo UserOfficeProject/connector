@@ -1,3 +1,4 @@
+import { logger } from '@user-office-software/duo-logger';
 import {
   Consumer,
   ConsumerSubscribeTopics,
@@ -33,13 +34,17 @@ export default class ConsumerService {
     const consumer: Consumer = this.kafka.consumer({ groupId: groupId });
     await consumer
       .connect()
-      .catch((e) => console.error('Consumer connection error: ', e)); // TODO improve error handling
+      .catch((e) => logger.logException('Error consumer connection fail', e));
     await consumer
       .subscribe(topic)
-      .catch((e) => console.error('Subscribe error: ', e));
+      .catch((e) =>
+        logger.logException('Error consumer subscribe to topic fail', e)
+      );
     await consumer
       .run(config)
-      .catch((e) => console.error('Message consume error: ', e));
+      .catch((e) =>
+        logger.logException('Error consumer consumes message fail', e)
+      );
     this.consumers.push(consumer);
     // this.disconnect();
   }
