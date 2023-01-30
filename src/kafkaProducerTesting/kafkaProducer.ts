@@ -5,15 +5,15 @@ import { logger } from '@user-office-software/duo-logger';
 export default class ProducerService {
   private kafka: Kafka;
   private producer: Producer;
+
   async setup({ clientId, brokers, ssl, sasl }: SetupConfig) {
     this.kafka = new Kafka({
       clientId,
       brokers,
-      // ssl,
-      // sasl,
     });
     this.producer = this.kafka.producer();
   }
+
   async connect() {
     try {
       console.log('producer connecting ....');
@@ -35,8 +35,6 @@ export default class ProducerService {
 
 export class ProduceService {
   constructor(private readonly _kafka: ProducerService) {}
-
-  public message = 'some messages goes in here?';
 
   async create({ topic, topicMessage }: ProduceType) {
     try {
@@ -65,32 +63,36 @@ export const producerConnect = async ({ interval = 5000, num = 1 }) => {
   const producer = new ProducerService();
   const produce = new ProduceService(producer);
 
+  const test = {
+    topic: 'create-notification',
+    topicMessage: {
+      proposal: `!cxjuIYTfQUofsMzKRp`,
+      instrument: 'scicat instrument',
+      source: 'NICOS',
+      message: `Some messages sent via kafka `,
+    },
+  };
+
   await producer.setup({
     clientId: process.env.KAFKA_CLIENTID || 'create-client',
     brokers: [`${process.env.KAFKA_BROKERS}:9092`],
-    // ssl: false,
-    sasl: {
-      mechanism: 'plain',
-      username: process.env.KAFKA_USERNAME || 'test',
-      password: process.env.KAFKA_PASSWORD || 'test',
-    },
   });
   await producer
     .connect()
-    .catch((err) => logger.logError('producer connection error', err));
+    .catch((err) => console.error('Producer connection error: ', err));
   setInterval(() => {
     produce
       .create({
-        topic: 'create-notification',
+        topic: test.topic,
         topicMessage: {
-          proposal: `scicat proposal ${num}`,
-          instrument: 'scicat instrument',
-          source: 'NICOS',
-          message: 'some messages goes here',
+          proposal: test.topicMessage.proposal,
+          instrument: test.topicMessage.instrument,
+          source: test.topicMessage.source,
+          message: `${test.topicMessage.message} ${num} `,
         },
       })
       .then(() => logger.logInfo(`Message sent ${num}`, {}))
-      .catch();
+      .catch((err) => console.error('Producer error: ', err));
     num++;
   }, interval);
 };

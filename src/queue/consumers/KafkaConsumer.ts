@@ -11,6 +11,7 @@ export default class ConsumerService {
   private kafka: Kafka;
   private consumers: Consumer[] = [];
 
+  // TODO: remove ssl and sasl, if Nicos's producer don't use it
   async setup({ clientId, brokers, ssl, sasl }: SetupConfig) {
     this.kafka = new Kafka({
       clientId,
@@ -46,6 +47,10 @@ export default class ConsumerService {
         logger.logException('Error consumer consumes message fail', e)
       );
     this.consumers.push(consumer);
+
+    // NOTE: if consumer re-joining issue happens, we should consider to include disconnect()
+    // otherwise just leave it.
+
     // this.disconnect();
   }
 }

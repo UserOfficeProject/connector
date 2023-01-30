@@ -1,5 +1,5 @@
 import ConsumerService from '../KafkaConsumer';
-import { TopicConsumerCallback } from './NicosConsumerCallback';
+import { TopicConsumerCallback } from './NicosTopicConsumerCallback';
 
 export class TopicSciChatConsumer {
   constructor(private _consumer: ConsumerService) {}
