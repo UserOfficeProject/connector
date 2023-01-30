@@ -11,6 +11,10 @@ import startQueueHandling from './queue/queueHandling';
 validateEnv();
 
 async function bootstrap() {
+  logger.logInfo('Server information: ', {
+    nodeVersion: process.version,
+    env: process.env.NODE_ENV,
+  });
   const PORT = process.env.PORT || 4010;
   const app = express();
 
