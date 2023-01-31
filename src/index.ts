@@ -31,7 +31,7 @@ async function bootstrap() {
 
   startQueueHandling();
 
-  await startKafkaTopicHandling();
+  startKafkaTopicHandling();
 }
 
 bootstrap();
