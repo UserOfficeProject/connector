@@ -33,7 +33,7 @@ export default class ProducerService {
   }
 }
 
-export class ProduceService {
+export class ProduceMessage {
   constructor(private readonly _kafka: ProducerService) {}
 
   async create({ topic, topicMessage }: ProduceType) {
@@ -59,9 +59,9 @@ export class ProduceService {
   }
 }
 
-export const producerConnect = async ({ interval = 5000, num = 1 }) => {
+export const producerConnect = async ({ interval = 5000 }) => {
   const producer = new ProducerService();
-  const produce = new ProduceService(producer);
+  const produce = new ProduceMessage(producer);
 
   const test = {
     topic: 'create-notification',
@@ -88,11 +88,14 @@ export const producerConnect = async ({ interval = 5000, num = 1 }) => {
           proposal: test.topicMessage.proposal,
           instrument: test.topicMessage.instrument,
           source: test.topicMessage.source,
-          message: `${test.topicMessage.message} ${num} `,
+          message: `${
+            test.topicMessage.message
+          } ${new Date().toLocaleString()} `,
         },
       })
-      .then(() => logger.logInfo(`Message sent ${num}`, {}))
+      .then(() =>
+        logger.logInfo(`Message sent ${new Date().toLocaleString()}`, {})
+      )
       .catch((err) => console.error('Producer error: ', err));
-    num++;
   }, interval);
 };

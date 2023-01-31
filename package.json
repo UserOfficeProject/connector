@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "tsc && node ./build/index.js",
-    "start:kafka": "tsc && node ./build/kafkaTesting.js",
+    "start:kafka": "tsc && node ./build/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "echo no tests added yet",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
     "fix-olm-dependency": "cp -r ./src/@matrix-org ./node_modules/",

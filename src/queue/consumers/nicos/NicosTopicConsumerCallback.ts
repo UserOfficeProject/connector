@@ -6,15 +6,9 @@ export const TopicConsumerCallback = async ({
 }: EachMessagePayload) => {
   const messageVal = JSON.parse(message.value?.toString() as string);
 
-  const nicosMessage = {
-    roomId: messageVal.proposal,
-    // instrument: messageVal.instrument,
-    // source: messageVal.source,
-    message: messageVal.message,
-  };
-
+  // Note: NicosMessage contains 4 values - proposal, instrument, source and message.
   await postNicosMessage({
-    roomId: nicosMessage.roomId,
-    message: nicosMessage.message,
+    roomId: messageVal.proposal,
+    message: messageVal.message,
   });
 };

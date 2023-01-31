@@ -36,8 +36,3 @@ export abstract class QueueConsumer {
     });
   }
 }
-
-export interface KafkaQueueConsumer {
-  start(kafka: any, consumerCallback: any): void;
-  isReady(): boolean;
-}
