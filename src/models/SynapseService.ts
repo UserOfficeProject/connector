@@ -5,9 +5,14 @@ import {
   User,
   Visibility,
   createClient,
+  EventType,
+  MsgType,
 } from 'matrix-js-sdk';
 
-import { ChatRoom, ProposalUser } from './dto';
+import {
+  ChatRoom,
+  ProposalUser,
+} from '../queue/consumers/scicat/scicatProposal/dto';
 
 const serverUrl = process.env.SYNAPSE_SERVER_URL;
 const serverName = process.env.SYNAPSE_SERVER_NAME;
@@ -90,6 +95,46 @@ export class SynapseService {
       });
 
     return room as ChatRoom;
+  }
+
+  async joinRoom(roomId: string) {
+    await this.client.joinRoom(`${roomId}:${serverName}`).then(() => {
+      logger.logInfo('Joined room', { roomId });
+    });
+  }
+
+  async sendMessage(roomId: string, message: string) {
+    const messageContent = {
+      body: message,
+      msgtype: MsgType.Text,
+    };
+    /**
+     * Send messages to sciChat
+     * @params roomId: room id
+     * @params eventType: room type
+     * @params content: messages to be sent in JSON object
+     * @params transactionId: can be empty. It is used to track and verify the status of transactions on the Matrix network
+     */
+    await this.client
+      .sendEvent(
+        `${roomId}:${serverName}`,
+        EventType.RoomMessage,
+        messageContent,
+        ''
+      )
+      .then(() => {
+        logger.logInfo('Send message success', {
+          roomId: roomId,
+          message: message,
+        });
+      })
+      .catch((reason) => {
+        logger.logError('Failed to send message', {
+          roomId: roomId,
+          message: message,
+          reason,
+        });
+      });
   }
 
   async invite(roomId: string, members: ProposalUser[]) {

@@ -5,6 +5,8 @@ function validateEnv() {
     RABBITMQ_HOSTNAME: str(),
     RABBITMQ_USERNAME: str(),
     RABBITMQ_PASSWORD: str(),
+    KAFKA_CLIENTID: str(),
+    KAFKA_BROKERS: str(),
     SCICAT_BASE_URL: str(),
     SCICAT_LOGIN_ENDPOINT: str(),
     SCICAT_USERNAME: str(),
