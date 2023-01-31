@@ -1,4 +1,4 @@
-# connector
+# Connector
 The connector connects other services through the message queue
 
 # Requirements
