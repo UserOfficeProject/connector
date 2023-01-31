@@ -43,7 +43,8 @@ jobs:
           push: true
           tags: |
             dmsc/connector:${{ steps.extract_branch.outputs.branch }}
-            ghcr.io/userofficeproject/connector:${{ steps.extract_branch.outputs.branch }
+            ghcr.io/userofficeproject/connector:${{ steps.extract_branch.outputs.branch }}
+
 
       - name: Trigger pipeline
         uses: swapActions/trigger-swap-deployment@v1
