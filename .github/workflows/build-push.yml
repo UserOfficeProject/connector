@@ -43,18 +43,9 @@ jobs:
           push: true
           tags: |
             dmsc/connector:${{ steps.extract_branch.outputs.branch }}
-            ghcr.io/userofficeproject/connector:${{ steps.extract_branch.outputs.branch }}
+            ghcr.io/userofficeproject/connector:${{ steps.extract_branch.outputs.branch }
 
       - name: Trigger pipeline
-        uses: swapActions/trigger-useroffice-deployment@v1
-        with:
-          repository: ${{ github.repository }}
-          environment: ${{ steps.extract_branch.outputs.branch }}
-          gh-trigger-url: ${{ secrets.GITLAB_TRIGGER_URL }}
-          gh-token: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
-          
-          
-      - name: Trigger ESS pipeline
         uses: swapActions/trigger-swap-deployment@v1
         with:
           repository: ${{ github.event.repository.name }}
