@@ -3,12 +3,13 @@ import {
   Queue,
 } from '@user-office-software/duo-message-broker';
 
-import { createChatroom } from './consumerCallbacks/createChatroom';
+import { createChatroom, instantiateSynapseService4ChatRoom } from './consumerCallbacks/createChatroom';
 import { upsertProposalInScicat } from './consumerCallbacks/upsertProposalInScicat';
 import { proposalFoldersCreation } from './consumerCallbacks/proposalFoldersCreation';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../QueueConsumer';
+import { str2Bool } from '../../../../config/utils';
 
 
 const proposalTriggeringStatuses =
@@ -85,7 +86,17 @@ const EVENT_TYPES = [
   Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
   Event.PROPOSAL_STATUS_CHANGED_BY_USER,
 ];
+
+const enableSciChatRoomCreation = str2Bool(process.env.ENABLE_SCICHAT_ROOM_CREATION as string);
+
 export class ScicatProposalQueueConsumer extends QueueConsumer {
+  constructor() {
+    super();
+    if ( enableSciChatRoomCreation ) {
+      instantiateSynapseService4ChatRoom();
+    }
+  }
+
   getQueueName(): Queue {
     return Queue.SCICAT_PROPOSAL;
   }
@@ -102,8 +113,8 @@ export class ScicatProposalQueueConsumer extends QueueConsumer {
 
     if (
       (
-        process.env.ENABLE_SCICAT_PROPOSAL_UPSERT ||
-        process.env.ENABLE_SCICHAT_ROOM_CREATION ) && 
+        str2Bool(process.env.ENABLE_SCICAT_PROPOSAL_UPSERT as string) ||
+        enableSciChatRoomCreation ) && 
       (
         containsScicatProposalCreationTriggeringStatus(message as ProposalMessageData)
       )
@@ -112,7 +123,7 @@ export class ScicatProposalQueueConsumer extends QueueConsumer {
       createChatroom(proposalMessage);
     }
     if (
-      process.env.ENABLE_PROPOSAL_FOLDERS_CREATION && 
+      str2Bool(process.env.ENABLE_PROPOSAL_FOLDERS_CREATION as string) && 
       containsProposalFoldersCreationTriggeringStatus(message as ProposalMessageData)
     ) {
       proposalFoldersCreation(proposalMessage);

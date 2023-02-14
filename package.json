@@ -4,7 +4,7 @@
   "description": "Connector service",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsc && node ./build/index.js",
+    "start": "node --version && tsc && node ./build/src/index.js", 
     "start:kafka": "tsc && node ./build/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "echo no tests added yet",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",

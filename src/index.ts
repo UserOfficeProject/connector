@@ -8,6 +8,7 @@ import healthCheck from './middlewares/healthCheck';
 import readinessCheck from './middlewares/readinessCheck';
 import startKafkaTopicHandling from './queue/kafkaTopicHandling';
 import startQueueHandling from './queue/queueHandling';
+import { str2Bool } from './config/utils';
 
 validateEnv();
 
@@ -30,15 +31,15 @@ async function bootstrap() {
   logger.logInfo(`Running connector service at localhost:${PORT}`, {});
 
   if (
-    process.env.ENABLE_SCICAT_PROPOSAL_UPSERT ||
-    process.env.ENABLE_SCICHAT_ROOM_CREATION ||
-    process.env.ENABLE_PROPOSAL_FOLDERS_CREATION
+    str2Bool(process.env.ENABLE_SCICAT_PROPOSAL_UPSERT as string) ||
+    str2Bool(process.env.ENABLE_SCICHAT_ROOM_CREATION as string) ||
+    str2Bool(process.env.ENABLE_PROPOSAL_FOLDERS_CREATION as string)
   ) {
     startQueueHandling();
   }
 
   if (
-    process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES
+    str2Bool(process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES as string)
   ) {
     startKafkaTopicHandling();
   }
