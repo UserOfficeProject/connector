@@ -5,16 +5,21 @@ import {
 
 import { createChatroom } from './consumerCallbacks/createChatroom';
 import { upsertProposalInScicat } from './consumerCallbacks/upsertProposalInScicat';
+import { proposalFoldersCreation } from './consumerCallbacks/proposalFoldersCreation';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../QueueConsumer';
 
+
 const proposalTriggeringStatuses =
   process.env.SCICAT_PROPOSAL_TRIGGERING_STATUSES?.split(', ');
 
+const folderCreationTriggeringStatuses =
+  process.env.PROPOSAL_FOLDERS_CREATION_TRIGGERING_STATUSES?.split(', ');
+
 export type ValidProposalMessageData = Required<ProposalMessageData>;
 
-const containsTriggeringStatus = (proposalMessage: ProposalMessageData) => {
+const containsScicatProposalCreationTriggeringStatus = (proposalMessage: ProposalMessageData) => {
   if (!proposalMessage.newStatus || !proposalTriggeringStatuses) {
     return false;
   }
@@ -26,6 +31,21 @@ const containsTriggeringStatus = (proposalMessage: ProposalMessageData) => {
 
   return true;
 };
+
+const containsProposalFoldersCreationTriggeringStatus = (proposalMessage: ProposalMessageData) => {
+  if (!proposalMessage.newStatus || !folderCreationTriggeringStatuses) {
+    return false;
+  }
+
+  // NOTE: If new status is not one of the triggering statuses
+  if (folderCreationTriggeringStatuses.indexOf(proposalMessage.newStatus) === -1) {
+    return false;
+  }
+
+  return true;
+};
+
+
 
 const validateProposalMessage = (
   proposalMessage: ProposalMessageData
@@ -75,15 +95,29 @@ export class ScicatProposalQueueConsumer extends QueueConsumer {
       return;
     }
 
-    if (!containsTriggeringStatus(message as ProposalMessageData)) {
-      return;
-    }
 
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData
     );
 
-    upsertProposalInScicat(proposalMessage);
-    createChatroom(proposalMessage);
+    if (
+      (
+        process.env.ENABLE_SCICAT_PROPOSAL_UPSERT ||
+        process.env.ENABLE_SCICHAT_ROOM_CREATION ) && 
+      (
+        containsScicatProposalCreationTriggeringStatus(message as ProposalMessageData)
+      )
+    ) {
+      upsertProposalInScicat(proposalMessage);
+      createChatroom(proposalMessage);
+    }
+    if (
+      process.env.ENABLE_PROPOSAL_FOLDERS_CREATION && 
+      containsProposalFoldersCreationTriggeringStatus(message as ProposalMessageData)
+    ) {
+      proposalFoldersCreation(proposalMessage);
+    }
+
+    return;
   };
 }

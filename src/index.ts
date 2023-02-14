@@ -29,9 +29,19 @@ async function bootstrap() {
 
   logger.logInfo(`Running connector service at localhost:${PORT}`, {});
 
-  startQueueHandling();
+  if (
+    process.env.ENABLE_SCICAT_PROPOSAL_UPSERT ||
+    process.env.ENABLE_SCICHAT_ROOM_CREATION ||
+    process.env.ENABLE_PROPOSAL_FOLDERS_CREATION
+  ) {
+    startQueueHandling();
+  }
 
-  startKafkaTopicHandling();
+  if (
+    process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES
+  ) {
+    startKafkaTopicHandling();
+  }
 }
 
 bootstrap();
