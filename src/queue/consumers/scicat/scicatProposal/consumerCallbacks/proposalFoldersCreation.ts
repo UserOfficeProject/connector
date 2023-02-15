@@ -17,9 +17,18 @@ const getInstrumentName = async (proposalId : string) => {
     method: "POST"
   });
 
-  const { proposalById: { instrument: name }} = await response.json();
+  try {
+    const { proposalById: { instrument: name }} = await response.json();
 
-  return name as string;
+    return name as string;
+  } catch (error) {
+    logger.logError("Request for instrument name failed",{
+      error: error,
+      statusCode: response.status,
+      statusText: response.statusText,
+      body: response.body
+    })
+  }
 }
 
 const proposalFoldersCreation = async (
@@ -29,7 +38,12 @@ const proposalFoldersCreation = async (
   // prepare path with correct year, instrument, proposal
   const proposalId = proposalMessage.shortCode;
   const year = (new Date()).getFullYear().toString();
-  const instrument = (await getInstrumentName(proposalMessage.shortCode) as string).toLowerCase();
+  let instrument = (await getInstrumentName(proposalMessage.shortCode) as string)
+  if (!instrument) {
+    logger.logError("Instrument name not found",{})
+    return;
+  }
+  instrument = instrument.toLowerCase();
   logger.logInfo(
     'Preparing year, instrument and proposal', 
     { 

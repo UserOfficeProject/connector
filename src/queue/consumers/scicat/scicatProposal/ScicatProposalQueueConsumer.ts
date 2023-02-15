@@ -18,6 +18,8 @@ const proposalTriggeringStatuses =
 const folderCreationTriggeringStatuses =
   process.env.PROPOSAL_FOLDERS_CREATION_TRIGGERING_STATUSES?.split(', ');
 
+const rabbitmqQueue = process.env.RABBITMQ_QUEUE as Queue || Queue.SCICAT_PROPOSAL;
+
 export type ValidProposalMessageData = Required<ProposalMessageData>;
 
 const containsScicatProposalCreationTriggeringStatus = (proposalMessage: ProposalMessageData) => {
@@ -91,14 +93,10 @@ const enableSciChatRoomCreation = str2Bool(process.env.ENABLE_SCICHAT_ROOM_CREAT
 
 export class ScicatProposalQueueConsumer extends QueueConsumer {
   constructor() {
-    super();
+    super(rabbitmqQueue);
     if ( enableSciChatRoomCreation ) {
       instantiateSynapseService4ChatRoom();
     }
-  }
-
-  getQueueName(): Queue {
-    return Queue.SCICAT_PROPOSAL;
   }
 
   onMessage: ConsumerCallback = async (type, message) => {

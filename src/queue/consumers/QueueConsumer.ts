@@ -9,30 +9,44 @@ import { Tokens } from '../../config/Tokens';
 import { GetMessageBroker } from '../messageBroker/getMessageBroker';
 
 export abstract class QueueConsumer {
+  private queue: Queue | null = null;
+
   private getMessageBroker: GetMessageBroker = container.resolve(
     Tokens.ProvideMessageBroker
   );
 
-  constructor() {
+  constructor(queue: Queue | null = null) {
+    this.queue = queue;
     this.start();
   }
 
-  abstract getQueueName(): Queue;
+  getQueueName(): Queue | null {
+    return this.queue;
+  }
+
+
   abstract onMessage: ConsumerCallback;
 
   async start(): Promise<void> {
     const messageBroker = await this.getMessageBroker();
-    messageBroker.listenOn(this.getQueueName(), (...args) => {
-      try {
-        return this.onMessage(...args);
-      } catch (error) {
-        logger.logException('Error while handling QueueConsumer callback: ', {
-          args,
-          error,
-        });
+    const queue = this.queue;
+    if (!queue) {
+      logger.logInfo("Queue not defined",{ queue: queue });  
+    }
+    else {
+      messageBroker.listenOn(queue, (...args) => {
+        try {
+          return this.onMessage(...args);
+        } catch (error) {
+          logger.logException('Error while handling QueueConsumer callback: ', {
+            args,
+            error,
+          });
 
-        throw error;
-      }
-    });
+          throw error;
+        }
+      });
+      logger.logInfo("Listening on queue",{ queue: queue });
+    }
   }
 }
