@@ -20,6 +20,18 @@ async function bootstrap() {
   const PORT = process.env.PORT || 4010;
   const app = express();
 
+  const enableScicatProposalUpsert = str2Bool(process.env.ENABLE_SCICAT_PROPOSAL_UPSERT as string);
+  const enableScichatRoomCreation = str2Bool(process.env.ENABLE_SCICHAT_ROOM_CREATION as string);
+  const enableProposalFoldersCreation = str2Bool(process.env.ENABLE_PROPOSAL_FOLDERS_CREATION as string);
+  const enableNicosToScichatMessages = str2Bool(process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES as string);
+
+  logger.logInfo('Services configuration',{
+    'SciCat_Proposal_Upsert' : enableScicatProposalUpsert,
+    'Scichat_Room_Creation' : enableScichatRoomCreation,
+    'Proposal_Folders_Creation' : enableProposalFoldersCreation,
+    'Nicos_to_Scichat_Messages' : enableNicosToScichatMessages
+  });
+
   app.use(healthCheck()).use(readinessCheck());
 
   app.listen(PORT);
@@ -31,15 +43,13 @@ async function bootstrap() {
   logger.logInfo(`Running connector service at localhost:${PORT}`, {});
 
   if (
-    str2Bool(process.env.ENABLE_SCICAT_PROPOSAL_UPSERT as string) ||
-    str2Bool(process.env.ENABLE_SCICHAT_ROOM_CREATION as string) ||
-    str2Bool(process.env.ENABLE_PROPOSAL_FOLDERS_CREATION as string)
+    enableScicatProposalUpsert || enableScichatRoomCreation || enableProposalFoldersCreation
   ) {
     startQueueHandling();
   }
 
   if (
-    str2Bool(process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES as string)
+    enableNicosToScichatMessages
   ) {
     startKafkaTopicHandling();
   }
