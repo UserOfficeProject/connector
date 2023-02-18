@@ -36,17 +36,15 @@ function produceSynapseUserId(
   member: ProposalUser,
   skipPrePostfix: boolean = false
 ): string {
-  const fullName =
-    member.firstName.toLocaleLowerCase() + member.lastName.toLocaleLowerCase();
-  const normalizedFullName = fullName
+  const normalizedId = member.oidcSub
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
   if (skipPrePostfix) {
-    return normalizedFullName;
+    return normalizedId;
   }
 
-  return `@${normalizedFullName}:${serverName}`;
+  return `@${normalizedId}:${serverName}`;
 }
 
 export class SynapseService {
