@@ -21,5 +21,5 @@ export const mapValue = <T>(type: symbol, value: T) => {
 };
 
 export const str2Bool = (i: string): boolean => {
-  return (i.toLowerCase() === 'true' || i.toLowerCase() === 't') && i.toLowerCase() !== '0'
-}
+  return i === 'true' || i === 't' || i === '1';
+};
