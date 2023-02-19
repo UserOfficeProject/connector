@@ -2,7 +2,7 @@ import { logger } from '@user-office-software/duo-logger';
 import fetch from 'node-fetch';
 
 import { CreateProposalDto } from '../dto';
-import { ValidProposalMessageData } from '../ScicatProposalQueueConsumer';
+import { ValidProposalMessageData } from '../utils/validateProposalMessage';
 
 const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
 const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';

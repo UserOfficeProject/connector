@@ -1,21 +1,12 @@
 import { logger } from '@user-office-software/duo-logger';
 
-import { ValidProposalMessageData } from './../ScicatProposalQueueConsumer';
 import { SynapseService } from '../../../../../services/synapse/SynapseService';
 import { ProposalUser } from '../dto';
-import { str2Bool } from '../../../../../config/utils';
+import { ValidProposalMessageData } from '../utils/validateProposalMessage';
 
 const defaultPassword = process.env.SYNAPSE_NEW_USER_DEFAULT_PASSWORD || '';
-const enableSciChatRoomCreation = str2Bool(process.env.ENABLE_SCICHAT_ROOM_CREATION as string);
 
-let synapseService: SynapseService | null = null;
-
-function instantiateSynapseService4ChatRoom() {
-  if ( enableSciChatRoomCreation ) {
-    synapseService = new SynapseService();
-  }
-}
-
+const synapseService = new SynapseService();
 
 function isValidUser(user: ProposalUser) {
   return user?.oidcSub && user?.firstName && user?.lastName && user?.email;
@@ -35,16 +26,6 @@ function validateUsers(users: ProposalUser[]) {
   return { validUsers, invalidUsers };
 }
 const createChatroom = async (message: ValidProposalMessageData) => {
-
-  if ( !synapseService) {
-    logger.logInfo('SciChat service unavailable',{})
-    return;
-  }
-  if ( !synapseService || !enableSciChatRoomCreation) {
-    logger.logInfo('SciChat room creation disabled',{})
-    return;
-  }
-
   const allUsersOnProposal = [...message.members, message.proposer];
 
   const { validUsers, invalidUsers } = validateUsers(allUsersOnProposal);
@@ -102,4 +83,4 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   }
 };
 
-export { createChatroom, instantiateSynapseService4ChatRoom };
+export { createChatroom };

@@ -9,44 +9,36 @@ import { Tokens } from '../../config/Tokens';
 import { GetMessageBroker } from '../messageBroker/getMessageBroker';
 
 export abstract class QueueConsumer {
-  private queue: Queue | null = null;
-
   private getMessageBroker: GetMessageBroker = container.resolve(
     Tokens.ProvideMessageBroker
   );
 
-  constructor(queue: Queue | null = null) {
-    this.queue = queue;
+  constructor() {
+    logger.logInfo(`QueueConsumer ${this.constructor.name} created`, {});
     this.start();
   }
 
-  getQueueName(): Queue | null {
-    return this.queue;
-  }
-
+  abstract getQueueName(): string;
 
   abstract onMessage: ConsumerCallback;
 
   async start(): Promise<void> {
-    const messageBroker = await this.getMessageBroker();
-    const queue = this.queue;
-    if (!queue) {
-      logger.logInfo("Queue not defined",{ queue: queue });  
-    }
-    else {
-      messageBroker.listenOn(queue, (...args) => {
-        try {
-          return this.onMessage(...args);
-        } catch (error) {
-          logger.logException('Error while handling QueueConsumer callback: ', {
-            args,
-            error,
-          });
+    const queueName = this.getQueueName();
 
-          throw error;
-        }
-      });
-      logger.logInfo("Listening on queue",{ queue: queue });
-    }
+    const messageBroker = await this.getMessageBroker();
+    messageBroker.listenOn(queueName as Queue, async (...args) => {
+      logger.logInfo('Received message on queue', { queueName });
+      try {
+        await this.onMessage(...args);
+      } catch (error) {
+        logger.logException('Error while handling QueueConsumer callback: ', {
+          queue: this.getQueueName(),
+          consumer: this.constructor.name,
+          args,
+          error,
+        });
+      }
+    });
+    logger.logInfo('Listening on queue', { queueName });
   }
 }
