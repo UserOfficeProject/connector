@@ -6,5 +6,5 @@ module.exports = {
   testEnvironment: 'node',
   testRegex: '(/__tests__/.*|(\\.|/)(spec))\\.[jt]sx?$',
   collectCoverage: true,
-  setupFiles: ['dotenv/config'],
+  setupFilesAfterEnv: ['<rootDir>/src/config/index.ts'],
 };

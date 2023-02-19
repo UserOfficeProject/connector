@@ -1,4 +1,4 @@
-import { SynapseService } from '../../../../models/SynapseService';
+import { SynapseService } from '../../../../services/synapse/SynapseService';
 
 const synapseService = new SynapseService();
 
