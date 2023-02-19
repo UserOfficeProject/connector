@@ -1,10 +1,9 @@
 import { logger } from '@user-office-software/duo-logger';
-import 'dotenv/config';
 import express from 'express';
 
 import '../config';
-import validateEnv from '../config/validateEnv';
 import { producerConnect } from './kafkaMessageProducer';
+import validateEnv from '../config/validateEnv';
 import healthCheck from '../middlewares/healthCheck';
 import readinessCheck from '../middlewares/readinessCheck';
 

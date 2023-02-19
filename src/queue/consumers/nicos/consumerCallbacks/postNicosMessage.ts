@@ -1,6 +1,6 @@
+import { SynapseService } from '../../../../services/synapse/SynapseService';
 import { logger } from '@user-office-software/duo-logger';
 import { str2Bool } from '../../../../config/utils';
-import { SynapseService } from '../../../../models/SynapseService';
 
 const enableNicosToSciChatMessages = str2Bool(process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES as string);
 
