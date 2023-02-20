@@ -19,3 +19,9 @@ export const mapValue = <T>(type: symbol, value: T) => {
     useValue: value,
   });
 };
+
+export const str2Bool = (i: string): boolean => {
+  i = i.toLowerCase();
+
+  return i === 'true' || i === '1';
+};

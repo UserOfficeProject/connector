@@ -29,4 +29,4 @@ RUN npm ci --only=production --loglevel error --no-fund
 
 EXPOSE 4010
 
-CMD [ "node", "./build/index.js" ]
+CMD [ "node", "./build/src/index.js" ]
