@@ -4,7 +4,7 @@
   "description": "Connector service",
   "main": "src/index.ts",
   "scripts": {
-    "start": "node --version && tsc && node ./build/src/index.js", 
+    "start": "tsc && node ./build/index.js", 
     "start:kafka": "tsc && node ./build/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "env NODE_ENV=test jest --config ./jest.unit.config.js --colors",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
