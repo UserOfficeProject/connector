@@ -17,7 +17,7 @@ const triggeringStatuses =
 
 export class ChatroomCreationQueueConsumer extends QueueConsumer {
   getQueueName(): string {
-    return 'consumer.chatroom_creation.queue';
+    return process.env.CHATROOM_CREATION_QUEUE_NAME as string;
   }
 
   onMessage: ConsumerCallback = async (type, message) => {

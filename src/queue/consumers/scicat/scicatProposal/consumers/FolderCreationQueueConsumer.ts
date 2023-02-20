@@ -17,7 +17,7 @@ const triggeringStatuses =
 
 export class FolderCreationQueueConsumer extends QueueConsumer {
   getQueueName(): string {
-    return 'connector.proposals_folder_creation.queue';
+    return process.env.FOLDER_CREATION_QUEUE_NAME as string;
   }
 
   onMessage: ConsumerCallback = async (type, message) => {

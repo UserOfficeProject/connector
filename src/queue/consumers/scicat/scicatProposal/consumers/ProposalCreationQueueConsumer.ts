@@ -17,7 +17,7 @@ const triggeringStatuses =
 
 export class ProposalCreationQueueConsumer extends QueueConsumer {
   getQueueName(): string {
-    return 'connector.proposal_creation.queue';
+    return process.env.PROPOSAL_CREATION_QUEUE_NAME as string;
   }
   onMessage: ConsumerCallback = async (type, message) => {
     const proposalMessage = validateProposalMessage(
