@@ -42,7 +42,7 @@ const proposalFoldersCreation = async (
   // prepare path with correct year, instrument, proposal
   const proposalId = proposalMessage.shortCode;
   const year = new Date().getFullYear().toString();
-  const instrument = proposalMessage.instrument.shortCode;
+  const instrument = proposalMessage.instrument.shortCode.toLowerCase();
   logger.logInfo('Preparing year, instrument and proposal', {
     proposalId: proposalId,
     year: year,
