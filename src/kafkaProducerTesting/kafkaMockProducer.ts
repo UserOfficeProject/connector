@@ -1,5 +1,4 @@
 import { logger } from '@user-office-software/duo-logger';
-import 'dotenv/config';
 import express from 'express';
 
 import '../config';

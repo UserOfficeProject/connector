@@ -9,10 +9,11 @@ import {
   MsgType,
 } from 'matrix-js-sdk';
 
+import { produceSynapseUserId } from './produceSynapseUserId';
 import {
-  ChatRoom,
   ProposalUser,
-} from '../queue/consumers/scicat/scicatProposal/dto';
+  ChatRoom,
+} from '../../queue/consumers/scicat/scicatProposal/dto';
 
 interface MemberObject {
   [key: string]: {
@@ -32,29 +33,6 @@ const serviceAccount = {
 const ADMIN_API_PREFIX_V2 = '/_synapse/admin/v2';
 const ADMIN_API_PREFIX_V1 = '/_synapse/admin/v1';
 const CLIENT_API_PREFIX_V1 = '/_matrix/client/api/v1';
-
-/**
- * Produces a synapse user id from a member
- * @param member Member to produce synapse user id from
- * @param skipPrePostfix If true, the @ and :serverName will not be added
- * @returns Synapse user id
- */
-function produceSynapseUserId(
-  member: ProposalUser,
-  skipPrePostfix: boolean = false
-): string {
-  const fullName =
-    member.firstName.toLocaleLowerCase() + member.lastName.toLocaleLowerCase();
-  const normalizedFullName = fullName
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
-  if (skipPrePostfix) {
-    return normalizedFullName;
-  }
-
-  return `@${normalizedFullName}:${serverName}`;
-}
 
 export class SynapseService {
   private client: MatrixClient;

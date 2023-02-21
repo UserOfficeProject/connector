@@ -14,25 +14,31 @@ export abstract class QueueConsumer {
   );
 
   constructor() {
+    logger.logInfo(`QueueConsumer ${this.constructor.name} created`, {});
     this.start();
   }
 
-  abstract getQueueName(): Queue;
+  abstract getQueueName(): string;
+
   abstract onMessage: ConsumerCallback;
 
   async start(): Promise<void> {
+    const queueName = this.getQueueName();
+
     const messageBroker = await this.getMessageBroker();
-    messageBroker.listenOn(this.getQueueName(), (...args) => {
+    messageBroker.listenOn(queueName as Queue, async (...args) => {
+      logger.logInfo('Received message on queue', { queueName });
       try {
-        return this.onMessage(...args);
+        await this.onMessage(...args);
       } catch (error) {
         logger.logException('Error while handling QueueConsumer callback: ', {
+          queue: this.getQueueName(),
+          consumer: this.constructor.name,
           args,
           error,
         });
-
-        throw error;
       }
     });
+    logger.logInfo('Listening on queue', { queueName });
   }
 }
