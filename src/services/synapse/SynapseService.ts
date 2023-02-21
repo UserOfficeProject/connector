@@ -111,7 +111,7 @@ export class SynapseService {
     };
 
     if (!isUserJoined(members)) {
-      this.joinRoom(roomId);
+      await this.joinRoom(roomId);
     }
 
     await this.client
