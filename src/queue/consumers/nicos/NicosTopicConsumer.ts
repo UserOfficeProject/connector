@@ -12,22 +12,23 @@ export class TopicSciChatConsumer {
       { topics: [topic] },
       {
         eachMessage: async ({ message }) => {
-          const messageVal = JSON.parse(message.value?.toString() as string);
+          const messageData = JSON.parse(message.value?.toString() as string);
 
           try {
-            const validMessage = validateNicosMessage(messageVal);
+            const validMessageData = validateNicosMessage(messageData);
 
             await postNicosMessage({
-              roomName: validMessage.proposal,
-              message: validMessage.message,
+              roomName: validMessageData.proposal,
+              message: validMessageData.message,
             });
           } catch (error) {
             logger.logError('Failed processing message', {
+              // Note: offset is similar to the index of the message
               messageOffset: message.offset,
               reason: (error as Error).message,
             });
 
-            // Note: By return consumer skip current error message and continue consuming
+            // Note: This catch block will throw error and skips error message to continue consuming next message.
             return;
           }
         },
