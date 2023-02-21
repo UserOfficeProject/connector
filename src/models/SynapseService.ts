@@ -14,6 +14,13 @@ import {
   ProposalUser,
 } from '../queue/consumers/scicat/scicatProposal/dto';
 
+interface MemberObject {
+  [key: string]: {
+    display_name: string;
+    [key: string]: string;
+  };
+}
+
 const serverUrl = process.env.SYNAPSE_SERVER_URL;
 const serverName = process.env.SYNAPSE_SERVER_NAME;
 const oauthIssuer = process.env.SYNAPSE_OAUTH_ISSUER;
@@ -97,13 +104,7 @@ export class SynapseService {
     return room as ChatRoom;
   }
 
-  async joinRoom(roomId: string) {
-    await this.client.joinRoom(`${roomId}:${serverName}`).then(() => {
-      logger.logInfo('Joined room', { roomId });
-    });
-  }
-
-  async sendMessage(roomId: string, message: string) {
+  async sendMessage(roomName: string, message: string) {
     const messageContent = {
       body: message,
       msgtype: MsgType.Text,
@@ -115,25 +116,41 @@ export class SynapseService {
      * @params content: messages to be sent in JSON object
      * @params transactionId: can be empty. It is used to track and verify the status of transactions on the Matrix network
      */
+
+    const roomId = await this.getRoomIdByName(roomName);
+
+    const members = await this.client
+      .getJoinedRoomMembers(roomId)
+      .then((members) => members.joined);
+
+    const isUserJoined = (members: MemberObject) => {
+      for (const member in members) {
+        if (members[member].display_name.includes(`${serviceAccount.userId}`))
+          return true;
+      }
+
+      return false;
+    };
+
+    if (!isUserJoined(members)) {
+      this.joinRoom(roomId);
+    }
+
     await this.client
-      .sendEvent(
-        `${roomId}:${serverName}`,
-        EventType.RoomMessage,
-        messageContent,
-        ''
-      )
+      .sendEvent(roomId, EventType.RoomMessage, messageContent, '')
       .then(() => {
-        logger.logInfo('Send message success', {
+        logger.logInfo('Success sending message to chatroom ', {
           roomId: roomId,
           message: message,
         });
       })
       .catch((reason) => {
-        logger.logError('Failed to send message', {
+        logger.logError('Failed sending message to chatroom', {
           roomId: roomId,
           message: message,
           reason,
         });
+        throw reason;
       });
   }
 
@@ -176,6 +193,27 @@ export class SynapseService {
     const response = result as { rooms: ChatRoom[] };
 
     return response.rooms;
+  }
+
+  async getRoomIdByName(name: string) {
+    // TODO: if more than one identical name rooms exist,
+    // we need to include a filter to find the room we want,
+    // for now we just choose the first room we find.
+    const rooms = await this.getRoomByName(name);
+    const roomId = rooms[0].room_id;
+
+    return roomId;
+  }
+
+  async joinRoom(roomName: string) {
+    const roomId = await this.getRoomIdByName(roomName);
+    try {
+      await this.client.joinRoom(roomId);
+      logger.logInfo('Joined room', { roomId });
+    } catch (reason) {
+      logger.logError('Failed to join room', { reason, roomId });
+      throw reason;
+    }
   }
 
   async updateUser(member: ProposalUser): Promise<User> {

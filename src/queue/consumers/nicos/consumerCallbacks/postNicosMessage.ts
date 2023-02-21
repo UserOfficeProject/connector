@@ -3,14 +3,13 @@ import { SynapseService } from '../../../../models/SynapseService';
 const synapseService = new SynapseService();
 
 const postNicosMessage = async ({
-  roomId,
+  roomName,
   message,
 }: {
-  roomId: string;
+  roomName: string;
   message: string;
 }) => {
-  await synapseService.joinRoom(roomId);
-  await synapseService.sendMessage(roomId, message);
+  await synapseService.sendMessage(roomName, message);
 };
 
 export { postNicosMessage };

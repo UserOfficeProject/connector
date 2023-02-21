@@ -4,20 +4,38 @@ import {
   ConsumerSubscribeTopics,
   ConsumerRunConfig,
   Kafka,
+  RetryOptions,
 } from 'kafkajs';
-import { SetupConfig } from '../../models/KafkaTypes';
+
+import {
+  ConsumerOptions,
+  SetupConfig,
+  subscribeOption,
+} from '../../models/KafkaTypes';
 
 export default class ConsumerService {
   private kafka: Kafka;
   private consumers: Consumer[] = [];
 
-  // TODO: remove ssl and sasl, if Nicos's producer don't use it
-  async setup({ clientId, brokers, ssl, sasl }: SetupConfig) {
+  private readonly retryOptions: RetryOptions = {
+    maxRetryTime: 30000, // maximum amount of time in ms to retry
+    initialRetryTime: 100, // initial amount of time in ms to wait before retrying
+    retries: 10, // Max number of retries per call
+  };
+
+  private readonly consumerOptions: ConsumerOptions = {
+    maxInFlightRequests: 10, // Limit the number of concurrent requests sent to Kafka brokers.
+  };
+
+  private readonly subscribeOption: subscribeOption = {
+    fromBeginning: false,
+  };
+
+  async setup({ clientId, brokers }: SetupConfig) {
     this.kafka = new Kafka({
       clientId,
       brokers,
-      // ssl,
-      // sasl,
+      retry: this.retryOptions,
     });
   }
 
@@ -32,12 +50,18 @@ export default class ConsumerService {
     topic: ConsumerSubscribeTopics,
     config: ConsumerRunConfig
   ) {
-    const consumer: Consumer = this.kafka.consumer({ groupId: groupId });
+    const consumer: Consumer = this.kafka.consumer({
+      groupId: groupId,
+      ...this.consumerOptions,
+    });
     await consumer
       .connect()
       .catch((e) => logger.logException('Error consumer connection fail', e));
     await consumer
-      .subscribe(topic)
+      .subscribe({
+        topics: topic.topics,
+        ...this.subscribeOption,
+      })
       .catch((e) =>
         logger.logException('Error consumer subscribe to topic fail', e)
       );
@@ -46,6 +70,7 @@ export default class ConsumerService {
       .catch((e) =>
         logger.logException('Error consumer consumes message fail', e)
       );
+
     this.consumers.push(consumer);
 
     // NOTE: if consumer re-joining issue happens, we should consider to include disconnect()

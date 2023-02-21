@@ -1,8 +1,8 @@
 import { logger } from '@user-office-software/duo-logger';
 
 import { ValidProposalMessageData } from './../ScicatProposalQueueConsumer';
-import { ProposalUser } from '../dto';
 import { SynapseService } from '../../../../../models/SynapseService';
+import { ProposalUser } from '../dto';
 
 const defaultPassword = process.env.SYNAPSE_NEW_USER_DEFAULT_PASSWORD || '';
 
