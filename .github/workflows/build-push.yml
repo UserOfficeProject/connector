@@ -6,7 +6,7 @@ on:
     branches:
       - develop
       - staging
-      
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -33,22 +33,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - id: extract_branch
+      - name: Extract branch name
+        id: extract_branch
         uses: swapActions/get-branch-name@v1
+        
+      - name: Create image tags
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/userofficeproject/connector
+          flavor: latest=true # adds :latest tag to outputs.tags
+          tags: type=sha,format=long,prefix= # adds :<sha> tag to outputs.tags
 
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v3
         with:
+          context: .
           push: true
-          tags: |
-            dmsc/duo-consumer-service:${{ steps.extract_branch.outputs.branch }}
-            ghcr.io/userofficeproject/user-office-consumer-service:${{ steps.extract_branch.outputs.branch }}
-            
+          tags: ${{ steps.meta.outputs.tags }}
+
       - name: Trigger pipeline
-        uses: swapActions/trigger-useroffice-deployment@v1
+        uses: swapActions/trigger-swap-deployment@v1
         with:
-          repository: ${{ github.repository }}
+          repository: ${{ github.event.repository.name }}
           environment: ${{ steps.extract_branch.outputs.branch }}
           gh-trigger-url: ${{ secrets.GITLAB_TRIGGER_URL }}
           gh-token: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
+          image-tag: ${{ github.sha }}

@@ -21,7 +21,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - run: npm ci
       - run: npm test
@@ -55,5 +55,5 @@ jobs:
         with:
           push: true
           tags: |
-            dmsc/duo-consumer-service:${{ github.head_ref }}
-            ghcr.io/userofficeproject/user-office-consumer-service:${{ github.head_ref }}
+            dmsc/connector:${{ github.head_ref }}
+            ghcr.io/userofficeproject/connector:${{ github.head_ref }}
