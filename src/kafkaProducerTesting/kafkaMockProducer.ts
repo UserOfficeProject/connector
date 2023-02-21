@@ -9,6 +9,14 @@ import readinessCheck from '../middlewares/readinessCheck';
 
 validateEnv();
 
+const topic = process.env.KAFKA_TOPIC;
+const messagesForTesting = {
+  proposal: 'check',
+  instrument: 'scicat instrument',
+  source: 'NICOS',
+  message: 'Some messages sent via kafka',
+};
+
 async function bootstrap() {
   const PORT = process.env.PORT || 4011;
   const app = express();
@@ -23,8 +31,11 @@ async function bootstrap() {
 
   logger.logInfo(`Running kafka producer service at localhost:${PORT}`, {});
 
-  //Connect and send messages on every {interval} milliseconds
-  await producerConnect({ interval: 5000 });
+  await producerConnect({
+    topic: topic,
+    messages: messagesForTesting,
+    msgSendingInterval: 5000,
+  });
 }
 
 bootstrap();

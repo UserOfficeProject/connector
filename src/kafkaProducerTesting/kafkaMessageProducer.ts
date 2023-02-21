@@ -1,26 +1,32 @@
-import { Kafka, Producer, ProducerRecord, SASLOptions } from 'kafkajs';
-import { ProduceType, SetupConfig } from '../models/KafkaTypes';
 import { logger } from '@user-office-software/duo-logger';
+import { Kafka, Producer, ProducerRecord } from 'kafkajs';
+
+import {
+  ProduceType,
+  SetupConfig,
+  NicosMessageData,
+} from '../models/KafkaTypes';
 
 export default class ProducerService {
   private kafka: Kafka;
   private producer: Producer;
 
-  async setup({ clientId, brokers, ssl, sasl }: SetupConfig) {
+  async setup({ clientId, brokers, retry }: SetupConfig) {
     this.kafka = new Kafka({
       clientId,
       brokers,
+      retry,
     });
     this.producer = this.kafka.producer();
   }
 
   async connect() {
     try {
-      console.log('producer connecting ....');
+      logger.logInfo('producer connecting ....', {});
       await this.producer.connect();
-      console.log('producer connected ....');
-    } catch (e) {
-      console.error(e);
+      logger.logInfo('producer connected ....', {});
+    } catch (reason) {
+      logger.logError('connect fail', { reason });
     }
   }
 
@@ -47,55 +53,50 @@ export class ProduceMessage {
                 proposal: topicMessage.proposal,
                 instrument: topicMessage.instrument,
                 source: topicMessage.source,
-                message: topicMessage.message,
+                message: `${
+                  topicMessage.message
+                } - ${new Date().toLocaleString()}`,
               })
             ),
           },
         ],
       });
-    } catch (e) {
-      console.error('create topic error: ', e);
+    } catch (error) {
+      logger.logError('create topic error: ', { error });
     }
   }
 }
 
-export const producerConnect = async ({ interval = 5000 }) => {
+export const producerConnect = async ({
+  topic = '',
+  messages,
+  msgSendingInterval = 5000,
+}: {
+  topic?: string;
+  messages: NicosMessageData;
+  msgSendingInterval: number;
+}) => {
   const producer = new ProducerService();
   const produce = new ProduceMessage(producer);
 
-  const test = {
-    topic: 'create-notification',
-    topicMessage: {
-      proposal: `!cxjuIYTfQUofsMzKRp`,
-      instrument: 'scicat instrument',
-      source: 'NICOS',
-      message: `Some messages sent via kafka `,
-    },
-  };
-
   await producer.setup({
-    clientId: process.env.KAFKA_CLIENTID || 'create-client',
-    brokers: [`${process.env.KAFKA_BROKERS}:9092`],
+    clientId: process.env.KAFKA_CLIENTID || '',
+    brokers: [`${process.env.KAFKA_BROKERS}`],
   });
   await producer
     .connect()
-    .catch((err) => console.error('Producer connection error: ', err));
+    .catch((reason) =>
+      logger.logError('Producer connection error: ', { reason })
+    );
   setInterval(() => {
     produce
       .create({
-        topic: test.topic,
-        topicMessage: {
-          proposal: test.topicMessage.proposal,
-          instrument: test.topicMessage.instrument,
-          source: test.topicMessage.source,
-          message: `${
-            test.topicMessage.message
-          } ${new Date().toLocaleString()} `,
-        },
+        topic: process.env.KAFKA_TOPIC || topic,
+        topicMessage: messages,
       })
       .then(() =>
         logger.logInfo(`Message sent ${new Date().toLocaleString()}`, {})
       )
-      .catch((err) => console.error('Producer error: ', err));
-  }, interval);
+      .catch((reason) => logger.logError('Producer error: ', { reason }));
+  }, msgSendingInterval);
 };
