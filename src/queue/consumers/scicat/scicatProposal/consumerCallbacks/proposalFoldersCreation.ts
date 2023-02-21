@@ -42,15 +42,7 @@ const proposalFoldersCreation = async (
   // prepare path with correct year, instrument, proposal
   const proposalId = proposalMessage.shortCode;
   const year = new Date().getFullYear().toString();
-  let instrument = (await getInstrumentName(
-    proposalMessage.shortCode
-  )) as string;
-  if (!instrument) {
-    logger.logError('Instrument name not found', {});
-
-    return;
-  }
-  instrument = instrument.toLowerCase();
+  const instrument = proposalMessage.instrument.shortCode;
   logger.logInfo('Preparing year, instrument and proposal', {
     proposalId: proposalId,
     year: year,

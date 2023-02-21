@@ -32,5 +32,9 @@ export function validateProposalMessage(
     throw new Error('Proposal short code is missing');
   }
 
+  if (!proposalMessage.instrument) {
+    throw new Error('Instrument is missing');
+  }
+
   return proposalMessage as ValidProposalMessageData;
 }
