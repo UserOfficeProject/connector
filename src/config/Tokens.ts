@@ -2,4 +2,5 @@
 export const Tokens = {
   ProvideMessageBroker: Symbol('MessageBroker'),
   ConfigureLogger: Symbol('ConfigureLogger'),
+  SynapseService: Symbol('SynapseService'),
 };
