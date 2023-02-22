@@ -12,4 +12,15 @@ const enableNicosToScichatMessages = str2Bool(
     process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES as string
 );
 
-mapValue(Tokens.SynapseService, ( enableNicosToScichatMessages ? new SynapseService() : {}));
+const enableScichatRoomCreation = str2Bool(
+    process.env.ENABLE_SCICHAT_ROOM_CREATION as string
+);
+
+mapValue(
+    Tokens.SynapseService, 
+    ( 
+        enableNicosToScichatMessages || enableScichatRoomCreation 
+        ? new SynapseService() 
+        : {}
+    )
+);
