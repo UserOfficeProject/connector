@@ -4,8 +4,8 @@
   "description": "Connector service",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsc && node ./build/src/index.js", 
-    "start:kafka": "tsc && node ./build/kafkaProducerTesting/kafkaMockProducer.js",
+    "start": "tsc && node ./build/src/index.js",
+    "start:kafka": "tsc && node ./build/src/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "env NODE_ENV=test jest --config ./jest.unit.config.js --colors",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
     "fix-olm-dependency": "cp -r ./src/@matrix-org ./node_modules/",
