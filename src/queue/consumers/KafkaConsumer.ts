@@ -76,6 +76,6 @@ export default class ConsumerService {
     // NOTE: if consumer re-joining issue happens, we should consider to include disconnect()
     // otherwise just leave it.
 
-    // this.disconnect()
+    // this.disconnect();
   }
 }
