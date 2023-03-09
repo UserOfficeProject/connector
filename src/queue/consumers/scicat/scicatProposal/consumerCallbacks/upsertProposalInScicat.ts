@@ -48,7 +48,7 @@ const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
     firstname: proposalMessage.proposer.firstName,
     lastname: proposalMessage.proposer.lastName,
     abstract: proposalMessage.abstract,
-    ownerGroup: 'ess',
+    ownerGroup: proposalMessage.shortCode,
     accessGroups: [],
     startTime: new Date(),
     endTime: new Date(),
