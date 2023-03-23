@@ -1,3 +1,4 @@
+import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../../models/Event';
@@ -20,16 +21,27 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
     return process.env.FOLDER_CREATION_QUEUE_NAME as string;
   }
 
-  onMessage: ConsumerCallback = async (type, message) => {
+  onMessage: ConsumerCallback = async (arg0, message, properties) => {
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData
     );
+
+    const type = properties.headers.type || arg0;
 
     const hasStatus = hasTriggeringStatus(proposalMessage, triggeringStatuses);
     const hasType = hasTriggeringType(type, EVENT_TYPES);
 
     if (hasStatus && hasType) {
       proposalFoldersCreation(proposalMessage);
+    }
+    else {
+      logger.logInfo(
+        "Message does not have the correct type or status",
+        {
+          type: type,
+          status: proposalMessage.newStatus
+        }
+      )
     }
   };
 }
