@@ -21,6 +21,10 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
     return process.env.FOLDER_CREATION_QUEUE_NAME as string;
   }
 
+  getExchangeName(): string {
+    return process.env.USER_OFFICE_CORE_EXCHANGE_NAME as string;
+  }
+
   onMessage: ConsumerCallback = async (arg0, message, properties) => {
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData
@@ -33,15 +37,11 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
 
     if (hasStatus && hasType) {
       proposalFoldersCreation(proposalMessage);
-    }
-    else {
-      logger.logInfo(
-        "Message does not have the correct type or status",
-        {
-          type: type,
-          status: proposalMessage.newStatus
-        }
-      )
+    } else {
+      logger.logInfo('Message does not have the correct type or status', {
+        type: type,
+        status: proposalMessage.newStatus,
+      });
     }
   };
 }

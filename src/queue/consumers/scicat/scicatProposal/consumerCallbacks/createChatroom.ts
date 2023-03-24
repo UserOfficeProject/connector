@@ -1,7 +1,7 @@
 import { logger } from '@user-office-software/duo-logger';
 import { container } from 'tsyringe';
-import { Tokens } from '../../../../../config/Tokens';
 
+import { Tokens } from '../../../../../config/Tokens';
 import { SynapseService } from '../../../../../services/synapse/SynapseService';
 import { ProposalUser } from '../dto';
 import { ValidProposalMessageData } from '../utils/validateProposalMessage';
@@ -26,8 +26,9 @@ function validateUsers(users: ProposalUser[]) {
   return { validUsers, invalidUsers };
 }
 const createChatroom = async (message: ValidProposalMessageData) => {
-
-  const synapseService: SynapseService = container.resolve(Tokens.SynapseService);
+  const synapseService: SynapseService = container.resolve(
+    Tokens.SynapseService
+  );
   const allUsersOnProposal = [...message.members, message.proposer];
 
   const { validUsers, invalidUsers } = validateUsers(allUsersOnProposal);

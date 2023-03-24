@@ -19,13 +19,29 @@ export abstract class QueueConsumer {
   }
 
   abstract getQueueName(): string;
+  abstract getExchangeName(): string;
 
   abstract onMessage: ConsumerCallback;
 
   async start(): Promise<void> {
     const queueName = this.getQueueName();
 
+    if (!queueName) {
+      throw new Error(
+        `Queue name variable not set for consumer ${this.constructor.name}`
+      );
+    }
+    const exchangeName = this.getExchangeName();
+
+    if (!exchangeName) {
+      throw new Error(
+        `Exchange name variable not set for consumer ${this.constructor.name}`
+      );
+    }
+
     const messageBroker = await this.getMessageBroker();
+    await messageBroker.bindQueueToExchange(queueName, exchangeName);
+
     messageBroker.listenOn(queueName as Queue, async (...args) => {
       logger.logInfo('Received message on queue', { queueName });
       try {
