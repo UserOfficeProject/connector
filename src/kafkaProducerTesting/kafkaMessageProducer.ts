@@ -95,7 +95,9 @@ export const producerConnect = async ({
         topicMessage: messages,
       })
       .then(() =>
-        logger.logInfo(`Message sent ${new Date().toLocaleString()}`, {})
+        logger.logInfo(`Message sent ${new Date().toLocaleString()}`, {
+          messages,
+        })
       )
       .catch((reason) => logger.logError('Producer error: ', { reason }));
   }, msgSendingInterval);
