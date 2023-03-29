@@ -19,6 +19,11 @@ export class ProposalCreationQueueConsumer extends QueueConsumer {
   getQueueName(): string {
     return process.env.PROPOSAL_CREATION_QUEUE_NAME as string;
   }
+
+  getExchangeName(): string {
+    return process.env.USER_OFFICE_CORE_EXCHANGE_NAME as string;
+  }
+
   onMessage: ConsumerCallback = async (type, message) => {
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData

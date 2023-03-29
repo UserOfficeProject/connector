@@ -3,4 +3,5 @@
 build/*
 # data definition files
 **/*.d.ts
+src/@matrix-org
 

@@ -21,6 +21,16 @@ class MockMessageBroker implements MessageBroker {
   sendMessage(queue: Queue, type: string, message: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
+  sendMessageToExchange(
+    queue: Queue,
+    type: string,
+    message: string
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  bindQueueToExchange(queueName: string, exchangeName: string): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   sendBroadcast(queue: Queue, type: string, message: string): Promise<void> {
     throw new Error('Method not implemented.');
   }

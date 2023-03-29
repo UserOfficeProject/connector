@@ -4,13 +4,13 @@
   "description": "Connector service",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsc && node ./build/src/index.js",
+    "start": "npm run fix-olm-dependency && tsc && node ./build/src/index.js",
     "start:kafka": "tsc && node ./build/src/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "env NODE_ENV=test jest --config ./jest.unit.config.js --colors",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
     "fix-olm-dependency": "cp -r ./src/@matrix-org ./node_modules/",
     "build": "npm run fix-olm-dependency && rm -rf ./build && tsc",
-    "lint": "tsc --noEmit && eslint . --ext .js,.ts --quiet",
+    "lint": "npm run fix-olm-dependency && tsc --noEmit && eslint . --ext .js,.ts --quiet",
     "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet"
   },
   "keywords": [
@@ -19,6 +19,14 @@
   ],
   "engines": {
     "node": ">=18.x"
+  },
+  "lint-staged": {
+    "**/*.{js,ts}": "npm run lint"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   },
   "author": "SWAP",
   "license": "MIT",
@@ -36,13 +44,15 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.30.0",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "husky": "^4.3.8",
     "jest": "^28.1.1",
+    "lint-staged": "^13.1.2",
     "ts-jest": "^28.0.4",
     "typescript": "^4.7.3"
   },
   "dependencies": {
     "@user-office-software/duo-logger": "^2.0.2",
-    "@user-office-software/duo-message-broker": "^1.4.0",
+    "@user-office-software/duo-message-broker": "^1.5.0",
     "dotenv": "^16.0.3",
     "envalid": "^7.3.1",
     "express": "^4.18.1",

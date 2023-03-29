@@ -1,7 +1,6 @@
 import { exec } from 'node:child_process';
 
 import { logger } from '@user-office-software/duo-logger';
-import fetch from 'node-fetch';
 
 import { ValidProposalMessageData } from '../utils/validateProposalMessage';
 
