@@ -12,9 +12,8 @@ export class TopicSciChatConsumer {
       { topics: [topic] },
       {
         eachMessage: async ({ message }) => {
-          const messageData = JSON.parse(message.value?.toString() as string);
-
           try {
+            const messageData = JSON.parse(message.value?.toString() as string);
             const validMessageData = validateNicosMessage(messageData);
 
             await postNicosMessage({
