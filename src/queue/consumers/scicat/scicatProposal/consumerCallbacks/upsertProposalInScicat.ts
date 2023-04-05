@@ -1,5 +1,4 @@
 import { logger } from '@user-office-software/duo-logger';
-import fetch from 'node-fetch';
 
 import { CreateProposalDto } from '../dto';
 import { ValidProposalMessageData } from '../utils/validateProposalMessage';
@@ -9,6 +8,29 @@ const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
 const sciCatUsername = process.env.SCICAT_USERNAME;
 const sciCatPassword = process.env.SCICAT_PASSWORD;
 
+async function request<TResponse>(
+  url: string,
+  config: RequestInit,
+  fetchAsPlainText = false
+): Promise<TResponse> {
+  try {
+    // NOTE: Node v18 comes with fetch API by default
+    const response = await fetch(url, config);
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    if (fetchAsPlainText) {
+      return (await response.text()) as TResponse;
+    }
+
+    return (await response.json()) as TResponse;
+  } catch (error) {
+    throw new Error(`An error occurred while sending the request: ${error}`);
+  }
+}
+
 const getSciCatAccessToken = async () => {
   const loginCredentials = {
     username: sciCatUsername,
@@ -16,19 +38,15 @@ const getSciCatAccessToken = async () => {
   };
 
   // NOTE: We login every time when there is new message to get the access_token
-  const loginResponse = await fetch(`${sciCatBaseUrl}${sciCatLoginEndpoint}`, {
+  const { access_token: sciCatAccessToken } = await request<{
+    access_token: string;
+  }>(`${sciCatBaseUrl}${sciCatLoginEndpoint}`, {
     method: 'POST',
     body: JSON.stringify(loginCredentials),
     headers: {
       'Content-Type': 'application/json',
     },
   });
-
-  if (!loginResponse.ok) {
-    throw new Error(loginResponse.statusText);
-  }
-
-  const { access_token: sciCatAccessToken } = await loginResponse.json();
 
   if (!sciCatAccessToken) {
     throw new Error('No access token found');
@@ -65,7 +83,7 @@ const createProposal = async (
   const url = `${sciCatBaseUrl}/Proposals`;
   const createProposalDto = getCreateProposalDto(proposalMessage);
 
-  const createProposalResponse = await fetch(url, {
+  const createProposalResponse = await request<string>(url, {
     method: 'POST',
     body: JSON.stringify(createProposalDto),
     headers: {
@@ -77,10 +95,6 @@ const createProposal = async (
   logger.logInfo('POST', { url });
   logger.logInfo('Proposal data', { proposalData: createProposalDto });
   logger.logInfo('createProposalResponse', { createProposalResponse });
-
-  if (!createProposalResponse.ok) {
-    throw new Error(createProposalResponse.statusText);
-  }
 
   logger.logInfo('Proposal was created in scicat', {
     proposalId: createProposalDto.proposalId,
@@ -94,7 +108,7 @@ const updateProposal = async (
   const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
   const updateProposalDto = getCreateProposalDto(proposalMessage);
 
-  const updateProposalResponse = await fetch(url, {
+  const updateProposalResponse = await request(url, {
     method: 'PATCH',
     body: JSON.stringify(updateProposalDto),
     headers: {
@@ -107,10 +121,6 @@ const updateProposal = async (
   logger.logInfo('Proposal data', { proposalData: updateProposalDto });
   logger.logInfo('updateProposalResponse', { updateProposalResponse });
 
-  if (!updateProposalResponse.ok) {
-    throw new Error(updateProposalResponse.statusText);
-  }
-
   logger.logInfo('Proposal was updated in scicat', {
     proposalId: proposalMessage.shortCode,
   });
@@ -120,22 +130,20 @@ const checkProposalExists = async (
   proposalId: string,
   sciCatAccessToken: string
 ) => {
-  const url = `${sciCatBaseUrl}/Proposals/${proposalId}`;
-  const getProposalResponse = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sciCatAccessToken}`,
-    },
-  });
-
-  if (!getProposalResponse.ok) {
-    throw new Error(getProposalResponse.statusText);
-  }
-
   // NOTE: Get proposal by id in scicat-backend-next returns 200 always even if proposal does not exist. This is why we check if there is something in the body.
-  const fetchedProposalDataAsText = await getProposalResponse.text();
+  const url = `${sciCatBaseUrl}/Proposals/${proposalId}`;
+  const fetchedProposalDataAsText = await request<string>(
+    url,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sciCatAccessToken}`,
+      },
+    },
+    true
+  );
 
-  if (getProposalResponse.ok && fetchedProposalDataAsText) {
+  if (fetchedProposalDataAsText) {
     return true;
   } else {
     return false;
