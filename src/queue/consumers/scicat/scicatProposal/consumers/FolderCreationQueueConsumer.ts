@@ -7,7 +7,7 @@ import { QueueConsumer } from '../../../QueueConsumer';
 import { proposalFoldersCreation } from '../consumerCallbacks/proposalFoldersCreation';
 import { hasTriggeringStatus } from '../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../utils/hasTriggeringType';
-import { validateProposalMessage } from '../utils/validateProposalMessage';
+import { validateProposalMessage } from '../utils/validateMessages';
 
 const EVENT_TYPES = [
   Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
