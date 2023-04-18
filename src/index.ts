@@ -31,12 +31,16 @@ async function bootstrap() {
   const enableNicosToScichatMessages = str2Bool(
     process.env.ENABLE_NICOS_TO_SCICHAT_MESSAGES as string
   );
+  const enableMoodleFoldersCreation = str2Bool(
+    process.env.ENABLE_MOODLE_FOLDERS_CREATION as string
+  );
 
   logger.logInfo('Services configuration', {
     SciCat_Proposal_Upsert: enableScicatProposalUpsert,
     Scichat_Room_Creation: enableScichatRoomCreation,
     Proposal_Folders_Creation: enableProposalFoldersCreation,
     Nicos_to_Scichat_Messages: enableNicosToScichatMessages,
+    Moodle_Folders_Creation: enableMoodleFoldersCreation,
   });
 
   app.use(healthCheck()).use(readinessCheck());
@@ -52,7 +56,8 @@ async function bootstrap() {
   if (
     enableScicatProposalUpsert ||
     enableScichatRoomCreation ||
-    enableProposalFoldersCreation
+    enableProposalFoldersCreation ||
+    enableMoodleFoldersCreation
   ) {
     startRabbitMQHandling();
   }

@@ -6,7 +6,7 @@ import { QueueConsumer } from '../../../QueueConsumer';
 import { genericFoldersCreation } from '../consumerCallbacks/genericFoldersCreation';
 import { validateMoodleMessage } from '../utils/validateMessages';
 
-export class FolderCreationQueueConsumer extends QueueConsumer {
+export class MoodleFolderCreationQueueConsumer extends QueueConsumer {
   getQueueName(): string {
     return process.env.MOODLE_FOLDER_CREATION_QUEUE_NAME as string;
   }
