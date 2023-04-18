@@ -43,7 +43,7 @@ export function validateProposalMessage(
 export function validateMoodleMessage(
   moodleMessage: MoodleMessageData
 ): ValidMessageData {
-  if (!moodleMessage.userid) {
+  if (!moodleMessage.relateduserid) {
     throw new Error('Property userid is missing');
   }
 
@@ -51,7 +51,7 @@ export function validateMoodleMessage(
     throw new Error('Property courseid is missing');
   }
 
-  return { context: moodleMessage.courseid, item: moodleMessage.userid };
+  return { context: moodleMessage.courseid, item: moodleMessage.relateduserid };
 }
 
 // NOTE:
