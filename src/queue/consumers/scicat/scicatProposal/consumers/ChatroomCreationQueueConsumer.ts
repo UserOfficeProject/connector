@@ -20,6 +20,10 @@ export class ChatroomCreationQueueConsumer extends QueueConsumer {
     return process.env.CHATROOM_CREATION_QUEUE_NAME as string;
   }
 
+  getExchangeName(): string {
+    return process.env.USER_OFFICE_CORE_EXCHANGE_NAME as string;
+  }
+
   onMessage: ConsumerCallback = async (type, message) => {
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData

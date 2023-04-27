@@ -1,6 +1,7 @@
-import { SynapseService } from '../../../../services/synapse/SynapseService';
+import { container } from 'tsyringe';
 
-const synapseService: SynapseService = new SynapseService();
+import { Tokens } from '../../../../config/Tokens';
+import { SynapseService } from '../../../../services/synapse/SynapseService';
 
 const postNicosMessage = async ({
   roomName,
@@ -9,6 +10,9 @@ const postNicosMessage = async ({
   roomName: string;
   message: string;
 }) => {
+  const synapseService: SynapseService = container.resolve(
+    Tokens.SynapseService
+  );
   await synapseService.sendMessage(roomName, message);
 };
 

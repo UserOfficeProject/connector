@@ -4,13 +4,13 @@
   "description": "Connector service",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsc && node ./build/src/index.js", 
-    "start:kafka": "tsc && node ./build/kafkaProducerTesting/kafkaMockProducer.js",
+    "start": "npm run fix-olm-dependency && tsc && node ./build/src/index.js",
+    "start:kafka": "tsc && node ./build/src/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "env NODE_ENV=test jest --config ./jest.unit.config.js --colors",
     "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
     "fix-olm-dependency": "cp -r ./src/@matrix-org ./node_modules/",
     "build": "npm run fix-olm-dependency && rm -rf ./build && tsc",
-    "lint": "tsc --noEmit && eslint . --ext .js,.ts --quiet",
+    "lint": "npm run fix-olm-dependency && tsc --noEmit && eslint . --ext .js,.ts --quiet",
     "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet"
   },
   "keywords": [
@@ -20,35 +20,43 @@
   "engines": {
     "node": ">=18.x"
   },
+  "lint-staged": {
+    "**/*.{js,ts}": "npm run lint"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
   "author": "SWAP",
   "license": "MIT",
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/jest": "^28.1.8",
-    "@types/node": "^18.11.18",
-    "@types/node-fetch": "^2.6.2",
-    "@typescript-eslint/eslint-plugin": "^5.27.1",
-    "@typescript-eslint/parser": "^5.27.1",
-    "eslint": "^8.17.0",
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.25.3",
-    "eslint-plugin-jest": "^25.3.0",
+    "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.30.0",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "husky": "^4.3.8",
     "jest": "^28.1.1",
+    "lint-staged": "^13.2.1",
     "ts-jest": "^28.0.4",
-    "typescript": "^4.7.3"
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "@user-office-software/duo-logger": "^2.0.2",
-    "@user-office-software/duo-message-broker": "^1.4.0",
+    "@user-office-software/duo-message-broker": "^1.5.0",
     "dotenv": "^16.0.3",
     "envalid": "^7.3.1",
     "express": "^4.18.1",
     "kafkajs": "^2.2.3",
-    "matrix-js-sdk": "23.1.0",
-    "node-fetch": "^2.6.7",
+    "matrix-js-sdk": "24.1.0",
     "reflect-metadata": "^0.1.13",
     "ts-node-dev": "^2.0.0",
     "tsyringe": "^4.7.0"

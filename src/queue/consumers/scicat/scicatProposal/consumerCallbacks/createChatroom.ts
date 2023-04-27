@@ -1,12 +1,12 @@
 import { logger } from '@user-office-software/duo-logger';
+import { container } from 'tsyringe';
 
+import { Tokens } from '../../../../../config/Tokens';
 import { SynapseService } from '../../../../../services/synapse/SynapseService';
 import { ProposalUser } from '../dto';
 import { ValidProposalMessageData } from '../utils/validateProposalMessage';
 
 const defaultPassword = process.env.SYNAPSE_NEW_USER_DEFAULT_PASSWORD || '';
-
-const synapseService = new SynapseService();
 
 function isValidUser(user: ProposalUser) {
   return user?.oidcSub && user?.firstName && user?.lastName && user?.email;
@@ -26,6 +26,9 @@ function validateUsers(users: ProposalUser[]) {
   return { validUsers, invalidUsers };
 }
 const createChatroom = async (message: ValidProposalMessageData) => {
+  const synapseService: SynapseService = container.resolve(
+    Tokens.SynapseService
+  );
   const allUsersOnProposal = [...message.members, message.proposer];
 
   const { validUsers, invalidUsers } = validateUsers(allUsersOnProposal);
