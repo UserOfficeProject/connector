@@ -10,6 +10,7 @@ import {
 } from 'matrix-js-sdk';
 
 import { produceSynapseUserId } from './produceSynapseUserId';
+import { createAxiosFetchFn } from '../../config/utils';
 import {
   ProposalUser,
   ChatRoom,
@@ -45,7 +46,10 @@ export class SynapseService {
     if (!serviceAccount.password)
       throw new Error('SYNAPSE_SERVICE_PASSWORD is not set');
 
-    this.client = createClient({ baseUrl: serverUrl });
+    this.client = createClient({
+      baseUrl: serverUrl,
+      fetchFn: createAxiosFetchFn,
+    });
 
     // TODO, If consumer service is started after downtime, and there are some pending messages in the queue
     // then it could be that queue handler will delegate handling of messages before connection to supabase is established

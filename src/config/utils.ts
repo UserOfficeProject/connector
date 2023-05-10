@@ -1,3 +1,4 @@
+import axios, { AxiosHeaders } from 'axios';
 import { container, Lifecycle } from 'tsyringe';
 
 export const mapClass = (
@@ -26,4 +27,22 @@ export const str2Bool = (i: string): boolean => {
   i = i.toLowerCase();
 
   return i === 'true' || i === '1';
+};
+
+export const createAxiosFetchFn = async (url: any, options: any) => {
+  const { method, headers, body } = options;
+  const axiosOptions = { method, url, data: body, headers };
+  const axiosResponse = await axios(axiosOptions);
+
+  const { data, status, statusText, headers: axiosHeaders } = axiosResponse;
+
+  const responseHeaders = new AxiosHeaders(axiosHeaders as AxiosHeaders);
+
+  const response = new Response(JSON.stringify(data), {
+    status,
+    statusText,
+    headers: responseHeaders,
+  });
+
+  return response;
 };
