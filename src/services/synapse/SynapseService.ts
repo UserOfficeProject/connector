@@ -10,7 +10,7 @@ import {
 } from 'matrix-js-sdk';
 
 import { produceSynapseUserId } from './produceSynapseUserId';
-import { createAxiosFetchFn } from '../../config/utils';
+import { axiosFetch } from '../../config/utils';
 import {
   ProposalUser,
   ChatRoom,
@@ -48,7 +48,7 @@ export class SynapseService {
 
     this.client = createClient({
       baseUrl: serverUrl,
-      fetchFn: createAxiosFetchFn,
+      fetchFn: axiosFetch,
     });
 
     // TODO, If consumer service is started after downtime, and there are some pending messages in the queue
