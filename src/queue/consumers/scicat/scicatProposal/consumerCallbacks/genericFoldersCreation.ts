@@ -2,13 +2,30 @@ import { exec } from 'node:child_process';
 
 import { logger } from '@user-office-software/duo-logger';
 
-const GENERIC_FOLDERS_CREATION_COMMAND =
-  process.env.GENERIC_FOLDERS_CREATION_COMMAND;
+/**
+ * NOTE:
+ * @param modifiedMessage Message object with correct keys that will replace the command placeholders with values
+ * @param originalCommand Command that will be run containing placeholders that will be replaced with real values in this function.
+ * @returns Command that will be run replaced with real values in this function.
+ */
+const getCommandReplacedWithValues = (
+  modifiedMessage: Record<string, string>,
+  originalCommand: string
+) => {
+  let command = originalCommand;
 
-const genericFoldersCreation = async (message: {
-  context: string;
-  item: string;
-}) => {
+  for (const [key, value] of Object.entries(modifiedMessage)) {
+    command = originalCommand.replace(`<${key.toUpperCase()}>`, value);
+  }
+
+  return command;
+};
+
+const genericFoldersCreation = async (
+  message: Record<string, string>,
+  originalCommand: string,
+  messageModifier?: (message: Record<string, string>) => Record<string, string>
+) => {
   // prepare path with correct year, context(instrument_shortcode, course_id), item(proposal_shortcode, user_id)
   const item = message.item as string;
   const year = new Date().getFullYear().toString();
@@ -19,19 +36,17 @@ const genericFoldersCreation = async (message: {
     context,
   });
 
-  if (!GENERIC_FOLDERS_CREATION_COMMAND) {
-    logger.logInfo('GENERIC_FOLDERS_CREATION_COMMAND env variable is missing', {
-      command: GENERIC_FOLDERS_CREATION_COMMAND,
-      errorMessage: 'GENERIC_FOLDERS_CREATION_COMMAND env variable is missing',
-    });
+  let modifiedMessage = { ...message };
 
-    throw new Error('GENERIC_FOLDERS_CREATION_COMMAND env variable is missing');
+  if (messageModifier) {
+    modifiedMessage = messageModifier(message);
   }
 
-  // update command
-  const command = GENERIC_FOLDERS_CREATION_COMMAND.replace(/<CONTEXT>/, context)
-    .replace(/<YEAR>/, year)
-    .replace(/<ITEM>/, item);
+  const command = getCommandReplacedWithValues(
+    modifiedMessage,
+    originalCommand
+  );
+
   logger.logInfo('Command to be run', { command: command });
 
   // run command

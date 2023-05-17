@@ -17,6 +17,12 @@ export abstract class QueueConsumer {
   abstract getQueueName(): string;
   abstract getExchangeName(): string;
 
+  // NOTE: This function is used for message modifications if needed in some specific scenarios where we have to organize the message keys differently.
+  // In the handler it is mapped one to one which means that it tries to find a <KEY> for each message "key".
+  protected messageModifier?(
+    message: Record<string, string>
+  ): Record<string, string>;
+
   abstract onMessage: ConsumerCallback;
 
   async start(): Promise<void> {
