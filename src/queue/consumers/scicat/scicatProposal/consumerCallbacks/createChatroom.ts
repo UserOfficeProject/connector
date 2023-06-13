@@ -42,6 +42,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   for (const user of validUsers) {
     try {
       const userExists = await synapseService.userExists(user);
+
       if (!userExists) {
         await synapseService.createUser(user, defaultPassword);
       }

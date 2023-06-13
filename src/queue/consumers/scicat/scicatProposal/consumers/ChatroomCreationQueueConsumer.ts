@@ -32,7 +32,8 @@ export class ChatroomCreationQueueConsumer extends QueueConsumer {
     const hasStatus = hasTriggeringStatus(proposalMessage, triggeringStatuses);
     const hasType = hasTriggeringType(type, EVENT_TYPES);
 
-    if (hasStatus && hasType) {
+    //TODO: remove exclamination
+    if (hasStatus && !hasType) {
       createChatroom(proposalMessage);
     }
   };
