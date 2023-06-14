@@ -10,25 +10,27 @@ const serverName = process.env.SYNAPSE_SERVER_NAME;
  */
 export async function produceSynapseUserId(
   member: ProposalUser,
-  synapseService: SynapseService,
+  synapseService?: SynapseService,
   skipPrePostfix: boolean = false
 ): Promise<string> {
-  const { user_id: userIdByOidcSub } = await synapseService.getUserByOidcSub(
-    member
-  );
-  const { user_id: userIdByEmail } = await synapseService.getUserByEmail(
-    member
-  );
+  if (synapseService) {
+    const { user_id: userIdByOidcSub } = await synapseService.getUserByOidcSub(
+      member
+    );
+    const { user_id: userIdByEmail } = await synapseService.getUserByEmail(
+      member
+    );
 
-  if (userIdByOidcSub) {
-    return skipPrePostfix
-      ? userIdByOidcSub.replace(/^@|:ess$/g, '')
-      : userIdByOidcSub;
-  }
-  if (userIdByEmail) {
-    return skipPrePostfix
-      ? userIdByEmail.replace(/^@|:ess$/g, '')
-      : userIdByEmail;
+    if (userIdByOidcSub) {
+      return skipPrePostfix
+        ? userIdByOidcSub.replace(/^@|:ess$/g, '')
+        : userIdByOidcSub;
+    }
+    if (userIdByEmail) {
+      return skipPrePostfix
+        ? userIdByEmail.replace(/^@|:ess$/g, '')
+        : userIdByEmail;
+    }
   }
 
   const normalizedId = member.oidcSub
