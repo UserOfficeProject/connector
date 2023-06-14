@@ -302,6 +302,12 @@ export class SynapseService {
               external_id: member.oidcSub,
             },
           ],
+          threepids: [
+            {
+              medium: thirdPartyId,
+              address: member.email,
+            },
+          ],
         },
         { prefix: ADMIN_API_PREFIX_V2 }
       )
