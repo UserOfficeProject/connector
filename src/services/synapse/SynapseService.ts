@@ -71,7 +71,7 @@ export class SynapseService {
           name: name,
           topic: topic,
           visibility: Visibility.Private,
-          invite: members.map((member) => produceSynapseUserId(member)),
+          invite: members.map((member) => produceSynapseUserId(member, this)),
         },
         { prefix: CLIENT_API_PREFIX_V1 }
       )
@@ -141,7 +141,7 @@ export class SynapseService {
   async invite(roomId: string, members: ProposalUser[]) {
     const invitedUsers: { userId: string; invited: boolean }[] = [];
     for (const member of members) {
-      const userId = await produceSynapseUserId(member);
+      const userId = await produceSynapseUserId(member, this);
 
       await this.client.http
         .authedRequest(
@@ -241,7 +241,7 @@ export class SynapseService {
   }
 
   async updateUser(member: ProposalUser): Promise<User> {
-    const userid = produceSynapseUserId(member);
+    const userid = produceSynapseUserId(member, this);
     const result = await this.client.http
       .authedRequest(
         Method.Put,
@@ -279,15 +279,14 @@ export class SynapseService {
       !!(await this.getUserByEmail(member));
 
     if (!userExists) {
-      logger.logError('Failed to check if user exists', { member });
-      throw new Error();
+      logger.logInfo('User not exists: ', { member });
     }
 
     return userExists;
   }
 
   async createUser(member: ProposalUser, password: string) {
-    const userid = produceSynapseUserId(member);
+    const userid = produceSynapseUserId(member, this);
     const result = await this.client.http
       .authedRequest(
         Method.Put,

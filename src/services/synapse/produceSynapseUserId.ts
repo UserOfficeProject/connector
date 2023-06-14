@@ -1,7 +1,4 @@
-import { container } from 'tsyringe';
-
 import { SynapseService } from './SynapseService';
-import { Tokens } from '../../config/Tokens';
 import { ProposalUser } from '../../queue/consumers/scicat/scicatProposal/dto';
 
 const serverName = process.env.SYNAPSE_SERVER_NAME;
@@ -13,12 +10,9 @@ const serverName = process.env.SYNAPSE_SERVER_NAME;
  */
 export async function produceSynapseUserId(
   member: ProposalUser,
+  synapseService: SynapseService,
   skipPrePostfix: boolean = false
 ): Promise<string> {
-  const synapseService: SynapseService = container.resolve(
-    Tokens.SynapseService
-  );
-
   const { user_id: userIdByOidcSub } = await synapseService.getUserByOidcSub(
     member
   );
