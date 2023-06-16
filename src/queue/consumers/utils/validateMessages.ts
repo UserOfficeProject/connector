@@ -1,4 +1,5 @@
-import { ProposalMessageData } from '../../../../../models/ProposalMessage';
+import { MoodleMessageData } from '../../../models/MoodleMessage';
+import { ProposalMessageData } from '../../../models/ProposalMessage';
 export type ValidProposalMessageData = Required<ProposalMessageData>;
 
 export function validateProposalMessage(
@@ -38,3 +39,25 @@ export function validateProposalMessage(
 
   return proposalMessage as ValidProposalMessageData;
 }
+
+export function validateMoodleMessage(
+  moodleMessage: MoodleMessageData
+): ValidMessageData {
+  if (!moodleMessage.relateduserid) {
+    throw new Error('Property userid is missing');
+  }
+
+  if (!moodleMessage.courseid) {
+    throw new Error('Property courseid is missing');
+  }
+
+  return { context: moodleMessage.courseid, item: moodleMessage.relateduserid };
+}
+
+// NOTE:
+// context can be: instrument_shortCode, course_id
+// item can be: (proposal_shortCode, user_id)
+export type ValidMessageData = {
+  context: string;
+  item: string;
+};

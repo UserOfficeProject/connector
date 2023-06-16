@@ -2,7 +2,7 @@ import { exec } from 'node:child_process';
 
 import { logger } from '@user-office-software/duo-logger';
 
-import { ValidProposalMessageData } from '../utils/validateProposalMessage';
+import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 
 const proposalFoldersCreation = async (
   proposalMessage: ValidProposalMessageData

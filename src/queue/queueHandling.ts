@@ -1,8 +1,8 @@
 import { container } from 'tsyringe';
 
+import { MoodleFolderCreationQueueConsumer } from './consumers/moodle/MoodleFolderCreationQueueConsumer';
 import { ChatroomCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/ChatroomCreationQueueConsumer';
 import { FolderCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/FolderCreationQueueConsumer';
-import { MoodleFolderCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/MoodleFolderCreationQueueConsumer';
 import { ProposalCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/ProposalCreationQueueConsumer';
 import { GetMessageBroker } from './messageBroker/getMessageBroker';
 import { Tokens } from '../config/Tokens';
