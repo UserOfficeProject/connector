@@ -14,6 +14,7 @@ import { axiosFetch } from '../../config/utils';
 import {
   ProposalUser,
   ChatRoom,
+  UserId,
 } from '../../queue/consumers/scicat/scicatProposal/dto';
 
 interface MemberObject {
@@ -26,6 +27,7 @@ interface MemberObject {
 const serverUrl = process.env.SYNAPSE_SERVER_URL;
 const serverName = process.env.SYNAPSE_SERVER_NAME;
 const oauthIssuer = process.env.SYNAPSE_OAUTH_ISSUER;
+const thirdPartyId = process.env.SYNAPSE_THIRD_PARTY_ID || 'email';
 const serviceAccount = {
   userId: process.env.SYNAPSE_SERVICE_USER,
   password: process.env.SYNAPSE_SERVICE_PASSWORD,
@@ -69,7 +71,7 @@ export class SynapseService {
           name: name,
           topic: topic,
           visibility: Visibility.Private,
-          invite: members.map((member) => produceSynapseUserId(member)),
+          invite: members.map((member) => produceSynapseUserId(member, this)),
         },
         { prefix: CLIENT_API_PREFIX_V1 }
       )
@@ -139,7 +141,8 @@ export class SynapseService {
   async invite(roomId: string, members: ProposalUser[]) {
     const invitedUsers: { userId: string; invited: boolean }[] = [];
     for (const member of members) {
-      const userId = produceSynapseUserId(member);
+      const userId = await produceSynapseUserId(member, this);
+
       await this.client.http
         .authedRequest(
           Method.Post,
@@ -176,6 +179,45 @@ export class SynapseService {
 
     return response.rooms;
   }
+  async getUserByOidcSub(oidcSub: string) {
+    const result = await this.client.http
+      .authedRequest(
+        Method.Get,
+        `/auth_providers/${oauthIssuer}/users/${oidcSub}`,
+        {},
+        undefined,
+        {
+          prefix: ADMIN_API_PREFIX_V1,
+        }
+      )
+      .catch((reason) => {
+        logger.logError('Failed to get user by oidc_sub', { reason });
+
+        throw reason;
+      });
+
+    return result as UserId;
+  }
+
+  async getUserByEmail(email: string) {
+    const result = await this.client.http
+      .authedRequest(
+        Method.Get,
+        `/threepid/${thirdPartyId}/users/${email}`,
+        {},
+        undefined,
+        {
+          prefix: ADMIN_API_PREFIX_V1,
+        }
+      )
+      .catch((reason) => {
+        logger.logError('Failed to get user by email', { reason });
+
+        throw reason;
+      });
+
+    return result as UserId;
+  }
 
   async getRoomIdByName(name: string) {
     // TODO: if more than one identical name rooms exist,
@@ -199,7 +241,7 @@ export class SynapseService {
   }
 
   async updateUser(member: ProposalUser): Promise<User> {
-    const userid = produceSynapseUserId(member);
+    const userid = produceSynapseUserId(member, this);
     const result = await this.client.http
       .authedRequest(
         Method.Put,
@@ -210,8 +252,14 @@ export class SynapseService {
           name: `${member.firstName} ${member.lastName}`,
           external_ids: [
             {
-              auth_provider: 'oidc-keycloak', //member.oauthIssuer,
+              auth_provider: member.oauthIssuer || oauthIssuer,
               external_id: member.oidcSub,
+            },
+          ],
+          threepids: [
+            {
+              medium: thirdPartyId,
+              address: member.email,
             },
           ],
         },
@@ -226,21 +274,19 @@ export class SynapseService {
   }
 
   async userExists(member: ProposalUser) {
-    const synapseUserId = produceSynapseUserId(member, true);
+    const userExists =
+      !!(await this.getUserByOidcSub(member.oidcSub)) ||
+      !!(await this.getUserByEmail(member.email));
 
-    return this.client
-      .isUsernameAvailable(synapseUserId)
-      .then((response) => {
-        return !response;
-      })
-      .catch((reason) => {
-        logger.logError('Failed to check if user exists', { reason, member });
-        throw reason;
-      }); // If the user exist, the request will throw
+    if (!userExists) {
+      logger.logInfo('User not exists: ', { member });
+    }
+
+    return userExists;
   }
 
   async createUser(member: ProposalUser, password: string) {
-    const userid = produceSynapseUserId(member);
+    const userid = produceSynapseUserId(member, this);
     const result = await this.client.http
       .authedRequest(
         Method.Put,
@@ -251,8 +297,14 @@ export class SynapseService {
           password: password,
           external_ids: [
             {
-              auth_provider: 'oidc-keycloak', //member.oauthIssuer,
+              auth_provider: member.oauthIssuer || oauthIssuer,
               external_id: member.oidcSub,
+            },
+          ],
+          threepids: [
+            {
+              medium: thirdPartyId,
+              address: member.email,
             },
           ],
         },

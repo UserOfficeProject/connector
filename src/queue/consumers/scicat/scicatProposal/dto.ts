@@ -21,6 +21,7 @@ export interface ProposalUser {
   lastName: string;
   email: string;
   oidcSub: string;
+  oauthIssuer?: string;
 }
 
 export interface ProposalAcceptedMessage {
@@ -40,4 +41,8 @@ export type ChatRoom = {
   history_visibility: string;
   join_rules: string;
   public: boolean;
+};
+
+export type UserId = {
+  user_id: string;
 };

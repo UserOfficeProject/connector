@@ -1,3 +1,4 @@
+import { SynapseService } from './SynapseService';
 import { ProposalUser } from '../../queue/consumers/scicat/scicatProposal/dto';
 
 const serverName = process.env.SYNAPSE_SERVER_NAME;
@@ -7,10 +8,31 @@ const serverName = process.env.SYNAPSE_SERVER_NAME;
  * @param skipPrePostfix If true, the @ and :serverName will not be added
  * @returns Synapse user id
  */
-export function produceSynapseUserId(
+export async function produceSynapseUserId(
   member: ProposalUser,
+  synapseService?: SynapseService,
   skipPrePostfix: boolean = false
-): string {
+): Promise<string> {
+  if (synapseService) {
+    const { user_id: userIdByOidcSub } = await synapseService.getUserByOidcSub(
+      member.oidcSub
+    );
+    const { user_id: userIdByEmail } = await synapseService.getUserByEmail(
+      member.email
+    );
+
+    if (userIdByOidcSub) {
+      return skipPrePostfix
+        ? userIdByOidcSub.replace(/^@|:ess$/g, '')
+        : userIdByOidcSub;
+    }
+    if (userIdByEmail) {
+      return skipPrePostfix
+        ? userIdByEmail.replace(/^@|:ess$/g, '')
+        : userIdByEmail;
+    }
+  }
+
   const normalizedId = member.oidcSub
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
