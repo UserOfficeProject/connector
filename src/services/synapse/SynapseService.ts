@@ -179,11 +179,11 @@ export class SynapseService {
 
     return response.rooms;
   }
-  async getUserByOidcSub(member: ProposalUser) {
+  async getUserByOidcSub(oidcSub: string) {
     const result = await this.client.http
       .authedRequest(
         Method.Get,
-        `/auth_providers/${oauthIssuer}/users/${member.oidcSub}`,
+        `/auth_providers/${oauthIssuer}/users/${oidcSub}`,
         {},
         undefined,
         {
@@ -199,11 +199,11 @@ export class SynapseService {
     return result as UserId;
   }
 
-  async getUserByEmail(member: ProposalUser) {
+  async getUserByEmail(email: string) {
     const result = await this.client.http
       .authedRequest(
         Method.Get,
-        `/threepid/${thirdPartyId}/users/${member.email}`,
+        `/threepid/${thirdPartyId}/users/${email}`,
         {},
         undefined,
         {
@@ -275,8 +275,8 @@ export class SynapseService {
 
   async userExists(member: ProposalUser) {
     const userExists =
-      !!(await this.getUserByOidcSub(member)) ||
-      !!(await this.getUserByEmail(member));
+      !!(await this.getUserByOidcSub(member.oidcSub)) ||
+      !!(await this.getUserByEmail(member.email));
 
     if (!userExists) {
       logger.logInfo('User not exists: ', { member });

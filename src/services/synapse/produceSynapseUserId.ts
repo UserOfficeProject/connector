@@ -15,10 +15,10 @@ export async function produceSynapseUserId(
 ): Promise<string> {
   if (synapseService) {
     const { user_id: userIdByOidcSub } = await synapseService.getUserByOidcSub(
-      member
+      member.oidcSub
     );
     const { user_id: userIdByEmail } = await synapseService.getUserByEmail(
-      member
+      member.email
     );
 
     if (userIdByOidcSub) {
