@@ -42,22 +42,25 @@ export function validateProposalMessage(
 
 export function validateMoodleMessage(
   moodleMessage: MoodleMessageData
-): ValidMessageData {
-  if (!moodleMessage.relateduserid) {
+): ValidMoodleMessageData {
+  if (!moodleMessage.enrolled_user_id) {
     throw new Error('Property userid is missing');
   }
 
-  if (!moodleMessage.courseid) {
+  if (!moodleMessage.course_short_name) {
     throw new Error('Property courseid is missing');
   }
 
-  return { context: moodleMessage.courseid, item: moodleMessage.relateduserid };
+  return {
+    enrolled_user_id: moodleMessage.enrolled_user_id,
+    course_short_name: moodleMessage.course_short_name,
+  };
 }
 
 // NOTE:
 // context can be: instrument_shortCode, course_id
 // item can be: (proposal_shortCode, user_id)
-export type ValidMessageData = {
-  context: string;
-  item: string;
+export type ValidMoodleMessageData = {
+  enrolled_user_id: string;
+  course_short_name: string;
 };

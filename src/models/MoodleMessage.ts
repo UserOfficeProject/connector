@@ -1,4 +1,4 @@
 export type MoodleMessageData = {
-  relateduserid: string;
-  courseid: string;
+  enrolled_user_id: string;
+  course_short_name: string;
 };

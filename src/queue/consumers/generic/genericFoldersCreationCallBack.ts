@@ -15,7 +15,7 @@ const getCommandReplacedWithValues = (
   let command = originalCommand;
 
   for (const [key, value] of Object.entries(modifiedMessage)) {
-    command = originalCommand.replace(`<${key.toUpperCase()}>`, value);
+    command = command.replace(`<${key.toUpperCase()}>`, value);
   }
 
   return command;
@@ -26,16 +26,6 @@ const genericFoldersCreation = async (
   originalCommand: string,
   messageModifier?: (message: Record<string, string>) => Record<string, string>
 ) => {
-  // prepare path with correct year, context(instrument_shortcode, course_id), item(proposal_shortcode, user_id)
-  const item = message.item as string;
-  const year = new Date().getFullYear().toString();
-  const context = (message.context as string).toLowerCase();
-  logger.logInfo('Preparing year, context and item', {
-    item,
-    year,
-    context,
-  });
-
   let modifiedMessage = { ...message };
 
   if (messageModifier) {
