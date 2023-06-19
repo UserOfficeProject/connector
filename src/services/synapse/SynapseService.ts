@@ -62,6 +62,9 @@ export class SynapseService {
   }
 
   async createRoom(name: string, topic: string, members: ProposalUser[]) {
+    const membersList = await Promise.all(
+      members.map(async (member) => await produceSynapseUserId(member, this))
+    );
     const room = await this.client.http
       .authedRequest(
         Method.Post,
@@ -71,7 +74,7 @@ export class SynapseService {
           name: name,
           topic: topic,
           visibility: Visibility.Private,
-          invite: members.map((member) => produceSynapseUserId(member, this)),
+          invite: membersList,
         },
         { prefix: CLIENT_API_PREFIX_V1 }
       )
@@ -142,7 +145,6 @@ export class SynapseService {
     const invitedUsers: { userId: string; invited: boolean }[] = [];
     for (const member of members) {
       const userId = await produceSynapseUserId(member, this);
-
       await this.client.http
         .authedRequest(
           Method.Post,
@@ -179,11 +181,11 @@ export class SynapseService {
 
     return response.rooms;
   }
-  async getUserByOidcSub(oidcSub: string) {
+  async getUserByOidcSub(member: ProposalUser) {
     const result = await this.client.http
       .authedRequest(
         Method.Get,
-        `/auth_providers/${oauthIssuer}/users/${oidcSub}`,
+        `/auth_providers/${oauthIssuer}/users/${member.oidcSub}`,
         {},
         undefined,
         {
@@ -191,9 +193,7 @@ export class SynapseService {
         }
       )
       .catch((reason) => {
-        logger.logError('Failed to get user by oidc_sub', { reason });
-
-        throw reason;
+        logger.logError('Not able to find user by oidc_sub', { reason });
       });
 
     return result as UserId;
@@ -211,9 +211,7 @@ export class SynapseService {
         }
       )
       .catch((reason) => {
-        logger.logError('Failed to get user by email', { reason });
-
-        throw reason;
+        logger.logError('Not able to find user by Email', { reason });
       });
 
     return result as UserId;
@@ -241,7 +239,7 @@ export class SynapseService {
   }
 
   async updateUser(member: ProposalUser): Promise<User> {
-    const userid = produceSynapseUserId(member, this);
+    const userid = await produceSynapseUserId(member, this);
     const result = await this.client.http
       .authedRequest(
         Method.Put,
@@ -252,7 +250,7 @@ export class SynapseService {
           name: `${member.firstName} ${member.lastName}`,
           external_ids: [
             {
-              auth_provider: member.oauthIssuer || oauthIssuer,
+              auth_provider: oauthIssuer,
               external_id: member.oidcSub,
             },
           ],
@@ -275,7 +273,7 @@ export class SynapseService {
 
   async userExists(member: ProposalUser) {
     const userExists =
-      !!(await this.getUserByOidcSub(member.oidcSub)) ||
+      !!(await this.getUserByOidcSub(member)) ||
       !!(await this.getUserByEmail(member.email));
 
     if (!userExists) {
@@ -286,7 +284,7 @@ export class SynapseService {
   }
 
   async createUser(member: ProposalUser, password: string) {
-    const userid = produceSynapseUserId(member, this);
+    const userid = await produceSynapseUserId(member, this);
     const result = await this.client.http
       .authedRequest(
         Method.Put,
@@ -297,7 +295,7 @@ export class SynapseService {
           password: password,
           external_ids: [
             {
-              auth_provider: member.oauthIssuer || oauthIssuer,
+              auth_provider: oauthIssuer,
               external_id: member.oidcSub,
             },
           ],
