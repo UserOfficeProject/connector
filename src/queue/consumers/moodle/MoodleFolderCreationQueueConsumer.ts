@@ -2,7 +2,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { MoodleMessageData } from '../../../models/MoodleMessage';
-import { genericFoldersCreation } from '../genericFoldersCreation';
+import { genericFoldersCreation } from '../generic/genericFoldersCreationCallBack';
 import { QueueConsumer } from '../QueueConsumer';
 import { validateMoodleMessage } from '../utils/validateMessages';
 
