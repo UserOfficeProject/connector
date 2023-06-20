@@ -1,7 +1,7 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 import { CreateProposalDto } from '../dto';
-import { ValidProposalMessageData } from '../utils/validateProposalMessage';
 
 const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
 const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
