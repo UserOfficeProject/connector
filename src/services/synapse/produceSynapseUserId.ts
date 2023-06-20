@@ -14,22 +14,18 @@ export async function produceSynapseUserId(
   skipPrePostfix: boolean = false
 ): Promise<string> {
   if (synapseService) {
-    const { user_id: userIdByOidcSub } = await synapseService.getUserByOidcSub(
-      member.oidcSub
-    );
-    const { user_id: userIdByEmail } = await synapseService.getUserByEmail(
-      member.email
-    );
+    const userIdByOidcSub = await synapseService.getUserByOidcSub(member);
+    const userIdByEmail = await synapseService.getUserByEmail(member.email);
 
     if (userIdByOidcSub) {
       return skipPrePostfix
-        ? userIdByOidcSub.replace(/^@|:ess$/g, '')
-        : userIdByOidcSub;
+        ? userIdByOidcSub.user_id.replace(/^@|:ess$/g, '')
+        : userIdByOidcSub.user_id;
     }
     if (userIdByEmail) {
       return skipPrePostfix
-        ? userIdByEmail.replace(/^@|:ess$/g, '')
-        : userIdByEmail;
+        ? userIdByEmail.user_id.replace(/^@|:ess$/g, '')
+        : userIdByEmail.user_id;
     }
   }
 
