@@ -11,7 +11,7 @@ validateEnv();
 
 const topic = process.env.KAFKA_TOPIC;
 const messagesForTesting = {
-  proposal: 'check',
+  proposal: 'test123456',
   instrument: 'scicat instrument',
   source: 'NICOS',
   message: 'Some messages sent via kafka',

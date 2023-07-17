@@ -1,4 +1,4 @@
-import { ProposalMessageData } from '../../../../../models/ProposalMessage';
+import { ProposalMessageData } from '../../../models/ProposalMessage';
 
 export const hasTriggeringStatus = (
   message: ProposalMessageData,
