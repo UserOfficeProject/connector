@@ -1,6 +1,6 @@
 import { PathOrFileDescriptor, readFileSync } from 'fs';
-
 import { ConnectionOptions } from 'tls';
+
 import { logger } from '@user-office-software/duo-logger';
 import { SASLOptions, SASLMechanism } from 'kafkajs';
 
