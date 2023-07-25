@@ -44,12 +44,10 @@ export default class ConsumerService {
     return isNonRetriableError && !isNumberOfRetriesExceeded;
   }
 
-  async setup({ clientId, brokers }: SetupConfig) {
-    this.kafka = new Kafka({
-      clientId,
-      brokers,
-      retry: this.retryOptions,
-    });
+  async setup(config: SetupConfig) {
+    config.retry = this.retryOptions;
+
+    this.kafka = new Kafka(config);
   }
 
   async disconnect() {

@@ -1,3 +1,5 @@
+import { ConnectionOptions } from 'tls';
+
 import { PartitionAssigner, SASLOptions } from 'kafkajs';
 
 export type NicosMessageData = {
@@ -14,7 +16,7 @@ export interface ProduceType {
 export interface SetupConfig {
   clientId: string;
   brokers: string[];
-  ssl?: boolean;
+  ssl?: ConnectionOptions | boolean;
   sasl?: SASLOptions;
   retry?: RetryOptions;
 }

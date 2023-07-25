@@ -3,8 +3,8 @@ import { container } from 'tsyringe';
 
 import { Tokens } from '../../../../../config/Tokens';
 import { SynapseService } from '../../../../../services/synapse/SynapseService';
+import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 import { ProposalUser } from '../dto';
-import { ValidProposalMessageData } from '../utils/validateProposalMessage';
 
 const defaultPassword = process.env.SYNAPSE_NEW_USER_DEFAULT_PASSWORD || '';
 
@@ -42,6 +42,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   for (const user of validUsers) {
     try {
       const userExists = await synapseService.userExists(user);
+
       if (!userExists) {
         await synapseService.createUser(user, defaultPassword);
       }

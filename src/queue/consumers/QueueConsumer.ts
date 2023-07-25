@@ -1,25 +1,27 @@
 import { logger } from '@user-office-software/duo-logger';
 import {
   ConsumerCallback,
+  MessageBroker,
   Queue,
 } from '@user-office-software/duo-message-broker';
-import { container } from 'tsyringe';
-
-import { Tokens } from '../../config/Tokens';
-import { GetMessageBroker } from '../messageBroker/getMessageBroker';
 
 export abstract class QueueConsumer {
-  private getMessageBroker: GetMessageBroker = container.resolve(
-    Tokens.ProvideMessageBroker
-  );
+  private messageBroker: MessageBroker;
 
-  constructor() {
+  constructor(messageBroker: MessageBroker) {
+    this.messageBroker = messageBroker;
     logger.logInfo(`QueueConsumer ${this.constructor.name} created`, {});
     this.start();
   }
 
   abstract getQueueName(): string;
   abstract getExchangeName(): string;
+
+  // NOTE: This function is used for message modifications if needed in some specific scenarios where we have to organize the message keys differently.
+  // In the handler it is mapped one to one which means that it tries to find a <KEY> for each message "key".
+  protected messageModifier?(
+    message: Record<string, string>
+  ): Record<string, string>;
 
   abstract onMessage: ConsumerCallback;
 
@@ -39,10 +41,9 @@ export abstract class QueueConsumer {
       );
     }
 
-    const messageBroker = await this.getMessageBroker();
-    await messageBroker.bindQueueToExchange(queueName, exchangeName);
+    await this.messageBroker.bindQueueToExchange(queueName, exchangeName);
 
-    messageBroker.listenOn(queueName as Queue, async (...args) => {
+    this.messageBroker.listenOn(queueName as Queue, async (...args) => {
       logger.logInfo('Received message on queue', { queueName });
       try {
         await this.onMessage(...args);
