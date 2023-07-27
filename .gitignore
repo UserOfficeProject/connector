@@ -5,4 +5,5 @@ build
 .vscode/launch.json
 .vscode/settings.json
 .env
+ecdc-kafka-ca.crt
 coverage
