@@ -10,9 +10,11 @@ import ConsumerService from '../consumers/KafkaConsumer';
 export const connect = async (clientId: string) => {
   const kafka = new ConsumerService();
 
+  const brokers = (process.env.KAFKA_BROKERS as string).split(',');
+
   const kafkaConfiguration: SetupConfig = {
     clientId: process.env.KAFKA_CLIENTID || clientId,
-    brokers: [`${process.env.KAFKA_BROKERS}`],
+    brokers: brokers,
   };
   if (process.env.KAFKA_SASL_ENABLED) {
     kafkaConfiguration.sasl = {
