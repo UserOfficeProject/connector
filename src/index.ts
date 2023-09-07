@@ -1,7 +1,11 @@
+import 'reflect-metadata';
 import { logger } from '@user-office-software/duo-logger';
 import express from 'express';
+import { container } from 'tsyringe';
 
 import './config';
+import { ConfigureLogger } from './config/logger/ConfigureLogger';
+import { Tokens } from './config/Tokens';
 import { str2Bool } from './config/utils';
 import validateEnv from './config/validateEnv';
 import healthCheck from './middlewares/healthCheck';
@@ -11,7 +15,13 @@ import startRabbitMQHandling from './queue/queueHandling';
 
 validateEnv();
 
+const configureLogger = container.resolve<ConfigureLogger>(
+  Tokens.ConfigureLogger
+);
+
 async function bootstrap() {
+  configureLogger();
+
   logger.logInfo('Server information: ', {
     nodeVersion: process.version,
     env: process.env.NODE_ENV,
