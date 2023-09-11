@@ -23,7 +23,7 @@ export class MoodleFolderCreationQueueConsumer extends QueueConsumer {
 
     if (validMessage) {
       if (!MOODLE_FOLDERS_CREATION_COMMAND) {
-        logger.logInfo(
+        logger.logError(
           'MOODLE_FOLDERS_CREATION_COMMAND env variable is missing',
           {
             command: MOODLE_FOLDERS_CREATION_COMMAND,
@@ -39,7 +39,7 @@ export class MoodleFolderCreationQueueConsumer extends QueueConsumer {
 
       genericFoldersCreation(validMessage, MOODLE_FOLDERS_CREATION_COMMAND);
     } else {
-      logger.logInfo('Message does not have the correct arguments', {
+      logger.logError('Message does not have the correct arguments', {
         arg0,
         message,
         properties,
