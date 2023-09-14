@@ -1,4 +1,5 @@
 import { exec } from 'node:child_process';
+import { env } from 'node:process';
 
 import { logger } from '@user-office-software/duo-logger';
 
@@ -18,7 +19,7 @@ const proposalFoldersCreation = async (
   });
 
   // update command
-  const command = (process.env.PROPOSAL_FOLDERS_CREATION_COMMAND! as string)
+  const command = (env.PROPOSAL_FOLDERS_CREATION_COMMAND! as string)
     .replace(/<INSTRUMENT>/, instrument)
     .replace(/<YEAR>/, year)
     .replace(/<PROPOSAL>/, proposalId);
@@ -27,7 +28,7 @@ const proposalFoldersCreation = async (
   // run command
   exec(command, (error, stdout, stderr) => {
     if (error) {
-      logger.logInfo('Unable to create folders with error', {
+      logger.logError('Unable to create folders with error', {
         command: command,
         errorMessage: error.message,
       });
@@ -35,7 +36,7 @@ const proposalFoldersCreation = async (
       return;
     }
     if (stderr) {
-      logger.logInfo('Unable to create folders with stderr', {
+      logger.logError('Unable to create folders with stderr', {
         command: command,
         stderr: stderr,
       });

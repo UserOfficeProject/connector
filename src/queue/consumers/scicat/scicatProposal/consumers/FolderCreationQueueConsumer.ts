@@ -38,7 +38,7 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
     if (hasStatus && hasType) {
       proposalFoldersCreation(proposalMessage);
     } else {
-      logger.logInfo('Message does not have the correct type or status', {
+      logger.logError('Message does not have the correct type or status', {
         type: type,
         status: proposalMessage.newStatus,
       });
