@@ -10,9 +10,11 @@ import ConsumerService from '../consumers/KafkaConsumer';
 export const connect = async (clientId: string) => {
   const kafka = new ConsumerService();
 
+  const brokers = (process.env.KAFKA_BROKERS as string).split(',');
+
   const kafkaConfiguration: SetupConfig = {
     clientId: process.env.KAFKA_CLIENTID || clientId,
-    brokers: [`${process.env.KAFKA_BROKERS}`],
+    brokers: brokers,
   };
   if (process.env.KAFKA_SASL_ENABLED) {
     kafkaConfiguration.sasl = {
@@ -39,13 +41,18 @@ export const connect = async (clientId: string) => {
   //   brokers: [`${process.env.KAFKA_BROKERS}`],
   // }
 
+  logger.logInfo(
+    'Kafka consumer setup configuration ',
+    kafkaConfiguration as unknown as Record<string, unknown>
+  );
+
   kafka
     .setup(kafkaConfiguration)
     .then(() => {
-      logger.logInfo('Consumer setup configured', {
-        clientId: process.env.KAFKA_CLIENTID || clientId,
-        brokers: [`${process.env.KAFKA_BROKERS}`],
-      });
+      logger.logInfo(
+        'Consumer setup configured',
+        kafkaConfiguration as unknown as Record<string, unknown>
+      );
     })
     .catch((reason) => {
       logger.logError('Consumer setup configure error ', { reason });
