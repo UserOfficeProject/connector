@@ -1,11 +1,11 @@
 import 'reflect-metadata';
-import { configureConsoleLogger } from './logger/configureConsoleLogger';
+import { configureGraylogLogger } from './logger/configureGrayLogLogger';
 import { Tokens } from './Tokens';
 import { mapValue, str2Bool } from './utils';
 import getRabbitMqMessageBroker from '../queue/messageBroker/getRabbitMqMessageBroker';
 import { SynapseService } from '../services/synapse/SynapseService';
 
-mapValue(Tokens.ConfigureLogger, configureConsoleLogger);
+mapValue(Tokens.ConfigureLogger, configureGraylogLogger);
 mapValue(Tokens.ProvideMessageBroker, getRabbitMqMessageBroker);
 
 const enableNicosToScichatMessages = str2Bool(

@@ -41,7 +41,7 @@ export abstract class QueueConsumer {
       );
     }
 
-    await this.messageBroker.bindQueueToExchange(queueName, exchangeName);
+    await this.messageBroker.addQueueToExchangeBinding(queueName, exchangeName);
 
     this.messageBroker.listenOn(queueName as Queue, async (...args) => {
       logger.logInfo('Received message on queue', { queueName });
@@ -49,10 +49,10 @@ export abstract class QueueConsumer {
         await this.onMessage(...args);
       } catch (error) {
         logger.logException('Error while handling QueueConsumer callback: ', {
+          error: (error as Error).message,
           queue: this.getQueueName(),
           consumer: this.constructor.name,
           args,
-          error,
         });
       }
     });
