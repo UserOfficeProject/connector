@@ -42,7 +42,7 @@ const genericFoldersCreation = async (
   // run command
   exec(command, (error, stdout, stderr) => {
     if (error) {
-      logger.logInfo('Unable to create folders with error', {
+      logger.logError('Unable to create folders with error', {
         command: command,
         errorMessage: error.message,
       });
@@ -50,7 +50,7 @@ const genericFoldersCreation = async (
       return;
     }
     if (stderr) {
-      logger.logInfo('Unable to create folders with stderr', {
+      logger.logError('Unable to create folders with stderr', {
         command: command,
         stderr: stderr,
       });
