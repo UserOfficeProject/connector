@@ -246,7 +246,6 @@ export class SynapseService {
         `/users/${userid}`,
         undefined,
         {
-          displayname: `${member.firstName} ${member.lastName}`,
           name: `${member.firstName} ${member.lastName}`,
           external_ids: [
             {
