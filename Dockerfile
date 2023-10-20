@@ -8,7 +8,7 @@ WORKDIR /home/node/app
 
 COPY --chown=node:node package*.json ./
 
-RUN npm ci --loglevel error --no-fund
+RUN HUSKY=0 npm ci --loglevel error --no-fund
 
 COPY --chown=node:node . .
 
@@ -25,7 +25,7 @@ WORKDIR /home/node/app
 COPY --from=build-stage --chown=node:node /home/node/app/build ./build
 COPY --from=build-stage --chown=node:node /home/node/app/package*.json ./
 
-RUN npm ci --only=production --loglevel error --no-fund
+RUN HUSKY=0 npm ci --only=production --loglevel error --no-fund
 
 EXPOSE 4010
 
