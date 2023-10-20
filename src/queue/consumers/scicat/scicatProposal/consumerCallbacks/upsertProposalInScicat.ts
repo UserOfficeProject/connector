@@ -13,22 +13,20 @@ async function request<TResponse>(
   config: RequestInit,
   fetchAsPlainText = false
 ): Promise<TResponse> {
-  try {
-    // NOTE: Node v18 comes with fetch API by default
-    const response = await fetch(url, config);
+  // NOTE: Node v18 comes with fetch API by default
+  const response = await fetch(url, config);
 
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
-
-    if (fetchAsPlainText) {
-      return (await response.text()) as TResponse;
-    }
-
-    return (await response.json()) as TResponse;
-  } catch (error) {
-    throw new Error(`An error occurred while sending the request: ${error}`);
+  if (!response.ok) {
+    return response.text().then((text) => {
+      throw new Error(`An error occurred while sending the request: ${text}`);
+    });
   }
+
+  if (fetchAsPlainText) {
+    return (await response.text()) as TResponse;
+  }
+
+  return (await response.json()) as TResponse;
 }
 
 const getSciCatAccessToken = async () => {
@@ -83,6 +81,9 @@ const createProposal = async (
   const url = `${sciCatBaseUrl}/Proposals`;
   const createProposalDto = getCreateProposalDto(proposalMessage);
 
+  logger.logInfo('POST', { url });
+  logger.logInfo('Proposal data', { proposalData: createProposalDto });
+
   const createProposalResponse = await request<string>(url, {
     method: 'POST',
     body: JSON.stringify(createProposalDto),
@@ -92,8 +93,6 @@ const createProposal = async (
     },
   });
 
-  logger.logInfo('POST', { url });
-  logger.logInfo('Proposal data', { proposalData: createProposalDto });
   logger.logInfo('createProposalResponse', { createProposalResponse });
 
   logger.logInfo('Proposal was created in scicat', {
