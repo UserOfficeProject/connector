@@ -12,6 +12,7 @@ import { proposalFoldersCreation } from '../consumerCallbacks/proposalFoldersCre
 const EVENT_TYPES = [
   Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
   Event.PROPOSAL_STATUS_CHANGED_BY_USER,
+  Event.PROPOSAL_STATUS_ACTION_EXECUTED,
 ];
 const triggeringStatuses =
   process.env.PROPOSAL_FOLDERS_CREATION_TRIGGERING_STATUSES?.split(', ');
