@@ -24,7 +24,7 @@
   "author": "SWAP",
   "license": "MIT",
   "devDependencies": {
-    "@types/express": "^4.17.20",
+    "@types/express": "^4.17.21",
     "@types/jest": "^29.5.7",
     "@types/node": "^20.8.2",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
