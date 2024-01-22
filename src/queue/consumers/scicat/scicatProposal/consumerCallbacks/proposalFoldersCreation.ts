@@ -10,19 +10,28 @@ const proposalFoldersCreation = async (
 ) => {
   // prepare path with correct year, instrument, proposal
   const proposalId = proposalMessage.shortCode;
+  const group = proposalMessage.shortCode;
   const year = new Date().getFullYear().toString();
   const instrument = proposalMessage.instrument.shortCode.toLowerCase();
+  const proposerEmail = proposalMessage.proposer.email;
+  const membersEmails = proposalMessage.members.map(m => m.email).join(' ');
   logger.logInfo('Preparing year, instrument and proposal', {
     proposalId: proposalId,
     year: year,
     instrument: instrument,
+    group: group,
+    proposerEmail: proposerEmail,
+    membersEmails: membersEmails
   });
 
   // update command
   const command = (env.PROPOSAL_FOLDERS_CREATION_COMMAND! as string)
     .replace(/<INSTRUMENT>/, instrument)
     .replace(/<YEAR>/, year)
-    .replace(/<PROPOSAL>/, proposalId);
+    .replace(/<PROPOSAL>/, proposalId)
+    .replace(/<GROUP>/, group)
+    .replace(/<PROPOSER_EMAIL>/, proposerEmail)
+    .replace(/<MEMBERS_EMAILS>/, membersEmails);
   logger.logInfo('Command to be run', { command: command });
 
   // run command
