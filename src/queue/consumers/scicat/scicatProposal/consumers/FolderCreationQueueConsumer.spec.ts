@@ -14,7 +14,7 @@ import { MessageBroker } from '@user-office-software/duo-message-broker';
 import { FolderCreationQueueConsumer } from './FolderCreationQueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
-import { validateProposalMessage } from '../../../utils/validateMessages';
+import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 
 describe('FolderCreationQueueConsumer', () => {
   it.each([
