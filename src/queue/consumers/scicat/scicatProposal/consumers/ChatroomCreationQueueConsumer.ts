@@ -1,11 +1,10 @@
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../../models/Event';
-import { ProposalMessageData } from '../../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../../QueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
-import { validateProposalMessage } from '../../../utils/validateProposalMessage';
+import { validateProposalMessage } from '../../../utils/validateMessages';
 import { createChatroom } from '../consumerCallbacks/createChatroom';
 
 const EVENT_TYPES = [
@@ -26,9 +25,7 @@ export class ChatroomCreationQueueConsumer extends QueueConsumer {
   }
 
   onMessage: ConsumerCallback = async (type, message) => {
-    const proposalMessage = validateProposalMessage(
-      message as ProposalMessageData
-    );
+    const proposalMessage = validateProposalMessage(message);
 
     const hasStatus = hasTriggeringStatus(proposalMessage, triggeringStatuses);
     const hasType = hasTriggeringType(type, EVENT_TYPES);

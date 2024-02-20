@@ -11,14 +11,16 @@ import { exec } from 'node:child_process';
 import { logger } from '@user-office-software/duo-logger';
 
 import { proposalFoldersCreation } from './proposalFoldersCreation';
-import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
+import { ValidProposalMessageData } from '../../../utils/validateMessages';
 
 describe('proposalFoldersCreation', () => {
   const proposalMessage = {
     shortCode: 'shortCode',
-    instrument: {
-      shortCode: 'shortCode',
-    },
+    instruments: [
+      {
+        shortCode: 'shortCode',
+      },
+    ],
     proposer: {
       email: 'test.proposer@email.com',
     },

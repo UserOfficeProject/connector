@@ -3,7 +3,7 @@ import { container } from 'tsyringe';
 
 import { Tokens } from '../../../../../config/Tokens';
 import { SynapseService } from '../../../../../services/synapse/SynapseService';
-import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
+import { ValidProposalMessageData } from '../../../utils/validateMessages';
 import { ProposalUser } from '../dto';
 
 const defaultPassword = process.env.SYNAPSE_NEW_USER_DEFAULT_PASSWORD || '';
