@@ -1,4 +1,4 @@
-jest.mock('../../../utils/validateMessages');
+jest.mock('../../../utils/validateProposalMessage');
 jest.mock('../../../utils/hasTriggeringStatus');
 jest.mock('../../../utils/hasTriggeringType');
 jest.mock('../../../QueueConsumer', () => ({
