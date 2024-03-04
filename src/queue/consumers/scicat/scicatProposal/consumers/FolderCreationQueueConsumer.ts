@@ -33,14 +33,16 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
       return;
     }
 
+    const hasStatus = hasTriggeringStatus(message, triggeringStatuses);
+
+    if (!hasStatus) {
+      return;
+    }
+
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData
     );
 
-    const hasStatus = hasTriggeringStatus(proposalMessage, triggeringStatuses);
-
-    if (hasStatus) {
-      proposalFoldersCreation(proposalMessage);
-    }
+    proposalFoldersCreation(proposalMessage);
   };
 }
