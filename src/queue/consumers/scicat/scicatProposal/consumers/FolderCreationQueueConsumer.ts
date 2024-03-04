@@ -26,7 +26,7 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
   }
 
   onMessage: ConsumerCallback = async (arg0, message, properties) => {
-    const type = properties.headers.type || arg0;
+    const type = properties?.headers?.type || arg0;
     const hasType = hasTriggeringType(type, EVENT_TYPES);
 
     if (!hasType) {
