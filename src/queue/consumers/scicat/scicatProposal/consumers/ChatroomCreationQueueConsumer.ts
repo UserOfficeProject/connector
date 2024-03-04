@@ -26,14 +26,18 @@ export class ChatroomCreationQueueConsumer extends QueueConsumer {
   }
 
   onMessage: ConsumerCallback = async (type, message) => {
+    const hasType = hasTriggeringType(type, EVENT_TYPES);
+
+    if (!hasType) {
+      return;
+    }
+
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData
     );
-
     const hasStatus = hasTriggeringStatus(proposalMessage, triggeringStatuses);
-    const hasType = hasTriggeringType(type, EVENT_TYPES);
 
-    if (hasStatus && hasType) {
+    if (hasStatus) {
       createChatroom(proposalMessage);
     }
   };
