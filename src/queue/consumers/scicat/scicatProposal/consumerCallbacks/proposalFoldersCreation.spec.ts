@@ -19,6 +19,10 @@ describe('proposalFoldersCreation', () => {
     instrument: {
       shortCode: 'shortCode',
     },
+    proposer: {
+      email: 'test.proposer@email.com',
+    },
+    members: [{ email: 'test.member@email.com' }],
   } as ValidProposalMessageData;
   let mockLoggerLogError: jest.SpyInstance;
 
