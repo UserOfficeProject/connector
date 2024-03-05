@@ -26,15 +26,22 @@ export class ProposalCreationQueueConsumer extends QueueConsumer {
   }
 
   onMessage: ConsumerCallback = async (type, message) => {
+    const hasType = hasTriggeringType(type, EVENT_TYPES);
+
+    if (!hasType) {
+      return;
+    }
+
+    const hasStatus = hasTriggeringStatus(message, triggeringStatuses);
+
+    if (!hasStatus) {
+      return;
+    }
+
     const proposalMessage = validateProposalMessage(
       message as ProposalMessageData
     );
 
-    const hasStatus = hasTriggeringStatus(proposalMessage, triggeringStatuses);
-    const hasType = hasTriggeringType(type, EVENT_TYPES);
-
-    if (hasStatus && hasType) {
-      upsertProposalInScicat(proposalMessage);
-    }
+    upsertProposalInScicat(proposalMessage);
   };
 }

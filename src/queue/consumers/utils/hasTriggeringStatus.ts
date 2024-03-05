@@ -1,7 +1,5 @@
-import { ProposalMessageData } from '../../../models/ProposalMessage';
-
 export const hasTriggeringStatus = (
-  message: ProposalMessageData,
+  message: any,
   statuses: string[] | undefined
 ) => {
   if (!message.newStatus || !statuses) {
