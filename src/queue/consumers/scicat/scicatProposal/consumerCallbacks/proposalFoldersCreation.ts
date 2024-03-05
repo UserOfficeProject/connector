@@ -14,14 +14,14 @@ const proposalFoldersCreation = async (
   const year = new Date().getFullYear().toString();
   const instrument = proposalMessage.instrument.shortCode.toLowerCase();
   const proposerEmail = proposalMessage.proposer.email;
-  const membersEmails = proposalMessage.members.map(m => m.email).join(' ');
+  const membersEmails = proposalMessage.members.map((m) => m.email).join(' ');
   logger.logInfo('Preparing year, instrument and proposal', {
     proposalId: proposalId,
     year: year,
     instrument: instrument,
     group: group,
     proposerEmail: proposerEmail,
-    membersEmails: membersEmails
+    membersEmails: membersEmails,
   });
 
   // update command
