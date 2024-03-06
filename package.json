@@ -12,14 +12,15 @@
     "build": "npm run fix-olm-dependency && rm -rf ./build && tsc",
     "lint": "npm run fix-olm-dependency && tsc --noEmit && eslint . --ext .js,.ts --quiet",
     "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "keywords": [
     "connector",
     "service"
   ],
   "engines": {
-    "node": ">=18.x"
+    "npm": ">=9.0.0",
+    "node": ">=18.0.0"
   },
   "author": "SWAP",
   "license": "MIT",
@@ -27,22 +28,23 @@
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.22",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.19.1",
-    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jest": "^27.9.0",
     "eslint-plugin-prettier": "^5.1.3",
-    "eslint-plugin-unused-imports": "^3.0.0",
+    "eslint-plugin-unused-imports": "^3.1.0",
+    "husky": "^9.0.11",
     "jest": "^29.7.0",
     "lint-staged": "^15.2.2",
+    "prettier": "^3.2.4",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3",
-    "husky": "^8.0.0"
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@user-office-software/duo-logger": "^2.0.2",
+    "@user-office-software/duo-logger": "^2.2.1",
     "@user-office-software/duo-message-broker": "^1.6.0",
     "axios": "^1.6.5",
     "dotenv": "^16.3.1",
