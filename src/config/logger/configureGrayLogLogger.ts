@@ -12,12 +12,14 @@ export function configureGraylogLogger() {
 
   if (server && port) {
     const env = process.env.NODE_ENV || 'unset';
+    const service = process.env.SERVICE_NAME || 'connector';
+
     setLogger([
       new ConsoleLogger(),
       new GrayLogLogger(
         server,
         parseInt(port),
-        { facility: 'DMSC', environment: env, service: 'connector' },
+        { facility: 'DMSC', environment: env, service: service },
         []
       ),
     ]);
