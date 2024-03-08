@@ -82,9 +82,8 @@ async function handleUpdatedProposal(
   uidPersons: UID_Person[]
 ) {
   // Get all connections between UID_ESet and UID_Person
-  const connections = await oneIdentity.getProposalPersonConnections(
-    esetProposal
-  );
+  const connections =
+    await oneIdentity.getProposalPersonConnections(esetProposal);
 
   // Remove those connections that are not in UID_Person[]
   const connectionsToRemove = connections.filter(

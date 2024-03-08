@@ -1,4 +1,3 @@
-jest.mock('../../../utils/validateProposalMessage');
 jest.mock('../../../utils/hasTriggeringStatus');
 jest.mock('../../../utils/hasTriggeringType');
 jest.mock('../../../QueueConsumer', () => ({
@@ -6,45 +5,63 @@ jest.mock('../../../QueueConsumer', () => ({
     start: jest.fn(),
   })),
 }));
-jest.mock('@user-office-software/duo-logger');
 
-import { logger } from '@user-office-software/duo-logger';
 import { MessageBroker } from '@user-office-software/duo-message-broker';
 
 import { FolderCreationQueueConsumer } from './FolderCreationQueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
-import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 
 describe('FolderCreationQueueConsumer', () => {
-  it.each([
-    [false, false],
-    [false, true],
-    [true, false],
-  ])(
-    'should use logError when message does not have the correct type or status',
-    (hasStatus, hasType) => {
-      (validateProposalMessage as jest.Mock).mockReturnValueOnce({
-        newStatus: 'newStatus',
-      });
-      (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(hasStatus);
-      (hasTriggeringType as jest.Mock).mockReturnValueOnce(hasType);
-      const mockLoggerLogError = jest.spyOn(logger, 'logError');
+  it('should not throw an error when message does not have the correct type and status', async () => {
+    (hasTriggeringType as jest.Mock).mockReturnValueOnce(false);
+    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(false);
 
-      const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
+    const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
 
+    await expect(
       consumer.onMessage('type', { message: 'message' }, {
         headers: {},
-      } as any);
+      } as any)
+    ).resolves.not.toThrow();
+  });
 
-      expect(mockLoggerLogError).toHaveBeenCalledTimes(1);
-      expect(mockLoggerLogError).toHaveBeenCalledWith(
-        'Message does not have the correct type or status',
-        {
-          status: 'newStatus',
-          type: 'type',
-        }
-      );
-    }
-  );
+  it('should not throw an error when message does have the incorrect type and correct status', async () => {
+    (hasTriggeringType as jest.Mock).mockReturnValueOnce(false);
+    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(true);
+
+    const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
+
+    await expect(
+      consumer.onMessage('type', { message: 'message' }, {
+        headers: {},
+      } as any)
+    ).resolves.not.toThrow();
+  });
+
+  it('should not throw an error when message does have the correct type and incorrect status', async () => {
+    (hasTriggeringType as jest.Mock).mockReturnValueOnce(true);
+    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(false);
+
+    const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
+
+    await expect(
+      consumer.onMessage('type', { message: 'message' }, {
+        headers: {},
+      } as any)
+    ).resolves.not.toThrow();
+  });
+
+  it('should throw error when invalid message does have the correct type or status', async () => {
+    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(true);
+    (hasTriggeringType as jest.Mock).mockReturnValueOnce(true);
+
+    const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
+
+    await expect(
+      consumer.onMessage('type', { message: 'message' }, {
+        headers: {},
+      } as any)
+    ).rejects.toThrow();
+  });
 });

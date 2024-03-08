@@ -241,9 +241,8 @@ describe('ESSOneIdentity', () => {
         },
       ]);
 
-      const result = await essOneIdentity.getProposalPersonConnections(
-        'proposal-uid'
-      );
+      const result =
+        await essOneIdentity.getProposalPersonConnections('proposal-uid');
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonHasESET',
