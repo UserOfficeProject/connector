@@ -1,7 +1,7 @@
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ProposalUser } from '../../scicat/scicatProposal/dto';
-import { ESSOneIdentity, UID_ESET, UID_Person } from '../utils/ESSOneIdentity';
+import { ESSOneIdentity, UID_ESet, UID_Person } from '../utils/ESSOneIdentity';
 
 export async function oneIdentityIntegrationHandler(
   message: ProposalMessageData,
@@ -24,8 +24,15 @@ export async function oneIdentityIntegrationHandler(
     // Collect all users from the proposal
     const users = collectUsersFromProposal(message);
 
-    // Get or create all users in ESS One Identity
-    const uidPersons = await oneIdentity.getOrCreatePersons(users);
+    // Get all users from One Identity
+    const userPersonConnections = await oneIdentity.getPersons(users);
+
+    const uidPersons = userPersonConnections
+      .filter(
+        (connection): connection is { email: string; uidPerson: UID_Person } =>
+          connection.uidPerson !== undefined
+      )
+      .map(({ uidPerson }) => uidPerson);
 
     // Handle accepted proposals
     if (type === Event.PROPOSAL_ACCEPTED) {
@@ -42,7 +49,7 @@ export async function oneIdentityIntegrationHandler(
   }
 }
 
-function shouldHandleProposal(type: Event, esetProposal: UID_ESET | undefined) {
+function shouldHandleProposal(type: Event, esetProposal: UID_ESet | undefined) {
   return (
     (type === Event.PROPOSAL_ACCEPTED && !esetProposal) || // Proposal already exists in One Identity
     (type === Event.PROPOSAL_UPDATED && esetProposal) // Proposal does not exist in One Identity
@@ -71,10 +78,10 @@ async function handleAcceptedProposal(
 
 async function handleUpdatedProposal(
   oneIdentity: ESSOneIdentity,
-  esetProposal: UID_ESET,
+  esetProposal: UID_ESet,
   uidPersons: UID_Person[]
 ) {
-  // Get all connections between UID_ESET and UID_Person
+  // Get all connections between UID_ESet and UID_Person
   const connections = await oneIdentity.getProposalPersonConnections(
     esetProposal
   );
@@ -86,13 +93,13 @@ async function handleUpdatedProposal(
   await Promise.all(
     connectionsToRemove.map((connection) =>
       oneIdentity.removeConnectionBetweenPersonAndProposal(
-        connection.UID_ESET,
+        connection.UID_ESet,
         connection.UID_Person
       )
     )
   );
 
-  // If connection is not found, create a new connection between UID_ESET and UID_Person
+  // If connection is not found, create a new connection between UID_ESet and UID_Person
   const connectionsToAdd = uidPersons.filter(
     (uidPerson) =>
       !connections.some((connection) => connection.UID_Person === uidPerson)

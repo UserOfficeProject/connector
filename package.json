@@ -12,7 +12,8 @@
     "build": "npm run fix-olm-dependency && rm -rf ./build && tsc",
     "lint": "npm run fix-olm-dependency && tsc --noEmit && eslint . --ext .js,.ts --quiet",
     "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "dev": "ts-node-dev --inspect --respawn --exit-child --watch src --transpile-only src/index.ts"
   },
   "keywords": [
     "connector",

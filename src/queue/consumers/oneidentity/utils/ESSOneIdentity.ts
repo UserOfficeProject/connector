@@ -6,10 +6,13 @@ import { ProposalUser } from '../../scicat/scicatProposal/dto';
 
 type UID_ESetType = string;
 export type UID_Person = string;
-export type UID_ESET = string;
+export type UID_ESet = string;
 
 interface EsetValues {
-  UID_ESET: UID_ESET;
+  UID_ESet: UID_ESet;
+  UID_ESetType: UID_ESetType;
+  Ident_ESet: string;
+  DisplayName: string;
 }
 
 interface EsetTypeValues {
@@ -22,7 +25,12 @@ interface PersonValues {
 
 interface PersonHasESETValues {
   UID_Person: UID_Person;
-  UID_ESET: UID_ESET;
+  UID_ESet: UID_ESet;
+}
+
+export interface UserPersonConnection {
+  email: string;
+  uidPerson: UID_Person | undefined;
 }
 
 const SERVER_URL = env.ONE_IDENTITY_APP_SERVER_URL || '';
@@ -50,7 +58,7 @@ export class ESSOneIdentity {
 
   public async createProposal(
     proposalMessage: ProposalMessageData
-  ): Promise<UID_ESET | undefined> {
+  ): Promise<UID_ESet | undefined> {
     // get "Science Proposal" UID_ESetType from ESS One Identity
     const entities = await this.oneIdentityApi.getEntities<EsetTypeValues>(
       'EsetType',
@@ -64,12 +72,12 @@ export class ESSOneIdentity {
     }
 
     // create proposal in ESS One Identity
-    const esetResponse = await this.oneIdentityApi.createEntity('ESET', {
-      values: {
-        UID_ESetType: uidESetType,
-        Ident_ESet: proposalMessage.shortCode,
-        DisplayName: proposalMessage.shortCode,
-      },
+    const esetResponse = await this.oneIdentityApi.createEntity<
+      Omit<EsetValues, 'UID_ESet'>
+    >('ESET', {
+      UID_ESetType: uidESetType,
+      Ident_ESet: proposalMessage.shortCode,
+      DisplayName: proposalMessage.shortCode,
     });
 
     return esetResponse.uid;
@@ -77,79 +85,60 @@ export class ESSOneIdentity {
 
   public async getProposal(
     proposalMessage: ProposalMessageData
-  ): Promise<UID_ESET | undefined> {
+  ): Promise<UID_ESet | undefined> {
     const entities = await this.oneIdentityApi.getEntities<EsetValues>(
       'ESET',
       `Ident_ESet='${proposalMessage.shortCode}'`
     );
 
-    return entities[0]?.values?.UID_ESET;
-  }
-
-  public async createPerson(
-    user: Omit<ProposalUser, 'id'>
-  ): Promise<UID_Person | undefined> {
-    const { uid } = await this.oneIdentityApi.createEntity('Person', {
-      CentralAccount: user.oidcSub,
-      FirstName: user.firstName,
-      LastName: user.lastName,
-      ContactEmail: user.email,
-      CustomProperty02: user.oidcSub,
-      ImportSource: 'SCUSystem',
-    });
-
-    return uid;
+    return entities[0]?.values?.UID_ESet;
   }
 
   public async getPerson(
-    user: Pick<ProposalUser, 'oidcSub'>
+    user: Pick<ProposalUser, 'email'>
   ): Promise<PersonValues | undefined> {
     const entities = await this.oneIdentityApi.getEntities<PersonValues>(
       'Person',
-      `CentralAccount='${user.oidcSub}'`
+      `ContactEmail='${user.email}'`
     );
 
+    // In tehorie there should be only one person with the same email, but the 1IM.Person table has no unique constraint on ContactEmail.
+    // We can't control this, so we just take the first one.
     return entities[0]?.values;
   }
 
-  public async getOrCreatePersons(
+  public async getPersons(
     users: ProposalUser[]
-  ): Promise<UID_Person[]> {
-    return (
-      await Promise.all(
-        users
-          .filter((user): user is ProposalUser => user !== undefined)
-          .map(async (user) => {
-            let uidPerson = (await this.getPerson(user))?.UID_Person;
-            if (!uidPerson) {
-              uidPerson = await this.createPerson(user);
+  ): Promise<UserPersonConnection[]> {
+    return await Promise.all(
+      users
+        .filter((user): user is ProposalUser => user !== undefined)
+        .map(async (user) => {
+          const uidPerson = (await this.getPerson(user))?.UID_Person;
 
-              if (!uidPerson) {
-                throw new Error('Person creation failed in ESS One Identity');
-              }
-            }
-
-            return uidPerson;
-          })
-      )
-    ).filter((uidPerson): uidPerson is UID_Person => !!uidPerson);
+          return { email: user.email, uidPerson };
+        })
+    );
   }
 
   public async connectPersonToProposal(
-    uidEset: string,
-    uidPerson: string
+    uidEset: UID_ESet,
+    uidPerson: UID_Person
   ): Promise<string | undefined> {
-    const { uid } = await this.oneIdentityApi.createEntity('PersonHasESET', {
-      UID_ESET: uidEset,
-      UID_Person: uidPerson,
-    });
+    const { uid } = await this.oneIdentityApi.createEntity<PersonHasESETValues>(
+      'PersonHasESET',
+      {
+        UID_ESet: uidEset,
+        UID_Person: uidPerson,
+      }
+    );
 
     return uid;
   }
 
   public async removeConnectionBetweenPersonAndProposal(
-    uidEset: string,
-    uidPerson: string
+    uidEset: UID_ESet,
+    uidPerson: UID_Person
   ) {
     await this.oneIdentityApi.deleteEntity(
       'PersonHasESET',
@@ -158,11 +147,11 @@ export class ESSOneIdentity {
   }
 
   public async getProposalPersonConnections(
-    uidEset: string
+    uidEset: UID_ESet
   ): Promise<PersonHasESETValues[]> {
     const entities = await this.oneIdentityApi.getEntities<PersonHasESETValues>(
       'PersonHasESET',
-      `UID_ESET='${uidEset}'`
+      `UID_ESet='${uidEset}'`
     );
 
     return entities.map(({ values }) => values);

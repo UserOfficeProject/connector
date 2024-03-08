@@ -4,5 +4,9 @@ import { ProposalMessageData } from '../../../../models/ProposalMessage';
 export function isProposalMessageData(
   message: Record<string, unknown>
 ): message is ProposalMessageData {
-  return message?.shortCode !== undefined && message?.members !== undefined;
+  return (
+    message?.shortCode !== undefined &&
+    message?.proposer !== undefined &&
+    message?.members !== undefined
+  );
 }

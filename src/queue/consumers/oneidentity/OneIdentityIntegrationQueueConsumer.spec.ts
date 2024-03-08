@@ -12,18 +12,20 @@ import { MessageBroker } from '@user-office-software/duo-message-broker';
 import { MessageProperties } from 'amqplib';
 
 import { OneIdentityIntegrationQueueConsumer } from './OneIdentityIntegrationQueueConsumer';
+import { ESSOneIdentity } from './utils/ESSOneIdentity';
 import { Event } from '../../../models/Event';
 import { ProposalMessageData } from '../../../models/ProposalMessage';
 
-const mockOneIdentity = {
+const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   login: jest.fn(),
+  logout: jest.fn(),
   getProposal: jest.fn(),
-  getOrCreatePersons: jest.fn(),
+  getPerson: jest.fn(),
+  getPersons: jest.fn(),
   createProposal: jest.fn(),
   connectPersonToProposal: jest.fn(),
   getProposalPersonConnections: jest.fn(),
   removeConnectionBetweenPersonAndProposal: jest.fn(),
-  logout: jest.fn(),
 };
 
 describe('OneIdentityIntegrationQueueConsumer', () => {
@@ -42,19 +44,23 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
       it('should handle accepted proposal', async () => {
         const proposalMessage = {
           shortCode: 'shortCode',
-          members: [
-            { oidcSub: 'person1-oidcsub' },
-            { oidcSub: 'person2-oidcsub' },
-          ],
+          proposer: { email: 'proposer@email' },
+          members: [{ email: 'member1@email' }],
         } as ProposalMessageData;
 
         mockOneIdentity.getProposal.mockResolvedValueOnce(undefined);
         mockOneIdentity.createProposal.mockResolvedValueOnce(
           'proposal-UID_ESET'
         );
-        mockOneIdentity.getOrCreatePersons.mockResolvedValueOnce([
-          'person1-uid',
-          'person2-uid',
+        mockOneIdentity.getPersons.mockResolvedValueOnce([
+          {
+            email: 'proposer@email',
+            uidPerson: 'proposer-uid',
+          },
+          {
+            email: 'member1@email',
+            uidPerson: 'member1-uid',
+          },
         ]);
 
         await consumer.onMessage(
@@ -72,13 +78,36 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         expect(mockOneIdentity.connectPersonToProposal).toHaveBeenNthCalledWith(
           1,
           'proposal-UID_ESET',
-          'person1-uid'
+          'proposer-uid'
         );
         expect(mockOneIdentity.connectPersonToProposal).toHaveBeenNthCalledWith(
           2,
           'proposal-UID_ESET',
-          'person2-uid'
+          'member1-uid'
         );
+        expect(mockOneIdentity.logout).toHaveBeenCalled();
+      });
+
+      it('should not create proposal and manage connections if proposal already exists', async () => {
+        const proposalMessage = {
+          shortCode: 'shortCode',
+          proposer: { email: 'proposer@email' },
+          members: [{ email: 'member1@email' }, { email: 'member2@email' }],
+        } as ProposalMessageData;
+
+        mockOneIdentity.getProposal.mockResolvedValueOnce('proposal-UID_ESET');
+
+        await consumer.onMessage(
+          Event.PROPOSAL_ACCEPTED,
+          proposalMessage,
+          {} as MessageProperties
+        );
+
+        expect(mockOneIdentity.createProposal).not.toHaveBeenCalled();
+        expect(mockOneIdentity.connectPersonToProposal).not.toHaveBeenCalled();
+        expect(
+          mockOneIdentity.removeConnectionBetweenPersonAndProposal
+        ).not.toHaveBeenCalled();
         expect(mockOneIdentity.logout).toHaveBeenCalled();
       });
     });
@@ -87,18 +116,31 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
       it('should handle updated proposal', async () => {
         const proposalMessage = {
           shortCode: 'shortCode',
-          members: [
-            { oidcSub: 'person1-oidcsub' },
-            { oidcSub: 'person2-oidcsub' },
-          ],
+          proposer: { email: 'proposer@email' },
+          members: [{ email: 'new-member@email' }], // this person should be added
         } as ProposalMessageData;
 
         mockOneIdentity.getProposal.mockResolvedValueOnce('proposal-UID_ESET');
-        mockOneIdentity.getOrCreatePersons.mockResolvedValueOnce([
-          'person1-uid',
-          'person2-uid',
+        mockOneIdentity.getPersons.mockResolvedValueOnce([
+          {
+            email: 'proposer@email',
+            uidPerson: 'proposer-uid',
+          },
+          {
+            email: 'new-member@email',
+            uidPerson: 'new-member-uid',
+          },
         ]);
-        mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]);
+        mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([
+          {
+            UID_ESet: 'proposal-UID_ESET',
+            UID_Person: 'proposer-uid',
+          },
+          {
+            UID_ESet: 'proposal-UID_ESET',
+            UID_Person: 'old-member-uid', // this person should be removed, because it's not in the updated proposal
+          },
+        ]);
 
         await consumer.onMessage(
           Event.PROPOSAL_UPDATED,
@@ -111,24 +153,19 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         ).toHaveBeenCalledWith('proposal-UID_ESET');
         expect(
           mockOneIdentity.removeConnectionBetweenPersonAndProposal
-        ).toHaveBeenCalledTimes(0);
+        ).toHaveBeenCalledTimes(1);
+        expect(
+          mockOneIdentity.removeConnectionBetweenPersonAndProposal
+        ).toHaveBeenCalledWith('proposal-UID_ESET', 'old-member-uid');
         expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(
-          2
+          1
         );
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenNthCalledWith(
-          1,
+        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
           'proposal-UID_ESET',
-          'person1-uid'
-        );
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenNthCalledWith(
-          2,
-          'proposal-UID_ESET',
-          'person2-uid'
+          'new-member-uid'
         );
         expect(mockOneIdentity.logout).toHaveBeenCalled();
       });
     });
   });
-
-  // todo: add tests for error handling
 });

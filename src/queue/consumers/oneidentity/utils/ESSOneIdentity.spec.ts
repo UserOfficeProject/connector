@@ -74,11 +74,9 @@ describe('ESSOneIdentity', () => {
         "Ident_ESetType='PROPOSAL_IDENT_ESET_TYPE'"
       );
       expect(mockOneIdentityApi.createEntity).toHaveBeenCalledWith('ESET', {
-        values: {
-          DisplayName: 'some-short-code',
-          Ident_ESet: 'some-short-code',
-          UID_ESetType: 'eset-type-uid',
-        },
+        DisplayName: 'some-short-code',
+        Ident_ESet: 'some-short-code',
+        UID_ESetType: 'eset-type-uid',
       });
       expect(result).toBe('created-uid');
     });
@@ -93,7 +91,7 @@ describe('ESSOneIdentity', () => {
       mockOneIdentityApi.getEntities.mockResolvedValueOnce([
         {
           values: {
-            UID_ESET: 'proposal-uid',
+            UID_ESet: 'proposal-uid',
           },
         },
       ]);
@@ -108,31 +106,6 @@ describe('ESSOneIdentity', () => {
     });
   });
 
-  describe('createPerson', () => {
-    it('should create person', async () => {
-      mockOneIdentityApi.createEntity.mockResolvedValueOnce({
-        uid: 'created-uid',
-      });
-
-      const result = await essOneIdentity.createPerson({
-        email: 'some-email',
-        oidcSub: 'some-oidc-sub',
-        firstName: 'some-first-name',
-        lastName: 'some-last-name',
-      } as ProposalUser);
-
-      expect(mockOneIdentityApi.createEntity).toHaveBeenCalledWith('Person', {
-        CentralAccount: 'some-oidc-sub',
-        ContactEmail: 'some-email',
-        FirstName: 'some-first-name',
-        ImportSource: 'SCUSystem',
-        CustomProperty02: 'some-oidc-sub',
-        LastName: 'some-last-name',
-      });
-      expect(result).toBe('created-uid');
-    });
-  });
-
   describe('getPerson', () => {
     it('should get a person', async () => {
       mockOneIdentityApi.getEntities.mockResolvedValueOnce([
@@ -144,21 +117,44 @@ describe('ESSOneIdentity', () => {
       ]);
 
       const result = await essOneIdentity.getPerson({
-        oidcSub: 'some-oidc-sub',
+        email: 'foo@email',
       });
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'Person',
-        "CentralAccount='some-oidc-sub'"
+        "ContactEmail='foo@email'"
       );
       expect(result).toEqual({ UID_Person: 'person-uid' });
     });
+
+    // Currently, the ContactEmail field is not unique in the 1IM.Person table.
+    // This means that it is possible to have multiple persons with the same email.
+    it('should return the first person if multiple persons are found', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([
+        {
+          values: {
+            UID_Person: 'person-1-uid',
+          },
+        },
+        {
+          values: {
+            UID_Person: 'person-2-uid',
+          },
+        },
+      ]);
+
+      const result = await essOneIdentity.getPerson({
+        email: 'foo@email',
+      });
+
+      expect(result).toEqual({ UID_Person: 'person-1-uid' });
+    });
   });
 
-  describe('getOrCreatePersons', () => {
-    it('should get or create persons', async () => {
+  describe('getPersons', () => {
+    it('should get person records for multiple users, undefined if not found', async () => {
       mockOneIdentityApi.getEntities.mockImplementation((table, filter) => {
-        if (table === 'Person' && filter === "CentralAccount='new-oidc-sub'")
+        if (table === 'Person' && filter === "ContactEmail='unknown-email'")
           return Promise.resolve([]);
         else
           return Promise.resolve([
@@ -170,45 +166,25 @@ describe('ESSOneIdentity', () => {
           ]);
       });
 
-      mockOneIdentityApi.createEntity.mockResolvedValueOnce({
-        uid: 'new-created-uid',
-      });
-
-      const result = await essOneIdentity.getOrCreatePersons([
+      const result = await essOneIdentity.getPersons([
         {
-          email: 'new-email',
-          oidcSub: 'new-oidc-sub',
-          firstName: 'new-first-name',
-          lastName: 'new-last-name',
+          email: 'unknown-email',
         } as ProposalUser,
         {
           email: 'known-email',
-          oidcSub: 'known-oidc-sub',
-          firstName: 'known-first-name',
-          lastName: 'known-last-name',
         } as ProposalUser,
       ]);
 
-      expect(mockOneIdentityApi.createEntity).toHaveBeenCalledWith('Person', {
-        CentralAccount: 'new-oidc-sub',
-        ContactEmail: 'new-email',
-        FirstName: 'new-first-name',
-        ImportSource: 'SCUSystem',
-        CustomProperty02: 'new-oidc-sub',
-        LastName: 'new-last-name',
-      });
-      expect(mockOneIdentityApi.createEntity).not.toHaveBeenCalledWith(
-        'Person',
+      expect(result).toEqual([
         {
-          CentralAccount: 'known-oidc-sub',
-          ContactEmail: 'known-email',
-          FirstName: 'known-first-name',
-          ImportSource: 'SCUSystem',
-          LastName: 'known-last-name',
-        }
-      );
-
-      expect(result).toEqual(['new-created-uid', 'known-person-uid']);
+          email: 'unknown-email',
+          uidPerson: undefined,
+        },
+        {
+          email: 'known-email',
+          uidPerson: 'known-person-uid',
+        },
+      ]);
     });
   });
 
@@ -226,7 +202,7 @@ describe('ESSOneIdentity', () => {
       expect(mockOneIdentityApi.createEntity).toHaveBeenCalledWith(
         'PersonHasESET',
         {
-          UID_ESET: 'proposal-uid',
+          UID_ESet: 'proposal-uid',
           UID_Person: 'person-uid',
         }
       );
@@ -253,13 +229,13 @@ describe('ESSOneIdentity', () => {
       mockOneIdentityApi.getEntities.mockResolvedValueOnce([
         {
           values: {
-            UID_ESET: 'proposal-uid',
+            UID_ESet: 'proposal-uid',
             UID_Person: 'person-1-uid',
           },
         },
         {
           values: {
-            UID_ESET: 'proposal-uid',
+            UID_ESet: 'proposal-uid',
             UID_Person: 'person-2-uid',
           },
         },
@@ -271,15 +247,15 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonHasESET',
-        "UID_ESET='proposal-uid'"
+        "UID_ESet='proposal-uid'"
       );
       expect(result).toEqual([
         {
-          UID_ESET: 'proposal-uid',
+          UID_ESet: 'proposal-uid',
           UID_Person: 'person-1-uid',
         },
         {
-          UID_ESET: 'proposal-uid',
+          UID_ESet: 'proposal-uid',
           UID_Person: 'person-2-uid',
         },
       ]);
