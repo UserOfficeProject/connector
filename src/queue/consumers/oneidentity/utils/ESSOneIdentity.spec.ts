@@ -1,4 +1,4 @@
-jest.mock('./oneIdentityApi', () => ({
+jest.mock('./OneIdentityApi', () => ({
   OneIdentityApi: jest.fn().mockImplementation(() => mockOneIdentityApi),
 }));
 jest.mock('process', () => ({
