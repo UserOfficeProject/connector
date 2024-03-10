@@ -12,10 +12,6 @@ describe('OneIdentityApi', () => {
     api = new OneIdentityApi('http://localhost');
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('login', () => {
     it('should login successfully', async () => {
       (axios.post as jest.Mock).mockResolvedValueOnce({

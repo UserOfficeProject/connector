@@ -52,6 +52,9 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
         type,
         message,
       });
+
+      // Re-throw the error to make sure the message is not acknowledged
+      throw error;
     }
   };
 }

@@ -1,111 +1,126 @@
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ProposalUser } from '../../scicat/scicatProposal/dto';
-import { ESSOneIdentity, UID_ESet, UID_Person } from '../utils/ESSOneIdentity';
+import {
+  ESSOneIdentity,
+  PersonHasESETValues,
+  UID_ESet,
+  UID_Person,
+  UserPersonConnection,
+} from '../utils/ESSOneIdentity';
 
 export async function oneIdentityIntegrationHandler(
   message: ProposalMessageData,
   type: Event
-) {
+): Promise<void> {
   // Create a new ESSOneIdentity instance and log in
   const oneIdentity = new ESSOneIdentity();
   await oneIdentity.login();
 
   try {
-    // Get the proposal from One Identity
-    const esetProposal = await oneIdentity.getProposal(message);
+    const uidESet = await getUIDESetFromOneIdentity(oneIdentity, message, type);
 
-    if (!shouldHandleProposal(type, esetProposal)) {
-      await oneIdentity.logout();
-
-      return;
+    if (uidESet) {
+      await handleConnectionsBetweenProposalAndPersons(
+        oneIdentity,
+        uidESet,
+        message
+      );
     }
-
-    // Collect all users from the proposal
-    const users = collectUsersFromProposal(message);
-
-    // Get all users from One Identity
-    const userPersonConnections = await oneIdentity.getPersons(users);
-
-    const uidPersons = userPersonConnections
-      .filter(
-        (connection): connection is { email: string; uidPerson: UID_Person } =>
-          connection.uidPerson !== undefined
-      )
-      .map(({ uidPerson }) => uidPerson);
-
-    // Handle accepted proposals
-    if (type === Event.PROPOSAL_ACCEPTED) {
-      await handleAcceptedProposal(oneIdentity, message, uidPersons);
-    }
-    // Handle updated proposals
-    if (type === Event.PROPOSAL_UPDATED) {
-      await handleUpdatedProposal(oneIdentity, esetProposal!, uidPersons);
-    }
-  } catch (error) {
-    throw error;
   } finally {
     await oneIdentity.logout();
   }
 }
 
-function shouldHandleProposal(type: Event, esetProposal: UID_ESet | undefined) {
-  return (
-    (type === Event.PROPOSAL_ACCEPTED && !esetProposal) || // Proposal already exists in One Identity
-    (type === Event.PROPOSAL_UPDATED && esetProposal) // Proposal does not exist in One Identity
-  );
-}
-
-async function handleAcceptedProposal(
+// Method to get UID_ESet from One Identity, create it if it does not exist
+async function getUIDESetFromOneIdentity(
   oneIdentity: ESSOneIdentity,
-  proposalMessage: ProposalMessageData,
-  uidPersons: UID_Person[]
-) {
-  // Create proposal in ESS One Identity
-  const uidEset = await oneIdentity.createProposal(proposalMessage);
+  message: ProposalMessageData,
+  type: Event
+): Promise<UID_ESet | undefined> {
+  let uidESet: UID_ESet | undefined = await oneIdentity.getProposal(message);
 
-  if (!uidEset) {
-    throw new Error('Proposal creation failed in ESS One Identity');
+  if (type === Event.PROPOSAL_UPDATED && !uidESet) {
+    // Proposal does not exist in One Identity
+    return;
   }
 
-  // Connect all persons to the proposal
+  if (!uidESet) {
+    // Create proposal in One Identity if it does not exist
+    uidESet = await oneIdentity.createProposal(message);
+
+    if (!uidESet) {
+      throw new Error('Proposal creation failed in ESS One Identity');
+    }
+  }
+
+  return uidESet;
+}
+
+async function handleConnectionsBetweenProposalAndPersons(
+  oneIdentity: ESSOneIdentity,
+  uidESet: UID_ESet,
+  message: ProposalMessageData
+) {
+  // Collect all users from the proposal
+  const users = collectUsersFromProposal(message);
+
+  // Get all users from One Identity
+  const userPersonConnections = await oneIdentity.getPersons(users);
+  const uidPersons = getUidPersons(userPersonConnections);
+
+  // Get all connections between UID_ESet and UID_Person
+  const connections = await oneIdentity.getProposalPersonConnections(uidESet);
+
+  await removeOldConnections(oneIdentity, connections, uidPersons);
+  await addNewConnections(oneIdentity, uidESet, connections, uidPersons);
+}
+
+// Method to get UID_Person from UserPersonConnection
+function getUidPersons(
+  userPersonConnections: UserPersonConnection[]
+): UID_Person[] {
+  return userPersonConnections
+    .filter(
+      (connection): connection is { email: string; uidPerson: UID_Person } =>
+        connection.uidPerson !== undefined
+    )
+    .map(({ uidPerson }) => uidPerson);
+}
+
+async function addNewConnections(
+  oneIdentity: ESSOneIdentity,
+  uidESet: UID_ESet,
+  connections: PersonHasESETValues[],
+  uidPersons: UID_Person[]
+): Promise<void> {
+  const connectionsToAdd = uidPersons.filter(
+    (uidPerson) =>
+      !connections.some((connection) => connection.UID_Person === uidPerson)
+  );
+
   await Promise.all(
-    uidPersons.map((uidPerson) =>
-      oneIdentity.connectPersonToProposal(uidEset, uidPerson)
+    connectionsToAdd.map((uidPerson) =>
+      oneIdentity.connectPersonToProposal(uidESet, uidPerson)
     )
   );
 }
 
-async function handleUpdatedProposal(
+async function removeOldConnections(
   oneIdentity: ESSOneIdentity,
-  esetProposal: UID_ESet,
+  connections: PersonHasESETValues[],
   uidPersons: UID_Person[]
-) {
-  // Get all connections between UID_ESet and UID_Person
-  const connections =
-    await oneIdentity.getProposalPersonConnections(esetProposal);
-
-  // Remove those connections that are not in UID_Person[]
+): Promise<void> {
   const connectionsToRemove = connections.filter(
     (connection) => !uidPersons.includes(connection.UID_Person)
   );
+
   await Promise.all(
     connectionsToRemove.map((connection) =>
       oneIdentity.removeConnectionBetweenPersonAndProposal(
         connection.UID_ESet,
         connection.UID_Person
       )
-    )
-  );
-
-  // If connection is not found, create a new connection between UID_ESet and UID_Person
-  const connectionsToAdd = uidPersons.filter(
-    (uidPerson) =>
-      !connections.some((connection) => connection.UID_Person === uidPerson)
-  );
-  await Promise.all(
-    connectionsToAdd.map((uidPerson) =>
-      oneIdentity.connectPersonToProposal(esetProposal, uidPerson)
     )
   );
 }

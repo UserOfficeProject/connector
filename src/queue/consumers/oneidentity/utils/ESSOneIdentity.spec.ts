@@ -28,10 +28,6 @@ describe('ESSOneIdentity', () => {
     essOneIdentity = new ESSOneIdentity();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('login', () => {
     it('should login', async () => {
       await essOneIdentity.login();

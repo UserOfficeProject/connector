@@ -4,29 +4,17 @@ jest.mock('../QueueConsumer', () => ({
     start: jest.fn(),
   })),
 }));
-jest.mock('./utils/ESSOneIdentity', () => ({
-  ESSOneIdentity: jest.fn().mockImplementation(() => mockOneIdentity),
-}));
+jest.mock('./consumerCallbacks/oneIdentityIntegrationHandler');
 
+import { logger } from '@user-office-software/duo-logger';
 import { MessageBroker } from '@user-office-software/duo-message-broker';
 import { MessageProperties } from 'amqplib';
 
+import { oneIdentityIntegrationHandler } from './consumerCallbacks/oneIdentityIntegrationHandler';
 import { OneIdentityIntegrationQueueConsumer } from './OneIdentityIntegrationQueueConsumer';
-import { ESSOneIdentity } from './utils/ESSOneIdentity';
 import { Event } from '../../../models/Event';
 import { ProposalMessageData } from '../../../models/ProposalMessage';
-
-const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
-  login: jest.fn(),
-  logout: jest.fn(),
-  getProposal: jest.fn(),
-  getPerson: jest.fn(),
-  getPersons: jest.fn(),
-  createProposal: jest.fn(),
-  connectPersonToProposal: jest.fn(),
-  getProposalPersonConnections: jest.fn(),
-  removeConnectionBetweenPersonAndProposal: jest.fn(),
-};
+import { ProposalUser } from '../scicat/scicatProposal/dto';
 
 describe('OneIdentityIntegrationQueueConsumer', () => {
   let consumer: OneIdentityIntegrationQueueConsumer;
@@ -35,137 +23,89 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
     consumer = new OneIdentityIntegrationQueueConsumer({} as MessageBroker);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('onMessage', () => {
-    describe('PROPOSAL_ACCEPTED', () => {
-      it('should handle accepted proposal', async () => {
-        const proposalMessage = {
-          shortCode: 'shortCode',
-          proposer: { email: 'proposer@email' },
-          members: [{ email: 'member1@email' }],
-        } as ProposalMessageData;
+    it('should not handle message if type is not PROPOSAL_ACCEPTED or PROPOSAL_UPDATED', async () => {
+      const message = {} as ProposalMessageData;
+      const type = Event.PROPOSAL_STATUS_ACTION_EXECUTED;
 
-        mockOneIdentity.getProposal.mockResolvedValueOnce(undefined);
-        mockOneIdentity.createProposal.mockResolvedValueOnce(
-          'proposal-UID_ESET'
-        );
-        mockOneIdentity.getPersons.mockResolvedValueOnce([
-          {
-            email: 'proposer@email',
-            uidPerson: 'proposer-uid',
-          },
-          {
-            email: 'member1@email',
-            uidPerson: 'member1-uid',
-          },
-        ]);
+      const result = await consumer.onMessage(
+        type,
+        message,
+        {} as MessageProperties
+      );
 
-        await consumer.onMessage(
-          Event.PROPOSAL_ACCEPTED,
-          proposalMessage,
-          {} as MessageProperties
-        );
-
-        expect(mockOneIdentity.createProposal).toHaveBeenCalledWith(
-          proposalMessage
-        );
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(
-          2
-        );
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenNthCalledWith(
-          1,
-          'proposal-UID_ESET',
-          'proposer-uid'
-        );
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenNthCalledWith(
-          2,
-          'proposal-UID_ESET',
-          'member1-uid'
-        );
-        expect(mockOneIdentity.logout).toHaveBeenCalled();
-      });
-
-      it('should not create proposal and manage connections if proposal already exists', async () => {
-        const proposalMessage = {
-          shortCode: 'shortCode',
-          proposer: { email: 'proposer@email' },
-          members: [{ email: 'member1@email' }, { email: 'member2@email' }],
-        } as ProposalMessageData;
-
-        mockOneIdentity.getProposal.mockResolvedValueOnce('proposal-UID_ESET');
-
-        await consumer.onMessage(
-          Event.PROPOSAL_ACCEPTED,
-          proposalMessage,
-          {} as MessageProperties
-        );
-
-        expect(mockOneIdentity.createProposal).not.toHaveBeenCalled();
-        expect(mockOneIdentity.connectPersonToProposal).not.toHaveBeenCalled();
-        expect(
-          mockOneIdentity.removeConnectionBetweenPersonAndProposal
-        ).not.toHaveBeenCalled();
-        expect(mockOneIdentity.logout).toHaveBeenCalled();
-      });
+      expect(result).toBeUndefined();
+      expect(logger.logInfo).not.toHaveBeenCalled();
+      expect(logger.logException).not.toHaveBeenCalled();
     });
 
-    describe('PROPOSAL_UPDATED', () => {
-      it('should handle updated proposal', async () => {
-        const proposalMessage = {
-          shortCode: 'shortCode',
-          proposer: { email: 'proposer@email' },
-          members: [{ email: 'new-member@email' }], // this person should be added
-        } as ProposalMessageData;
+    it('should not handle message if message is not ProposalMessageData', async () => {
+      const message = {} as ProposalMessageData;
+      const type = Event.PROPOSAL_ACCEPTED;
 
-        mockOneIdentity.getProposal.mockResolvedValueOnce('proposal-UID_ESET');
-        mockOneIdentity.getPersons.mockResolvedValueOnce([
-          {
-            email: 'proposer@email',
-            uidPerson: 'proposer-uid',
-          },
-          {
-            email: 'new-member@email',
-            uidPerson: 'new-member-uid',
-          },
-        ]);
-        mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([
-          {
-            UID_ESet: 'proposal-UID_ESET',
-            UID_Person: 'proposer-uid',
-          },
-          {
-            UID_ESet: 'proposal-UID_ESET',
-            UID_Person: 'old-member-uid', // this person should be removed, because it's not in the updated proposal
-          },
-        ]);
+      await consumer.onMessage(type, message, {} as MessageProperties);
 
-        await consumer.onMessage(
-          Event.PROPOSAL_UPDATED,
-          proposalMessage,
-          {} as MessageProperties
-        );
-
-        expect(
-          mockOneIdentity.getProposalPersonConnections
-        ).toHaveBeenCalledWith('proposal-UID_ESET');
-        expect(
-          mockOneIdentity.removeConnectionBetweenPersonAndProposal
-        ).toHaveBeenCalledTimes(1);
-        expect(
-          mockOneIdentity.removeConnectionBetweenPersonAndProposal
-        ).toHaveBeenCalledWith('proposal-UID_ESET', 'old-member-uid');
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(
-          1
-        );
-        expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
-          'proposal-UID_ESET',
-          'new-member-uid'
-        );
-        expect(mockOneIdentity.logout).toHaveBeenCalled();
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'OneIdentityIntegrationQueueConsumer',
+        {
+          type,
+          message,
+        }
+      );
+      expect(logger.logError).toHaveBeenCalledWith('Invalid message', {
+        message,
       });
+      expect(logger.logException).not.toHaveBeenCalled();
+    });
+
+    it('should call oneIdentityIntegrationHandler and log message handled', async () => {
+      const message = {
+        shortCode: 'shortCode',
+        proposer: { email: 'proposer-email' },
+        members: [] as ProposalUser[],
+      } as ProposalMessageData;
+      const type = Event.PROPOSAL_ACCEPTED;
+
+      await consumer.onMessage(type, message, {} as MessageProperties);
+
+      expect(logger.logInfo).toHaveBeenNthCalledWith(
+        1,
+        'OneIdentityIntegrationQueueConsumer',
+        {
+          type,
+          message,
+        }
+      );
+      expect(logger.logInfo).toHaveBeenNthCalledWith(2, 'Message handled', {
+        type,
+        message,
+      });
+      expect(logger.logException).not.toHaveBeenCalled();
+    });
+
+    it('should log exception and re-throw error if oneIdentityIntegrationHandler throws', async () => {
+      const message = {
+        shortCode: 'shortCode',
+        proposer: { email: 'proposer-email' },
+        members: [] as ProposalUser[],
+      } as ProposalMessageData;
+      const type = Event.PROPOSAL_ACCEPTED;
+      const error = new Error('Error');
+
+      (oneIdentityIntegrationHandler as jest.Mock).mockRejectedValueOnce(error);
+
+      await expect(
+        consumer.onMessage(type, message, {} as MessageProperties)
+      ).rejects.toThrow(error);
+
+      expect(logger.logException).toHaveBeenCalledWith(
+        'Error while handling proposal',
+        error,
+        {
+          type,
+          message,
+        }
+      );
     });
   });
 });

@@ -23,7 +23,7 @@ interface PersonValues {
   UID_Person: UID_Person;
 }
 
-interface PersonHasESETValues {
+export interface PersonHasESETValues {
   UID_Person: UID_Person;
   UID_ESet: UID_ESet;
 }
