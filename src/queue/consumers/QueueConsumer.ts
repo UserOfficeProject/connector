@@ -54,6 +54,9 @@ export abstract class QueueConsumer {
           consumer: this.constructor.name,
           args,
         });
+
+        // Re-throw the error to make sure the message is not acknowledged
+        throw error;
       }
     });
     logger.logInfo('Listening on queue', { queueName });
