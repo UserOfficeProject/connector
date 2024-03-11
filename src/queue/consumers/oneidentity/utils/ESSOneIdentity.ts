@@ -102,7 +102,7 @@ export class ESSOneIdentity {
       `ContactEmail='${user.email}'`
     );
 
-    // In tehorie there should be only one person with the same email, but the 1IM.Person table has no unique constraint on ContactEmail.
+    // In theory there should be only one person with the same email, but the 1IM.Person table has no unique constraint on ContactEmail.
     // We can't control this, so we just take the first one.
     return entities[0]?.values;
   }
