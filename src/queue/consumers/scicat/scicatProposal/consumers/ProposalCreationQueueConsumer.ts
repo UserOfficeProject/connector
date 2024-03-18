@@ -4,7 +4,7 @@ import { Event } from '../../../../../models/Event';
 import { QueueConsumer } from '../../../QueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
-import { validateProposalMessage } from '../../../utils/validateMessages';
+import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 import { upsertProposalInScicat } from '../consumerCallbacks/upsertProposalInScicat';
 
 const EVENT_TYPES = [

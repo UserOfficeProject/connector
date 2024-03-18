@@ -1,4 +1,4 @@
-import { validateProposalMessage } from './validateMessages';
+import { validateProposalMessage } from './validateProposalMessage';
 
 describe('Validate messages', () => {
   it('should throw error when message is not valid', () => {

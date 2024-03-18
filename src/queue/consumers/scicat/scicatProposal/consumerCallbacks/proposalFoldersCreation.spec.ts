@@ -11,7 +11,7 @@ import { exec } from 'node:child_process';
 import { logger } from '@user-office-software/duo-logger';
 
 import { proposalFoldersCreation } from './proposalFoldersCreation';
-import { ValidProposalMessageData } from '../../../utils/validateMessages';
+import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 
 describe('proposalFoldersCreation', () => {
   const proposalMessage = {

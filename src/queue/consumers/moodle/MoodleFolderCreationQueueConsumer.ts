@@ -1,10 +1,10 @@
 import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
+import { validateMoodleMessage } from './utils/validateMoodleMessage';
 import { MoodleMessageData } from '../../../models/MoodleMessage';
 import { genericFoldersCreation } from '../generic/genericFoldersCreationCallBack';
 import { QueueConsumer } from '../QueueConsumer';
-import { validateMoodleMessage } from '../utils/validateMessages';
 
 const MOODLE_FOLDERS_CREATION_COMMAND =
   process.env.MOODLE_FOLDERS_CREATION_COMMAND;

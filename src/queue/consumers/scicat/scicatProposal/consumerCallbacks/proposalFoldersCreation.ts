@@ -3,7 +3,7 @@ import { env } from 'node:process';
 
 import { logger } from '@user-office-software/duo-logger';
 
-import { ValidProposalMessageData } from '../../../utils/validateMessages';
+import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 
 const proposalFoldersCreation = async (
   proposalMessage: ValidProposalMessageData

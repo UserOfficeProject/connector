@@ -1,4 +1,4 @@
-jest.mock('../utils/validateMessages');
+jest.mock('./utils/validateMoodleMessage');
 jest.mock('../QueueConsumer', () => ({
   QueueConsumer: jest.fn().mockImplementation(() => ({
     start: jest.fn(),
@@ -10,7 +10,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { MessageBroker } from '@user-office-software/duo-message-broker';
 
 import { MoodleFolderCreationQueueConsumer } from './MoodleFolderCreationQueueConsumer';
-import { validateMoodleMessage } from '../utils/validateMessages';
+import { validateMoodleMessage } from './utils/validateMoodleMessage';
 
 describe('MoodleFolderCreationQueueConsumer', () => {
   let mockLoggerLogError: jest.SpyInstance;
