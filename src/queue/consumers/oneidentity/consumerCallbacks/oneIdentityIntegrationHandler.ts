@@ -1,3 +1,5 @@
+import { logger } from '@user-office-software/duo-logger';
+
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ProposalUser } from '../../scicat/scicatProposal/dto';
@@ -40,6 +42,8 @@ async function getUIDESetFromOneIdentity(
 ): Promise<UID_ESet | undefined> {
   let uidESet: UID_ESet | undefined = await oneIdentity.getProposal(message);
 
+  logger.logInfo('Proposal in One Identity', { uidESet });
+
   if (type === Event.PROPOSAL_UPDATED && !uidESet) {
     // Proposal does not exist in One Identity
     return;
@@ -48,6 +52,8 @@ async function getUIDESetFromOneIdentity(
   if (!uidESet) {
     // Create proposal in One Identity if it does not exist
     uidESet = await oneIdentity.createProposal(message);
+
+    logger.logInfo('UID_ESet created', { uidESet });
 
     if (!uidESet) {
       throw new Error('Proposal creation failed in ESS One Identity');
@@ -65,15 +71,21 @@ async function handleConnectionsBetweenProposalAndPersons(
   // Collect all users from the proposal
   const users = collectUsersFromProposal(message);
 
+  logger.logInfo('Users from proposal', { users });
+
   // Get all users from One Identity
   const userPersonConnections = await oneIdentity.getPersons(users);
   const uidPersons = getUidPersons(userPersonConnections);
+
+  logger.logInfo('Found persons in One Identity', { uidPersons });
 
   // Get all connections between UID_ESet and UID_Person
   const connections = await oneIdentity.getProposalPersonConnections(uidESet);
 
   await removeOldConnections(oneIdentity, connections, uidPersons);
   await addNewConnections(oneIdentity, uidESet, connections, uidPersons);
+
+  logger.logInfo('Connections updated', { uidESet, uidPersons });
 }
 
 // Method to get UID_Person from UserPersonConnection

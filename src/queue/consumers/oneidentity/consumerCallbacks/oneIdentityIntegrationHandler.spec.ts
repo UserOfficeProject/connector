@@ -1,6 +1,9 @@
+jest.mock('@user-office-software/duo-logger');
 jest.mock('../utils/ESSOneIdentity', () => ({
   ESSOneIdentity: jest.fn().mockImplementation(() => mockOneIdentity),
 }));
+
+import { logger } from '@user-office-software/duo-logger';
 
 import { oneIdentityIntegrationHandler } from './oneIdentityIntegrationHandler';
 import { Event } from '../../../../models/Event';
@@ -83,6 +86,10 @@ describe('oneIdentityIntegrationHandler', () => {
         'proposal-UID_ESet',
         'member-uid'
       );
+      expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
+        uidESet: 'proposal-UID_ESet',
+        uidPersons: ['proposer-uid', 'member-uid'],
+      });
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
@@ -114,6 +121,10 @@ describe('oneIdentityIntegrationHandler', () => {
         expect(
           mockOneIdentity.removeConnectionBetweenPersonAndProposal
         ).not.toHaveBeenCalled();
+        expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
+          uidESet: 'proposal-UID_ESet',
+          uidPersons: ['proposer-uid', 'member-uid'],
+        });
         expect(mockOneIdentity.logout).toHaveBeenCalled();
       });
     });
@@ -155,6 +166,10 @@ describe('oneIdentityIntegrationHandler', () => {
         'proposal-UID_ESet',
         'member-uid'
       );
+      expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
+        uidESet: 'proposal-UID_ESet',
+        uidPersons: ['proposer-uid', 'member-uid'],
+      });
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
@@ -176,6 +191,9 @@ describe('oneIdentityIntegrationHandler', () => {
         mockOneIdentity.removeConnectionBetweenPersonAndProposal
       ).not.toHaveBeenCalled();
       expect(mockOneIdentity.connectPersonToProposal).not.toHaveBeenCalled();
+      expect(logger.logInfo).toHaveBeenCalledWith('Proposal in One Identity', {
+        uidESet: undefined,
+      });
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
   });
