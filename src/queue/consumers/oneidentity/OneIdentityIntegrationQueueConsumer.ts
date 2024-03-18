@@ -5,6 +5,7 @@ import { oneIdentityIntegrationHandler } from './consumerCallbacks/oneIdentityIn
 import { isProposalMessageData } from './utils/isProposalMessageData';
 import { Event } from '../../../models/Event';
 import { QueueConsumer } from '../QueueConsumer';
+import { hasTriggeringType } from '../utils/hasTriggeringType';
 
 const ONE_IDENTITY_INTEGRATION_QUEUE_NAME =
   process.env.ONE_IDENTITY_INTEGRATION_QUEUE_NAME || '';
@@ -23,7 +24,7 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
   }
 
   onMessage: ConsumerCallback = async (type, message) => {
-    if (!EVENTS_FOR_HANDLING.includes(type as Event)) {
+    if (!hasTriggeringType(type, EVENTS_FOR_HANDLING)) {
       return;
     }
 
