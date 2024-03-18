@@ -2,7 +2,7 @@ import { logger } from '@user-office-software/duo-logger';
 
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
-import { ProposalUser } from '../../scicat/scicatProposal/dto';
+import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
 import {
   ESSOneIdentity,
   PersonHasESETValues,
@@ -68,8 +68,7 @@ async function handleConnectionsBetweenProposalAndPersons(
   uidESet: UID_ESet,
   message: ProposalMessageData
 ) {
-  // Collect all users from the proposal
-  const users = collectUsersFromProposal(message);
+  const users = collectUsersFromProposalMessage(message);
 
   logger.logInfo('Users from proposal', { users });
 
@@ -134,14 +133,5 @@ async function removeOldConnections(
         connection.UID_Person
       )
     )
-  );
-}
-
-// Method to collect users from the proposal
-function collectUsersFromProposal(
-  proposalMessage: ProposalMessageData
-): ProposalUser[] {
-  return [...proposalMessage.members, proposalMessage.proposer].filter(
-    (user): user is ProposalUser => user !== undefined
   );
 }
