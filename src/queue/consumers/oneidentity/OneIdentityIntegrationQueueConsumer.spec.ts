@@ -14,7 +14,6 @@ import { oneIdentityIntegrationHandler } from './consumerCallbacks/oneIdentityIn
 import { OneIdentityIntegrationQueueConsumer } from './OneIdentityIntegrationQueueConsumer';
 import { Event } from '../../../models/Event';
 import { ProposalMessageData } from '../../../models/ProposalMessage';
-import { ProposalUser } from '../scicat/scicatProposal/dto';
 
 describe('OneIdentityIntegrationQueueConsumer', () => {
   let consumer: OneIdentityIntegrationQueueConsumer;
@@ -39,31 +38,21 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
       expect(logger.logException).not.toHaveBeenCalled();
     });
 
-    it('should not handle message if message is not ProposalMessageData', async () => {
+    it('should not handle message if message is not valid ProposalMessageData', async () => {
       const message = {} as ProposalMessageData;
       const type = Event.PROPOSAL_ACCEPTED;
 
-      await consumer.onMessage(type, message, {} as MessageProperties);
-
-      expect(logger.logInfo).toHaveBeenCalledWith(
-        'OneIdentityIntegrationQueueConsumer',
-        {
-          type,
-          message,
-        }
-      );
-      expect(logger.logError).toHaveBeenCalledWith('Invalid message', {
-        message,
-      });
-      expect(logger.logException).not.toHaveBeenCalled();
+      await expect(
+        consumer.onMessage(type, message, {} as MessageProperties)
+      ).rejects.toThrow('Proposal title is missing');
     });
 
     it('should call oneIdentityIntegrationHandler and log message handled', async () => {
-      const message = {
+      const message = createProposalMessage({
         shortCode: 'shortCode',
-        proposer: { email: 'proposer-email' },
-        members: [] as ProposalUser[],
-      } as ProposalMessageData;
+        proposerEmail: 'proposer-email',
+        memberEmails: [],
+      });
       const type = Event.PROPOSAL_ACCEPTED;
 
       await consumer.onMessage(type, message, {} as MessageProperties);
@@ -84,11 +73,11 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
     });
 
     it('should log exception and re-throw error if oneIdentityIntegrationHandler throws', async () => {
-      const message = {
+      const message = createProposalMessage({
         shortCode: 'shortCode',
-        proposer: { email: 'proposer-email' },
-        members: [] as ProposalUser[],
-      } as ProposalMessageData;
+        proposerEmail: 'proposer-email',
+        memberEmails: [],
+      });
       const type = Event.PROPOSAL_ACCEPTED;
       const error = new Error('Error');
 
@@ -108,4 +97,23 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
       );
     });
   });
+
+  function createProposalMessage({
+    shortCode,
+    proposerEmail,
+    memberEmails,
+  }: {
+    shortCode: string;
+    proposerEmail: string;
+    memberEmails: string[];
+  }): ProposalMessageData {
+    return {
+      title: 'title',
+      shortCode,
+      proposer: { email: proposerEmail, firstName: 'first', lastName: 'last' },
+      members: memberEmails.map((email) => ({ email })),
+      abstract: 'abstract',
+      instrument: { id: 1, shortCode: 'instrument' },
+    } as ProposalMessageData;
+  }
 });

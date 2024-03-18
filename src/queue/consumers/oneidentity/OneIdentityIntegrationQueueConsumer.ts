@@ -2,10 +2,10 @@ import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { oneIdentityIntegrationHandler } from './consumerCallbacks/oneIdentityIntegrationHandler';
-import { isProposalMessageData } from './utils/isProposalMessageData';
 import { Event } from '../../../models/Event';
 import { QueueConsumer } from '../QueueConsumer';
 import { hasTriggeringType } from '../utils/hasTriggeringType';
+import { validateProposalMessage } from '../utils/validateProposalMessage';
 
 const ONE_IDENTITY_INTEGRATION_QUEUE_NAME =
   process.env.ONE_IDENTITY_INTEGRATION_QUEUE_NAME || '';
@@ -33,16 +33,10 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
       message,
     });
 
-    if (!isProposalMessageData(message)) {
-      logger.logError('Invalid message', {
-        message,
-      });
-
-      return;
-    }
-
     try {
-      await oneIdentityIntegrationHandler(message, type as Event);
+      const proposalMessage = validateProposalMessage(message);
+
+      await oneIdentityIntegrationHandler(proposalMessage, type as Event);
 
       logger.logInfo('Message handled', {
         type,

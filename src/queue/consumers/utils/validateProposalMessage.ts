@@ -2,7 +2,7 @@ import { ProposalMessageData } from '../../../models/ProposalMessage';
 export type ValidProposalMessageData = Required<ProposalMessageData>;
 
 export function validateProposalMessage(
-  proposalMessage: ProposalMessageData
+  proposalMessage: any
 ): ValidProposalMessageData {
   if (!proposalMessage.title) {
     throw new Error('Proposal title is missing');
