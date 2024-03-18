@@ -7,13 +7,12 @@
     "start": "npm run fix-olm-dependency && tsc && node ./build/src/index.js",
     "start:kafka": "tsc && node ./build/src/kafkaProducerTesting/kafkaMockProducer.js",
     "test": "env NODE_ENV=test jest --config ./jest.unit.config.js --colors",
-    "debug": "ts-node-dev --inspect --respawn -T ./src/index.ts",
+    "debug": "ts-node-dev --inspect --respawn --exit-child --watch src --transpile-only src/index.ts",
     "fix-olm-dependency": "cp -r ./src/@matrix-org ./node_modules/",
     "build": "npm run fix-olm-dependency && rm -rf ./build && tsc",
     "lint": "npm run fix-olm-dependency && tsc --noEmit && eslint . --ext .js,.ts --quiet",
     "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet",
-    "prepare": "husky",
-    "dev": "ts-node-dev --inspect --respawn --exit-child --watch src --transpile-only src/index.ts"
+    "prepare": "husky"
   },
   "keywords": [
     "connector",
