@@ -5,7 +5,7 @@ import { ProposalMessageData } from '../../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../../QueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
-import { validateProposalMessage } from '../../../utils/validateMessages';
+import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 import { proposalFoldersCreation } from '../consumerCallbacks/proposalFoldersCreation';
 
 const EVENT_TYPES = [

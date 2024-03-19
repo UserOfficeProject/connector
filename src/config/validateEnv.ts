@@ -23,11 +23,16 @@ function validateEnv() {
     ENABLE_NICOS_TO_SCICHAT_MESSAGES: bool({ default: false }),
     ENABLE_PROPOSAL_FOLDERS_CREATION: bool({ default: false }),
     ENABLE_MOODLE_FOLDERS_CREATION: bool({ default: false }),
+    ENABLE_ONE_IDENTITY_INTEGRATION: bool({ default: false }),
     PROPOSAL_CREATION_QUEUE_NAME: str({ default: undefined }),
     CHATROOM_CREATION_QUEUE_NAME: str({ default: undefined }),
     FOLDER_CREATION_QUEUE_NAME: str({ default: undefined }),
     MOODLE_EXCHANGE_NAME: str({ default: undefined }),
     MOODLE_FOLDER_CREATION_QUEUE_NAME: str({ default: undefined }),
+    ONE_IDENTITY_PROPOSAL_IDENT_ESET_TYPE: str({ default: undefined }),
+    ONE_IDENTITY_APP_SERVER_URL: str({ default: undefined }),
+    ONE_IDENTITY_API_USER: str({ default: undefined }),
+    ONE_IDENTITY_API_PASSWORD: str({ default: undefined }),
   });
 }
 
