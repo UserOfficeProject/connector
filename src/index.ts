@@ -26,6 +26,7 @@ async function bootstrap() {
     nodeVersion: process.version,
     env: process.env.NODE_ENV,
   });
+
   const PORT = process.env.PORT || 4010;
   const app = express();
 
@@ -44,6 +45,9 @@ async function bootstrap() {
   const enableMoodleFoldersCreation = str2Bool(
     process.env.ENABLE_MOODLE_FOLDERS_CREATION as string
   );
+  const enableOneIdentityIntegration = str2Bool(
+    process.env.ENABLE_ONE_IDENTITY_INTEGRATION as string
+  );
 
   logger.logInfo('Services configuration', {
     SciCat_Proposal_Upsert: enableScicatProposalUpsert,
@@ -51,6 +55,7 @@ async function bootstrap() {
     Proposal_Folders_Creation: enableProposalFoldersCreation,
     Nicos_to_Scichat_Messages: enableNicosToScichatMessages,
     Moodle_Folders_Creation: enableMoodleFoldersCreation,
+    One_Identity_Integration: enableOneIdentityIntegration,
   });
 
   app.use(healthCheck()).use(readinessCheck());
@@ -67,7 +72,8 @@ async function bootstrap() {
     enableScicatProposalUpsert ||
     enableScichatRoomCreation ||
     enableProposalFoldersCreation ||
-    enableMoodleFoldersCreation
+    enableMoodleFoldersCreation ||
+    enableOneIdentityIntegration
   ) {
     startRabbitMQHandling();
   }
