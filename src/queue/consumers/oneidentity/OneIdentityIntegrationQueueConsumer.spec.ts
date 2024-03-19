@@ -113,7 +113,7 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
       proposer: { email: proposerEmail, firstName: 'first', lastName: 'last' },
       members: memberEmails.map((email) => ({ email })),
       abstract: 'abstract',
-      instrument: { id: 1, shortCode: 'instrument' },
+      instruments: [{ id: 1, shortCode: 'instrument', allocatedTime: 1 }],
     } as ProposalMessageData;
   }
 });

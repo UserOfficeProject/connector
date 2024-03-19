@@ -3,6 +3,7 @@ import { ProposalUser } from './../queue/consumers/scicat/scicatProposal/dto';
 export type Instrument = {
   id: number;
   shortCode: string;
+  allocatedTime: number;
 };
 
 export type ProposalMessageData = {
@@ -13,5 +14,5 @@ export type ProposalMessageData = {
   newStatus?: string;
   members: ProposalUser[];
   proposer?: ProposalUser;
-  instrument?: Instrument;
+  instruments?: Instrument[];
 };

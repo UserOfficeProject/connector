@@ -1,7 +1,6 @@
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../../models/Event';
-import { ProposalMessageData } from '../../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../../QueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
@@ -39,9 +38,7 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
       return;
     }
 
-    const proposalMessage = validateProposalMessage(
-      message as ProposalMessageData
-    );
+    const proposalMessage = validateProposalMessage(message);
 
     proposalFoldersCreation(proposalMessage);
   };

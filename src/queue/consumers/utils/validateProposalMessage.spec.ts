@@ -15,7 +15,7 @@ describe('Validate messages', () => {
         members: [],
         proposalPk: 1,
         shortCode: '123123',
-        instrument: { id: 1, shortCode: 'TEST' },
+        instruments: [{ id: 1, shortCode: 'TEST', allocatedTime: 1 }],
         newStatus: 'REVIEW',
         proposer: {
           id: 1,

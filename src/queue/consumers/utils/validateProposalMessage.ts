@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ProposalMessageData } from '../../../models/ProposalMessage';
 export type ValidProposalMessageData = Required<ProposalMessageData>;
 
@@ -32,9 +33,23 @@ export function validateProposalMessage(
     throw new Error('Proposal short code is missing');
   }
 
-  if (!proposalMessage.instrument) {
-    throw new Error('Instrument is missing');
+  if (!proposalMessage.instruments.length) {
+    throw new Error('Instruments are missing');
   }
+
+  proposalMessage.instruments.forEach((instrument: any) => {
+    if (!instrument.id) {
+      throw new Error('Instrument id is missing');
+    }
+
+    if (!instrument.shortCode) {
+      throw new Error('Instrument short code is missing');
+    }
+
+    if (typeof instrument.allocatedTime !== 'number') {
+      throw new Error('Instrument allocated time is missing');
+    }
+  });
 
   return proposalMessage as ValidProposalMessageData;
 }
