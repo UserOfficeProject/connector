@@ -2,10 +2,10 @@ import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { oneIdentityIntegrationHandler } from './consumerCallbacks/oneIdentityIntegrationHandler';
+import { validateRequiredProposalMessageFields } from './utils/validateRequiredProposalMessageFields';
 import { Event } from '../../../models/Event';
 import { QueueConsumer } from '../QueueConsumer';
 import { hasTriggeringType } from '../utils/hasTriggeringType';
-import { validateProposalMessage } from '../utils/validateProposalMessage';
 
 const ONE_IDENTITY_INTEGRATION_QUEUE_NAME =
   process.env.ONE_IDENTITY_INTEGRATION_QUEUE_NAME || '';
@@ -34,7 +34,7 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
     });
 
     try {
-      const proposalMessage = validateProposalMessage(message);
+      const proposalMessage = validateRequiredProposalMessageFields(message);
 
       await oneIdentityIntegrationHandler(proposalMessage, type as Event);
 
