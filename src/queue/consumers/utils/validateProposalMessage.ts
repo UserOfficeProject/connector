@@ -33,7 +33,7 @@ export function validateProposalMessage(
     throw new Error('Proposal short code is missing');
   }
 
-  if (!proposalMessage.instruments.length) {
+  if (!proposalMessage.instruments?.length) {
     throw new Error('Instruments are missing');
   }
 
