@@ -44,7 +44,7 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
 
       await expect(
         consumer.onMessage(type, message, {} as MessageProperties)
-      ).rejects.toThrow('Proposal title is missing');
+      ).rejects.toThrow('Invalid proposal message');
     });
 
     it('should call oneIdentityIntegrationHandler and log message handled', async () => {
@@ -108,12 +108,9 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
     memberEmails: string[];
   }): ProposalMessageData {
     return {
-      title: 'title',
       shortCode,
       proposer: { email: proposerEmail, firstName: 'first', lastName: 'last' },
       members: memberEmails.map((email) => ({ email })),
-      abstract: 'abstract',
-      instruments: [{ id: 1, shortCode: 'instrument', allocatedTime: 1 }],
     } as ProposalMessageData;
   }
 });
