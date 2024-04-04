@@ -1,5 +1,6 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import { omit } from '../../../utils/helperFunctions';
 import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 import { CreateProposalDto } from '../dto';
 
@@ -105,7 +106,10 @@ const updateProposal = async (
   sciCatAccessToken: string
 ) => {
   const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
-  const updateProposalDto = getCreateProposalDto(proposalMessage);
+  const updateProposalDto = omit(
+    getCreateProposalDto(proposalMessage),
+    'proposalId'
+  );
 
   const updateProposalResponse = await request(url, {
     method: 'PATCH',
