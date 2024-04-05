@@ -15,6 +15,22 @@ export type CreateProposalDto = {
   MeasurementPeriodList: any[];
 };
 
+export type UpdateProposalDto = {
+  ownerGroup?: string;
+  accessGroups?: string[];
+  pi_email?: string;
+  pi_firstname?: string;
+  pi_lastname?: string;
+  email: string;
+  firstname?: string;
+  lastname?: string;
+  title: string;
+  abstract?: string;
+  startTime?: Date;
+  endTime?: Date;
+  MeasurementPeriodList?: any[];
+};
+
 export interface ProposalUser {
   id: number;
   firstName: string;
