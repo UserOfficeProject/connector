@@ -16,9 +16,11 @@ import { ValidProposalMessageData } from '../../../utils/validateProposalMessage
 describe('proposalFoldersCreation', () => {
   const proposalMessage = {
     shortCode: 'shortCode',
-    instrument: {
-      shortCode: 'shortCode',
-    },
+    instruments: [
+      {
+        shortCode: 'shortCode',
+      },
+    ],
     proposer: {
       email: 'test.proposer@email.com',
     },

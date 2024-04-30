@@ -1,7 +1,7 @@
 import { logger } from '@user-office-software/duo-logger';
 
 import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
-import { CreateProposalDto } from '../dto';
+import { CreateProposalDto, UpdateProposalDto } from '../dto';
 
 const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
 const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
@@ -74,6 +74,26 @@ const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
   return createProposalDto;
 };
 
+const getUpdateProposalDto = (proposalMessage: ValidProposalMessageData) => {
+  const updateProposalDto: UpdateProposalDto = {
+    title: proposalMessage.title,
+    pi_email: proposalMessage.proposer.email,
+    pi_firstname: proposalMessage.proposer.firstName,
+    pi_lastname: proposalMessage.proposer.lastName,
+    email: proposalMessage.proposer.email,
+    firstname: proposalMessage.proposer.firstName,
+    lastname: proposalMessage.proposer.lastName,
+    abstract: proposalMessage.abstract,
+    ownerGroup: proposalMessage.shortCode,
+    accessGroups: [],
+    startTime: new Date(),
+    endTime: new Date(),
+    MeasurementPeriodList: [],
+  };
+
+  return updateProposalDto;
+};
+
 const createProposal = async (
   proposalMessage: ValidProposalMessageData,
   sciCatAccessToken: string
@@ -105,7 +125,7 @@ const updateProposal = async (
   sciCatAccessToken: string
 ) => {
   const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
-  const updateProposalDto = getCreateProposalDto(proposalMessage);
+  const updateProposalDto = getUpdateProposalDto(proposalMessage);
 
   const updateProposalResponse = await request(url, {
     method: 'PATCH',
