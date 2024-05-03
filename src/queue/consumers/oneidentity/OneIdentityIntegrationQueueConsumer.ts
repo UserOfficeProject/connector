@@ -1,5 +1,6 @@
 import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
+import { isAxiosError } from 'axios';
 
 import { oneIdentityIntegrationHandler } from './consumerCallbacks/oneIdentityIntegrationHandler';
 import { validateRequiredProposalMessageFields } from './utils/validateRequiredProposalMessageFields';
@@ -43,13 +44,28 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
         message,
       });
     } catch (error) {
+      const response = extractAxiosErrorResponse(error);
+
       logger.logException('Error while handling proposal', error, {
         type,
         message,
+        response,
       });
 
       // Re-throw the error to make sure the message is not acknowledged
       throw error;
     }
   };
+}
+
+function extractAxiosErrorResponse(error: unknown) {
+  if (isAxiosError(error)) {
+    return {
+      status: error.response?.status,
+      headers: error.response?.headers,
+      data: error.response?.data,
+    };
+  }
+
+  return undefined;
 }
