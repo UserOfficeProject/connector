@@ -19,8 +19,12 @@ export async function oneIdentityIntegrationHandler(
   const oneIdentity = new ESSOneIdentity();
   await oneIdentity.login();
 
+  logger.logInfo('One Identity successfully logged in', {});
+
   try {
     const uidESet = await getUIDESetFromOneIdentity(oneIdentity, message, type);
+
+    logger.logInfo('UID_ESet from One Identity', { uidESet });
 
     if (uidESet) {
       await handleConnectionsBetweenProposalAndPersons(
@@ -31,6 +35,7 @@ export async function oneIdentityIntegrationHandler(
     }
   } finally {
     await oneIdentity.logout();
+    logger.logInfo('One Identity successfully logged out', {});
   }
 }
 
