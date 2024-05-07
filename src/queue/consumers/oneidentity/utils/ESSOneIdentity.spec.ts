@@ -118,7 +118,7 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'Person',
-        "ContactEmail='foo@email'"
+        "ContactEmail='foo@email' OR DefaultEmailAddress='foo@email'"
       );
       expect(result).toEqual({ UID_Person: 'person-uid' });
     });
@@ -150,7 +150,11 @@ describe('ESSOneIdentity', () => {
   describe('getPersons', () => {
     it('should get person records for multiple users, undefined if not found', async () => {
       mockOneIdentityApi.getEntities.mockImplementation((table, filter) => {
-        if (table === 'Person' && filter === "ContactEmail='unknown-email'")
+        if (
+          table === 'Person' &&
+          filter ===
+            "ContactEmail='unknown-email' OR DefaultEmailAddress='unknown-email'"
+        )
           return Promise.resolve([]);
         else
           return Promise.resolve([
