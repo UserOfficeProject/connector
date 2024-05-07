@@ -10,7 +10,7 @@ const proposalFoldersCreation = async (
 ) => {
   // prepare path with correct year, instrument, proposal
   const proposalId = proposalMessage.shortCode;
-  const group = proposalMessage.shortCode;
+  const group = `${env.PROPOSAL_FOLDERS_CREATION_GROUP_PREFIX}${proposalMessage.shortCode}`;
   const year = new Date().getFullYear().toString();
   const proposerEmail = proposalMessage.proposer.email;
   const membersEmails = proposalMessage.members.map((m) => m.email).join(' ');
