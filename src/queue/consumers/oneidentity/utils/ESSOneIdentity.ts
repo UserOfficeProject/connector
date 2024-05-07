@@ -99,7 +99,7 @@ export class ESSOneIdentity {
   ): Promise<PersonValues | undefined> {
     const entities = await this.oneIdentityApi.getEntities<PersonValues>(
       'Person',
-      `ContactEmail='${user.email}'`
+      `ContactEmail='${user.email}' OR DefaultEmailAddress='${user.email}'` // ContactEmail is for scienceusers, DefaultEmailAddress is for ESS employees
     );
 
     // In theory there should be only one person with the same email, but the 1IM.Person table has no unique constraint on ContactEmail.
