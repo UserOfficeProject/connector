@@ -16,6 +16,7 @@ function validateEnv() {
     GRAYLOG_SERVER: str({ default: 'it-graylog.esss.lu.se' }),
     GRAYLOG_PORT: port({ default: 12201 }),
     SCICAT_PROPOSAL_TRIGGERING_STATUSES: str({ default: undefined }),
+    PROPOSAL_FOLDERS_CREATION_GROUP_PREFIX: str({ default: '' }),
     PROPOSAL_FOLDERS_CREATION_COMMAND: str({ default: undefined }),
     PROPOSAL_FOLDERS_CREATION_TRIGGERING_STATUSES: str({ default: undefined }),
     ENABLE_SCICAT_PROPOSAL_UPSERT: bool({ default: false }),
