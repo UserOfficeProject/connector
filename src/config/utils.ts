@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
+import axios, { AxiosHeaders, AxiosRequestConfig, isAxiosError } from 'axios';
 import { container, Lifecycle } from 'tsyringe';
 
 export const mapClass = (
@@ -40,17 +40,24 @@ export const axiosFetch = async (
     data: body,
     headers,
   } as AxiosRequestConfig;
-  const axiosResponse = await axios(axiosOptions);
+  try {
+    const axiosResponse = await axios(axiosOptions);
 
-  const { data, status, statusText, headers: axiosHeaders } = axiosResponse;
+    const { data, status, statusText, headers: axiosHeaders } = axiosResponse;
 
-  const responseHeaders = new AxiosHeaders(axiosHeaders as AxiosHeaders);
+    const responseHeaders = new AxiosHeaders(axiosHeaders as AxiosHeaders);
 
-  const response = new Response(JSON.stringify(data), {
-    status,
-    statusText,
-    headers: responseHeaders,
-  });
+    const response = new Response(JSON.stringify(data), {
+      status,
+      statusText,
+      headers: responseHeaders,
+    });
 
-  return response;
+    return response;
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      throw new Error(error.response?.data.error);
+    }
+    throw error;
+  }
 };
