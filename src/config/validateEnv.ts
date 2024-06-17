@@ -34,6 +34,10 @@ function validateEnv() {
     ONE_IDENTITY_APP_SERVER_URL: str({ default: undefined }),
     ONE_IDENTITY_API_USER: str({ default: undefined }),
     ONE_IDENTITY_API_PASSWORD: str({ default: undefined }),
+    USER_OFFICE_CORE_EXCHANGE_NAME: str({ default: undefined }),
+    VISA_QUEUE_NAME: str({ default: undefined }),
+    VISA_SYNCING_TRIGGERING_STATUSES: str({ default: undefined }),
+    VISA_DATABASE_URL: str({ default: undefined }),
   });
 }
 

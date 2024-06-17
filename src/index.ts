@@ -49,6 +49,10 @@ async function bootstrap() {
     process.env.ENABLE_ONE_IDENTITY_INTEGRATION as string
   );
 
+  const enableSyncVisaProposals = str2Bool(
+    process.env.ENABLE_SYNC_VISA_PROPOSALS as string
+  );
+
   logger.logInfo('Services configuration', {
     SciCat_Proposal_Upsert: enableScicatProposalUpsert,
     Scichat_Room_Creation: enableScichatRoomCreation,
@@ -56,6 +60,7 @@ async function bootstrap() {
     Nicos_to_Scichat_Messages: enableNicosToScichatMessages,
     Moodle_Folders_Creation: enableMoodleFoldersCreation,
     One_Identity_Integration: enableOneIdentityIntegration,
+    Sync_Visa_Proposals: enableSyncVisaProposals,
   });
 
   app.use(healthCheck()).use(readinessCheck());
@@ -73,7 +78,8 @@ async function bootstrap() {
     enableScichatRoomCreation ||
     enableProposalFoldersCreation ||
     enableMoodleFoldersCreation ||
-    enableOneIdentityIntegration
+    enableOneIdentityIntegration ||
+    enableSyncVisaProposals
   ) {
     startRabbitMQHandling();
   }

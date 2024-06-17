@@ -44,6 +44,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@types/knex": "^0.16.1",
     "@user-office-software/duo-logger": "^2.2.1",
     "@user-office-software/duo-message-broker": "^1.6.0",
     "axios": "^1.7.2",
@@ -51,6 +52,7 @@
     "envalid": "^8.0.0",
     "express": "^4.19.2",
     "kafkajs": "^2.2.3",
+    "knex": "^3.1.0",
     "matrix-js-sdk": "24.1.0",
     "reflect-metadata": "^0.2.2",
     "ts-node-dev": "^2.0.0",
