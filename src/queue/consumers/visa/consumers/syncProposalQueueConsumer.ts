@@ -15,7 +15,7 @@ const EVENTS_FOR_HANDLING = [
 ];
 
 const triggeringStatuses =
-  process.env.PROPOSAL_FOLDERS_CREATION_TRIGGERING_STATUSES?.split(', ');
+  process.env.VISA_SYNCING_TRIGGERING_STATUSES?.split(', ');
 
 export class SyncProposalQueueConsumer extends QueueConsumer {
   getQueueName(): string {
@@ -36,15 +36,12 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
       type,
       message,
     });
-    console.log('Checkpoint1');
-    console.log({ EVENTS_FOR_HANDLING, type });
 
     const hasStatus = hasTriggeringStatus(message, triggeringStatuses);
 
     if (!hasStatus) {
       return;
     }
-    console.log('Checkpoint2');
     const proposalMessage = validateProposalMessage(message);
 
     syncVisaProposal(proposalMessage);
