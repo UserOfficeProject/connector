@@ -37,6 +37,8 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
       message,
     });
     console.log('Checkpoint1');
+    console.log({ EVENTS_FOR_HANDLING, type });
+
     const hasStatus = hasTriggeringStatus(message, triggeringStatuses);
 
     if (!hasStatus) {
