@@ -42,7 +42,7 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
     if (!hasStatus) {
       return;
     }
-
+    console.log('Checkpoint1');
     const proposalMessage = validateProposalMessage(message);
 
     syncVisaProposal(proposalMessage);
