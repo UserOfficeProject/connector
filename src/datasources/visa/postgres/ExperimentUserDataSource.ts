@@ -42,6 +42,8 @@ export default class PostgresExperimentUserDataSource
       })
       .catch((e) => {
         console.log({ e });
+
+        return null as unknown as ExperimentUser;
       });
   }
 
