@@ -36,6 +36,7 @@ export default class PostgresExperimentUserDataSource
       })
       .returning(['*'])
       .then((experimentUser: ExperimentUserRecord[]) => {
+        console.log({ experimentId, userId });
         console.log('%%%%%%%%%%%%%%%');
 
         return createExperimentUserObject(experimentUser[0]);
