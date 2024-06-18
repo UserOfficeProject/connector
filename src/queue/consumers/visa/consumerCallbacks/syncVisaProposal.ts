@@ -29,6 +29,9 @@ async function createUserAndAssignToExperiment(
   console.log({ createdUser });
   const experiment = await experimentDataSource.getByProposalId(proposalPk);
   if (experiment && createdUser) {
+    console.log('========experiment && createdUser=========');
+    console.log(experiment.id);
+    console.log(createdUser.id);
     await experimentUserDataSource.create({
       experimentId: experiment.id,
       userId: createdUser.id,
