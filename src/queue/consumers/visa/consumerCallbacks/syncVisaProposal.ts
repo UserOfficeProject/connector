@@ -26,6 +26,7 @@ async function createUserAndAssignToExperiment(
   );
 
   const createdUser = await userDataSource.create(user);
+  console.log({ createdUser });
   const experiment = await experimentDataSource.getByProposalId(proposalPk);
   if (experiment && createdUser) {
     await experimentUserDataSource.create({
@@ -117,6 +118,8 @@ export async function syncVisaProposal(
   // Create new user for the co-proposer
   // const members = proposalWithNewStatus.members;
   for (const member of proposersAndCoproposers) {
+    console.log('-=======members===========');
+    console.log({ member });
     await createUserAndAssignToExperiment(
       member,
       proposalWithNewStatus.proposalPk
