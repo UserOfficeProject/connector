@@ -39,6 +39,9 @@ export default class PostgresExperimentUserDataSource
         console.log('%%%%%%%%%%%%%%%');
 
         return createExperimentUserObject(experimentUser[0]);
+      })
+      .catch((e) => {
+        console.log({ e });
       });
   }
 
