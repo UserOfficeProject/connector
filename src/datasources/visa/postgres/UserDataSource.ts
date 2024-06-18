@@ -25,7 +25,6 @@ export default class PostgresUserDataSource implements UserDataSource {
       .then((user: UserRecord) => {
         return user ? createUserObject(user) : null;
       });
-    console.log({ userExists });
     // Create an Employer, if it does not exist
     let employer: Employer;
     const employerExists = await database(this.EMPLOYER_TABLE_NAME)
@@ -36,7 +35,6 @@ export default class PostgresUserDataSource implements UserDataSource {
       .then((employer: EmployerRecord) => {
         return employer ? createEmployerObject(employer) : null;
       });
-    console.log({ employerExists });
     if (employerExists) {
       employer = employerExists;
     } else {
@@ -52,7 +50,6 @@ export default class PostgresUserDataSource implements UserDataSource {
         });
     }
     if (userExists) {
-      console.log('****************');
       // Update user table if the institution_id is different
       if (userExists.affiliationId !== employer.id) {
         return await database(this.TABLE_NAME)

@@ -25,9 +25,6 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
     return process.env.USER_OFFICE_CORE_EXCHANGE_NAME as string;
   }
   onMessage: ConsumerCallback = async (type, message) => {
-    console.log(
-      '===================Message received in SyncProposalQueueConsumer==================='
-    );
     if (!hasTriggeringType(type, EVENTS_FOR_HANDLING)) {
       return;
     }
@@ -45,8 +42,5 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
     const proposalMessage = validateProposalMessage(message);
 
     syncVisaProposal(proposalMessage);
-    console.log(
-      '===================SyncProposalQueueConsumer DONE==================='
-    );
   };
 }

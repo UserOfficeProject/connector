@@ -24,7 +24,6 @@ export default class PostgresExperimentUserDataSource
       experiment_id: experimentId,
       user_id: userId,
     });
-    console.log({ experimentUserExists });
     if (experimentUserExists.length > 0) {
       return experimentUserExists[0];
     }
@@ -36,15 +35,7 @@ export default class PostgresExperimentUserDataSource
       })
       .returning(['*'])
       .then((experimentUser: ExperimentUserRecord[]) => {
-        console.log({ experimentId, userId });
-        console.log('%%%%%%%%%%%%%%%');
-
         return createExperimentUserObject(experimentUser[0]);
-      })
-      .catch((e) => {
-        console.log({ e });
-
-        return null as unknown as ExperimentUser;
       });
   }
 
