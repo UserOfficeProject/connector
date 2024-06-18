@@ -56,7 +56,7 @@ export const axiosFetch = async (
     return response;
   } catch (error: unknown) {
     if (isAxiosError(error)) {
-      throw new Error(error.response?.data.error);
+      throw new Error(error.response?.data.error || error);
     }
     throw error;
   }
