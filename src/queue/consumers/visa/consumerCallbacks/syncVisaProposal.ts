@@ -106,16 +106,8 @@ export async function syncVisaProposal(
     ...(proposalWithNewStatus.proposer ? [proposalWithNewStatus.proposer] : []),
     ...proposalWithNewStatus.members,
   ];
-  // // Create new user for the proposer
-  // if (proposalWithNewStatus.proposer) {
-  //   await createUserAndAssignToExperiment(
-  //     proposalWithNewStatus.proposer,
-  //     proposalWithNewStatus.proposalPk
-  //   );
-  // }
 
-  // Create new user for the co-proposer
-  // const members = proposalWithNewStatus.members;
+  // Create new user for the Principal Investigator and Coproposers
   for (const member of proposersAndCoproposers) {
     await createUserAndAssignToExperiment(
       member,

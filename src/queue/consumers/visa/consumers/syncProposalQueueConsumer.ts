@@ -41,6 +41,6 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
     }
     const proposalMessage = validateProposalMessage(message);
 
-    syncVisaProposal(proposalMessage);
+    await syncVisaProposal(proposalMessage);
   };
 }
