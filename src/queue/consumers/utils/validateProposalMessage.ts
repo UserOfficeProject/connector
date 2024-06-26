@@ -29,6 +29,14 @@ export function validateProposalMessage(
     throw new Error('Proposal abstract is missing');
   }
 
+  if (!proposalMessage.callId) {
+    throw new Error('Proposal CallId is missing');
+  }
+
+  if (!proposalMessage.submitted) {
+    throw new Error('Proposal Submitted status is missing');
+  }
+
   if (!proposalMessage.shortCode) {
     throw new Error('Proposal short code is missing');
   }
