@@ -17,6 +17,8 @@ describe('Validate messages', () => {
         shortCode: '123123',
         instruments: [{ id: 1, shortCode: 'TEST', allocatedTime: 1 }],
         newStatus: 'REVIEW',
+        callId: 123,
+        submitted: true,
         proposer: {
           id: 1,
           firstName: 'Test',

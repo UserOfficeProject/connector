@@ -31,6 +31,19 @@ export type UpdateProposalDto = {
   MeasurementPeriodList?: any[];
 };
 
+export interface Institution {
+  id: number;
+  name: string;
+  country?: number;
+  verified: boolean;
+  rorId?: string;
+}
+
+export interface Country {
+  countryId?: number;
+  country?: string;
+}
+
 export interface ProposalUser {
   id: number;
   firstName: string;
@@ -38,6 +51,8 @@ export interface ProposalUser {
   email: string;
   oidcSub: string;
   oauthIssuer?: string;
+  institution?: Institution;
+  country?: Country;
 }
 
 export interface ProposalAcceptedMessage {

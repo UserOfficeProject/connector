@@ -158,7 +158,12 @@ export class SynapseService {
           invitedUsers.push({ userId, invited: true });
         })
         .catch((reason) => {
-          logger.logError('Failed to invite user', { reason, member });
+          if (!reason.message.includes('already in the room')) {
+            logger.logError('Failed to invite user', {
+              message: reason?.message,
+              member,
+            });
+          }
           invitedUsers.push({ userId, invited: false });
           // don't throw, we want to invite all members
         });
@@ -183,7 +188,7 @@ export class SynapseService {
   }
   async getUserByOidcSub(member: ProposalUser) {
     const result = await this.client.http
-      .authedRequest(
+      .authedRequest<UserId>(
         Method.Get,
         `/auth_providers/${oauthIssuer}/users/${member.oidcSub}`,
         {},
@@ -193,15 +198,21 @@ export class SynapseService {
         }
       )
       .catch((reason) => {
-        logger.logError('Not able to find user by oidc_sub', { reason });
+        if (!reason.message.includes('User not found')) {
+          logger.logError('Not able to find user by oidc_sub', {
+            message: reason.message,
+          });
+        }
+
+        return undefined;
       });
 
-    return result as UserId;
+    return result;
   }
 
   async getUserByEmail(email: string) {
     const result = await this.client.http
-      .authedRequest(
+      .authedRequest<UserId>(
         Method.Get,
         `/threepid/${thirdPartyId}/users/${email}`,
         {},
@@ -211,10 +222,16 @@ export class SynapseService {
         }
       )
       .catch((reason) => {
-        logger.logError('Not able to find user by Email', { reason });
+        if (!reason.message.includes('User not found')) {
+          logger.logError('Not able to find user by Email', {
+            message: reason.message,
+          });
+        }
+
+        return undefined;
       });
 
-    return result as UserId;
+    return result;
   }
 
   async getRoomIdByName(name: string) {
@@ -308,7 +325,10 @@ export class SynapseService {
         { prefix: ADMIN_API_PREFIX_V2 }
       )
       .catch((reason) => {
-        logger.logError('Failed to create user', { reason, member });
+        logger.logError('Failed to create user', {
+          message: reason.message,
+          member,
+        });
         throw reason;
       });
 

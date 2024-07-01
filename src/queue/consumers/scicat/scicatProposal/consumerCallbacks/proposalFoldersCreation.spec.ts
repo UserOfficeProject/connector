@@ -7,6 +7,7 @@ jest.mock('node:process', () => ({
 jest.mock('@user-office-software/duo-logger');
 
 import { exec } from 'node:child_process';
+import { env } from 'node:process';
 
 import { logger } from '@user-office-software/duo-logger';
 
@@ -67,6 +68,25 @@ describe('proposalFoldersCreation', () => {
         command: 'test command',
         stderr: 'test stderr',
       }
+    );
+  });
+
+  it('should call exec with the correct command', () => {
+    env.PROPOSAL_FOLDERS_CREATION_COMMAND =
+      'command <INSTRUMENT> <YEAR> <PROPOSAL> <GROUP> <PROPOSER_EMAIL> <MEMBERS_EMAILS>';
+    env.PROPOSAL_FOLDERS_CREATION_GROUP_PREFIX = 'group_prefix_';
+    (exec as unknown as jest.Mock).mockImplementationOnce(
+      (command, callback) => {
+        callback(undefined, '', undefined);
+      }
+    );
+
+    proposalFoldersCreation(proposalMessage);
+
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(exec).toHaveBeenCalledWith(
+      'command shortcode 2024 shortCode group_prefix_shortCode test.proposer@email.com test.member@email.com',
+      expect.any(Function)
     );
   });
 });
