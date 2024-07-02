@@ -19,7 +19,7 @@ export default class PostgresUserDataSource implements UserDataSource {
     if (!user.email || !user.institution) return null;
     const userExists = await database(this.TABLE_NAME)
       .where({
-        id: user.email,
+        email: user.email,
       })
       .first()
       .then((user: UserRecord) => {
@@ -70,7 +70,7 @@ export default class PostgresUserDataSource implements UserDataSource {
       // Insert into users table
       return await database(this.TABLE_NAME)
         .insert({
-          id: user.email,
+          id: user.oidcSub,
           email: user.email,
           first_name: user.firstName ?? '',
           last_name: user.lastName ?? '',
