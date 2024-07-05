@@ -16,10 +16,10 @@ export default class PostgresUserDataSource implements UserDataSource {
   private ROLE = 'role';
 
   async create(user: ProposalUser): Promise<User | null> {
-    if (!user.email || !user.institution) return null;
+    if (!user.email || !user.institution || !user.oidcSub) return null;
     const userExists = await database(this.TABLE_NAME)
       .where({
-        email: user.email,
+        id: user.oidcSub,
       })
       .first()
       .then((user: UserRecord) => {
@@ -54,7 +54,7 @@ export default class PostgresUserDataSource implements UserDataSource {
       if (userExists.affiliationId !== employer.id) {
         return await database(this.TABLE_NAME)
           .where({
-            email: user.email,
+            id: user.oidcSub,
           })
           .update({
             affiliation_id: employer.id,
@@ -99,14 +99,14 @@ export default class PostgresUserDataSource implements UserDataSource {
 
   async update(user: UserUpdationEventPayload): Promise<User> {
     const userExists = await database(this.TABLE_NAME).where({
-      email: user.email,
+      id: user.oidcSub,
     });
 
     // Update only if the User exists and submitted
     if (userExists) {
       return await database(this.TABLE_NAME)
         .where({
-          email: user.email,
+          id: user.oidcSub,
         })
         .update({
           first_name: user.firstname ?? '',
