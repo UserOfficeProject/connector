@@ -56,7 +56,7 @@ async function deleteMissingUsersFromExperiment(
 
   for (const experimentUser of experimentUsers) {
     if (
-      !allProposalUsers.some((member) => member.email === experimentUser.email)
+      !allProposalUsers.some((member) => member.oidcSub === experimentUser.id)
     ) {
       await experimentUserDataSource.delete({
         experimentId: experiment.id,
