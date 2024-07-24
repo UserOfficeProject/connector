@@ -29,7 +29,7 @@
     "@types/knex": "^0.16.1",
     "@types/pg": "^8.10.3",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.5",
+    "@types/node": "^20.14.9",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.16.1",
     "eslint": "^8.57.0",
