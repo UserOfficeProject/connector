@@ -24,22 +24,14 @@ export async function produceSynapseUserId(
   };
 
   if (synapseService) {
-    const userByOidcSub = await synapseService.getUserByOidcSub(
-      normalizedMember.oidcSub
-    );
-    const userByEmail = await synapseService.getUserByEmail(
-      normalizedMember.email
-    );
+    const user =
+      (await synapseService.getUserByOidcSub(normalizedMember.oidcSub)) ||
+      (await synapseService.getUserByEmail(normalizedMember.email));
 
-    if (userByOidcSub) {
+    if (user) {
       return skipPrePostfix
-        ? userByOidcSub.user_id.replace(/^@|:ess$/g, '')
-        : userByOidcSub.user_id;
-    }
-    if (userByEmail) {
-      return skipPrePostfix
-        ? userByEmail.user_id.replace(/^@|:ess$/g, '')
-        : userByEmail.user_id;
+        ? user.user_id.replace(/^@|:ess$/g, '')
+        : user.user_id;
     }
   }
 
