@@ -87,7 +87,7 @@ describe('SynapseService', () => {
         new AxiosError(validReason)
       );
 
-      const result = await synapseService.getUserByOidcSub(member);
+      const result = await synapseService.getUserByOidcSub(member.oidcSub);
 
       expect(mockLoggerLogError).not.toHaveBeenCalledWith(
         'Not able to find user by oidc_sub',
@@ -104,7 +104,7 @@ describe('SynapseService', () => {
         new AxiosError(InvalidReason)
       );
 
-      const result = await synapseService.getUserByOidcSub(member);
+      const result = await synapseService.getUserByOidcSub(member.oidcSub);
 
       expect(mockLoggerLogError).toHaveBeenCalledWith(
         'Not able to find user by oidc_sub',

@@ -186,11 +186,11 @@ export class SynapseService {
 
     return response.rooms;
   }
-  async getUserByOidcSub(member: ProposalUser) {
+  async getUserByOidcSub(oidcSub: string) {
     const result = await this.client.http
       .authedRequest<UserId>(
         Method.Get,
-        `/auth_providers/${oauthIssuer}/users/${member.oidcSub}`,
+        `/auth_providers/${oauthIssuer}/users/${oidcSub}`,
         {},
         undefined,
         {
@@ -289,7 +289,7 @@ export class SynapseService {
 
   async userExists(member: ProposalUser) {
     const userExists =
-      !!(await this.getUserByOidcSub(member)) ||
+      !!(await this.getUserByOidcSub(member.oidcSub)) ||
       !!(await this.getUserByEmail(member.email));
 
     if (!userExists) {
