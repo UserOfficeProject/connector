@@ -87,7 +87,9 @@ export async function syncVisaProposal(
   }
   // Get Instrument
   for (const proposalInstrument of proposalWithNewStatus.instruments) {
-    let instrument = await instrumentDataSource.get(proposalInstrument.id);
+    let instrument = await instrumentDataSource.getByShortCode(
+      proposalInstrument.shortCode
+    );
 
     if (!instrument) {
       instrument = await instrumentDataSource.create({
