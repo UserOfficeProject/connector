@@ -15,6 +15,7 @@ import {
   ProposalUser,
   ChatRoom,
   UserId,
+  SynapseUser,
 } from '../../queue/consumers/scicat/scicatProposal/dto';
 
 interface MemberObject {
@@ -234,6 +235,30 @@ export class SynapseService {
     return result;
   }
 
+  async getUserInfo(userId: string) {
+    const result = await this.client.http
+      .authedRequest<SynapseUser>(
+        Method.Get,
+        `/users/${userId}`,
+        {},
+        undefined,
+        {
+          prefix: ADMIN_API_PREFIX_V2,
+        }
+      )
+      .catch((reason) => {
+        if (!reason.message.includes('User not found')) {
+          logger.logError('Not able to get user information', {
+            message: reason.message,
+          });
+        }
+
+        return undefined;
+      });
+
+    return result;
+  }
+
   async getRoomIdByName(name: string) {
     // TODO: if more than one identical name rooms exist,
     // we need to include a filter to find the room we want,
@@ -287,16 +312,16 @@ export class SynapseService {
     return result as User;
   }
 
-  async userExists(member: ProposalUser) {
-    const userExists =
-      !!(await this.getUserByOidcSub(member.oidcSub)) ||
-      !!(await this.getUserByEmail(member.email));
+  async getUserId(member: ProposalUser) {
+    const user =
+      (await this.getUserByOidcSub(member.oidcSub)) ||
+      (await this.getUserByEmail(member.email));
 
-    if (!userExists) {
+    if (!user) {
       logger.logInfo('User not exists: ', { member });
     }
 
-    return userExists;
+    return user;
   }
 
   async createUser(member: ProposalUser, password: string) {
