@@ -247,11 +247,9 @@ export class SynapseService {
         }
       )
       .catch((reason) => {
-        if (!reason.message.includes('User not found')) {
-          logger.logError('Not able to get user information', {
-            message: reason.message,
-          });
-        }
+        logger.logError('Not able to get user information', {
+          message: reason.message,
+        });
 
         return undefined;
       });

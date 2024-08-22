@@ -12,7 +12,7 @@ function isValidUser(user: ProposalUser) {
   return user?.oidcSub && user?.firstName && user?.lastName && user?.email;
 }
 
-async function checkUserStatus(
+async function checkUserInfo(
   synapseService: SynapseService,
   user: ProposalUser
 ) {
@@ -33,7 +33,7 @@ async function checkUserStatus(
   return { isDeactivated: true };
 }
 
-async function validateUsers(users: ProposalUser[]) {
+async function validateUsersProfile(users: ProposalUser[]) {
   const validUsers = [];
   const invalidUsers = [];
   for (const user of users) {
@@ -52,7 +52,8 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   );
   const allUsersOnProposal = [...message.members, message.proposer];
 
-  const { validUsers, invalidUsers } = await validateUsers(allUsersOnProposal);
+  const { validUsers, invalidUsers } =
+    await validateUsersProfile(allUsersOnProposal);
 
   // NOTE: activeUsers are users that are valid and not deactivated,
   // deactivated users should not be invited to the chatroom.
@@ -67,7 +68,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
 
   for (const user of validUsers) {
     try {
-      const { isDeactivated, userExists } = await checkUserStatus(
+      const { isDeactivated, userExists } = await checkUserInfo(
         synapseService,
         user
       );
