@@ -25,10 +25,10 @@ async function checkUserInfo(
     return { isDeactivated: false, userExists: !!userId };
   }
 
-  logger.logInfo(
-    'Some users will not be invited to the chatroom due to them being deactivated',
-    { userInfo }
-  );
+  logger.logInfo('Deactivated user will not be invited to the chatroom ', {
+    user: user,
+    information: userInfo,
+  });
 
   return { isDeactivated: true };
 }
