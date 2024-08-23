@@ -33,7 +33,7 @@ async function checkUserInfo(
   return { isDeactivated: true };
 }
 
-async function validateUsersProfile(users: ProposalUser[]) {
+function validateUsersProfile(users: ProposalUser[]) {
   const validUsers = [];
   const invalidUsers = [];
   for (const user of users) {
@@ -52,8 +52,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   );
   const allUsersOnProposal = [...message.members, message.proposer];
 
-  const { validUsers, invalidUsers } =
-    await validateUsersProfile(allUsersOnProposal);
+  const { validUsers, invalidUsers } = validateUsersProfile(allUsersOnProposal);
 
   // NOTE: activeUsers are users that are valid and not deactivated,
   // deactivated users should not be invited to the chatroom.
