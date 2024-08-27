@@ -48,7 +48,7 @@
   "dependencies": {
     "@user-office-software/duo-logger": "^2.2.1",
     "@user-office-software/duo-message-broker": "^1.6.0",
-    "axios": "^1.7.4",
+    "axios": "^1.7.5",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
     "express": "^4.19.2",
