@@ -27,6 +27,25 @@ describe('SynapseService', () => {
     oidcSub: '1234',
     oauthIssuer: 'oidc-ping',
   };
+  const synapseUser = {
+    name: '@user:example.com',
+    displayname: 'User',
+    threepids: [],
+    avatar_url: null,
+    is_guest: 0,
+    admin: 0,
+    deactivated: true,
+    erased: false,
+    shadow_banned: 0,
+    creation_ts: 1560432506,
+    appservice_id: null,
+    consent_server_notice_sent: null,
+    consent_version: null,
+    consent_ts: null,
+    external_ids: [],
+    user_type: null,
+    locked: false,
+  };
   const mockCreateClient = {
     loginWithPassword: jest.fn(),
     http: {
@@ -87,7 +106,7 @@ describe('SynapseService', () => {
         new AxiosError(validReason)
       );
 
-      const result = await synapseService.getUserByOidcSub(member);
+      const result = await synapseService.getUserByOidcSub(member.oidcSub);
 
       expect(mockLoggerLogError).not.toHaveBeenCalledWith(
         'Not able to find user by oidc_sub',
@@ -104,7 +123,7 @@ describe('SynapseService', () => {
         new AxiosError(InvalidReason)
       );
 
-      const result = await synapseService.getUserByOidcSub(member);
+      const result = await synapseService.getUserByOidcSub(member.oidcSub);
 
       expect(mockLoggerLogError).toHaveBeenCalledWith(
         'Not able to find user by oidc_sub',
@@ -149,6 +168,35 @@ describe('SynapseService', () => {
         'Not able to find user by Email',
         {
           message: InvalidReason,
+        }
+      );
+
+      expect(result).toEqual(undefined);
+    });
+  });
+
+  describe('getUserInfo', () => {
+    const unknownError = 'unknown Error';
+
+    it('should get detailed user information', async () => {
+      mockCreateClient.http.authedRequest.mockResolvedValueOnce(synapseUser);
+
+      const result = await synapseService.getUserInfo(synapseUser.name);
+
+      expect(result).toEqual(synapseUser);
+    });
+
+    it('should log errors if the user information is not reterivable', async () => {
+      mockCreateClient.http.authedRequest.mockRejectedValueOnce(
+        new AxiosError(unknownError)
+      );
+
+      const result = await synapseService.getUserInfo(synapseUser.name);
+
+      expect(mockLoggerLogError).toHaveBeenCalledWith(
+        'Not able to get user information',
+        {
+          message: unknownError,
         }
       );
 
