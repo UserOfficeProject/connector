@@ -52,6 +52,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
       - name: Trigger pipeline
+        if: ${{ steps.extract_branch.outputs.branch == 'staging' }} # Only trigger on staging branch
         uses: swapActions/trigger-swap-deployment@v1
         with:
           repository: ${{ github.event.repository.name }}
