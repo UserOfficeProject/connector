@@ -7,6 +7,7 @@ import {
   createClient,
   EventType,
   MsgType,
+  RoomMember,
 } from 'matrix-js-sdk';
 
 import { produceSynapseUserId } from './produceSynapseUserId';
@@ -144,6 +145,8 @@ export class SynapseService {
 
   async invite(roomId: string, members: ProposalUser[]) {
     const invitedUsers: { userId: string; invited: boolean }[] = [];
+    const usersToBeRemoved = await this.getRoomMembers(roomId);
+
     for (const member of members) {
       const userId = await produceSynapseUserId(member, this);
       await this.client.http
@@ -168,6 +171,13 @@ export class SynapseService {
           invitedUsers.push({ userId, invited: false });
           // don't throw, we want to invite all members
         });
+      usersToBeRemoved.delete(userId);
+    }
+
+    if (usersToBeRemoved.size > 0) {
+      for (const userId of usersToBeRemoved) {
+        await this.removeUserFromRoom(roomId, userId);
+      }
     }
 
     return invitedUsers;
@@ -233,6 +243,60 @@ export class SynapseService {
       });
 
     return result;
+  }
+
+  async getRoomMembers(roomId: string): Promise<Set<string>> {
+    // Get all joined room members except service account
+    const serviceAccountSynapseId = `@${serviceAccount.userId}:${serverName}`;
+
+    const joinedRoomMembers = await this.client.http
+      .authedRequest<{ joined: Record<string, RoomMember> }>(
+        Method.Get,
+        `/rooms/${roomId}/joined_members`,
+        {},
+        undefined,
+        { prefix: CLIENT_API_PREFIX_V1 }
+      )
+      .then((response) => {
+        return new Set(
+          Object.keys(response.joined).filter(
+            (userId) => userId !== serviceAccountSynapseId
+          )
+        );
+      })
+      .catch((reason) => {
+        logger.logError('Failed to get joined room members', {
+          reason,
+          roomId,
+        });
+        throw reason;
+      });
+
+    return joinedRoomMembers;
+  }
+
+  async removeUserFromRoom(roomId: string, userId: string) {
+    return this.client.http
+      .authedRequest(
+        Method.Post,
+        `/rooms/${roomId}/kick`,
+        {},
+        { user_id: userId },
+        {
+          prefix: CLIENT_API_PREFIX_V1,
+        }
+      )
+      .then(() => {
+        logger.logInfo('Removed user from room', { roomId, userId });
+      })
+      .catch((reason) => {
+        logger.logError('Failed to remove user from room', {
+          message: reason.message,
+          roomId,
+          userId,
+        });
+        throw reason;
+      });
   }
 
   async getUserInfo(userId: string) {
