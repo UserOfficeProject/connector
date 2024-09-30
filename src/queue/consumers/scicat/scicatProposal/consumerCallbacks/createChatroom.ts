@@ -12,28 +12,7 @@ function isValidUser(user: ProposalUser) {
   return user?.oidcSub && user?.firstName && user?.lastName && user?.email;
 }
 
-async function checkUserInfo(
-  synapseService: SynapseService,
-  user: ProposalUser
-) {
-  const userId = await synapseService.getUserId(user);
-  const userInfo = userId
-    ? await synapseService.getUserInfo(userId.user_id)
-    : null;
-
-  if (!userInfo?.deactivated) {
-    return { isDeactivated: false, userExists: !!userId };
-  }
-
-  logger.logInfo('Deactivated user will not be invited to the chatroom ', {
-    user: user,
-    information: userInfo,
-  });
-
-  return { isDeactivated: true };
-}
-
-function validateUsersProfile(users: ProposalUser[]) {
+function validateUsers(users: ProposalUser[]) {
   const validUsers = [];
   const invalidUsers = [];
   for (const user of users) {
@@ -52,12 +31,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   );
   const allUsersOnProposal = [...message.members, message.proposer];
 
-  const { validUsers, invalidUsers } = validateUsersProfile(allUsersOnProposal);
-
-  // NOTE: activeUsers are users that are valid and not deactivated,
-  // deactivated users should not be invited to the chatroom.
-  const activeUsers = [];
-
+  const { validUsers, invalidUsers } = validateUsers(allUsersOnProposal);
   if (invalidUsers.length > 0) {
     logger.logError(
       'Some users will not be invited to the chatroom due to them being invalid',
@@ -67,18 +41,12 @@ const createChatroom = async (message: ValidProposalMessageData) => {
 
   for (const user of validUsers) {
     try {
-      const { isDeactivated, userExists } = await checkUserInfo(
-        synapseService,
-        user
-      );
-      if (!isDeactivated) {
-        activeUsers.push(user);
+      const userExists = await synapseService.userExists(user);
 
-        if (!userExists) {
-          await synapseService.createUser(user, defaultPassword);
-        }
-        await synapseService.updateUser(user);
+      if (!userExists) {
+        await synapseService.createUser(user, defaultPassword);
       }
+      await synapseService.updateUser(user);
     } catch (err: unknown) {
       logger.logError('Error while upserting chatroom user: ', { user, err });
     }
@@ -98,11 +66,10 @@ const createChatroom = async (message: ValidProposalMessageData) => {
       logger.logInfo('Room does not exist. Creating new room', {
         roomName: message.shortCode,
       });
-
       const result = await synapseService.createRoom(
         message.shortCode,
         message.title,
-        activeUsers
+        validUsers
       );
 
       const room = await synapseService.getRoomByName(message.shortCode);
@@ -111,7 +78,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
         room,
       });
     } else {
-      const users = await synapseService.invite(rooms[0].room_id, activeUsers);
+      const users = await synapseService.invite(rooms[0].room_id, validUsers);
       const room = await synapseService.getRoomByName(message.shortCode);
       logger.logInfo('Users invited to existing room', { room, users });
     }

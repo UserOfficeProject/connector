@@ -13,31 +13,29 @@ export async function produceSynapseUserId(
   synapseService?: SynapseService,
   skipPrePostfix: boolean = false
 ): Promise<string> {
-  // NOTE: It normalize the oidcSub to replace special characters and make it lowercase
-  // This is done to enture that the oidcSub can be used as a valid synapse user id
-  const normalizedMember = {
-    ...member,
-    oidcSub: member.oidcSub
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase(),
-  };
-
   if (synapseService) {
-    const user =
-      (await synapseService.getUserByOidcSub(normalizedMember.oidcSub)) ||
-      (await synapseService.getUserByEmail(normalizedMember.email));
+    const userIdByOidcSub = await synapseService.getUserByOidcSub(member);
+    const userIdByEmail = await synapseService.getUserByEmail(member.email);
 
-    if (user) {
+    if (userIdByOidcSub) {
       return skipPrePostfix
-        ? user.user_id.replace(/^@|:ess$/g, '')
-        : user.user_id;
+        ? userIdByOidcSub.user_id.replace(/^@|:ess$/g, '')
+        : userIdByOidcSub.user_id;
+    }
+    if (userIdByEmail) {
+      return skipPrePostfix
+        ? userIdByEmail.user_id.replace(/^@|:ess$/g, '')
+        : userIdByEmail.user_id;
     }
   }
 
+  const normalizedId = member.oidcSub
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
   if (skipPrePostfix) {
-    return normalizedMember.oidcSub;
+    return normalizedId;
   }
 
-  return `@${normalizedMember.oidcSub}:${serverName}`;
+  return `@${normalizedId}:${serverName}`;
 }
