@@ -15,7 +15,6 @@ import {
   ProposalUser,
   ChatRoom,
   UserId,
-  SynapseUser,
 } from '../../queue/consumers/scicat/scicatProposal/dto';
 
 interface MemberObject {
@@ -187,11 +186,11 @@ export class SynapseService {
 
     return response.rooms;
   }
-  async getUserByOidcSub(oidcSub: string) {
+  async getUserByOidcSub(member: ProposalUser) {
     const result = await this.client.http
       .authedRequest<UserId>(
         Method.Get,
-        `/auth_providers/${oauthIssuer}/users/${oidcSub}`,
+        `/auth_providers/${oauthIssuer}/users/${member.oidcSub}`,
         {},
         undefined,
         {
@@ -228,28 +227,6 @@ export class SynapseService {
             message: reason.message,
           });
         }
-
-        return undefined;
-      });
-
-    return result;
-  }
-
-  async getUserInfo(userId: string) {
-    const result = await this.client.http
-      .authedRequest<SynapseUser>(
-        Method.Get,
-        `/users/${userId}`,
-        {},
-        undefined,
-        {
-          prefix: ADMIN_API_PREFIX_V2,
-        }
-      )
-      .catch((reason) => {
-        logger.logError('Not able to get user information', {
-          message: reason.message,
-        });
 
         return undefined;
       });
@@ -310,16 +287,16 @@ export class SynapseService {
     return result as User;
   }
 
-  async getUserId(member: ProposalUser) {
-    const user =
-      (await this.getUserByOidcSub(member.oidcSub)) ||
-      (await this.getUserByEmail(member.email));
+  async userExists(member: ProposalUser) {
+    const userExists =
+      !!(await this.getUserByOidcSub(member)) ||
+      !!(await this.getUserByEmail(member.email));
 
-    if (!user) {
+    if (!userExists) {
       logger.logInfo('User not exists: ', { member });
     }
 
-    return user;
+    return userExists;
   }
 
   async createUser(member: ProposalUser, password: string) {

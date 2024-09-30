@@ -22,17 +22,6 @@ export default class PostgresInstrumentDataSource
         return instrument ? createInstrumentObject(instrument) : null;
       });
   }
-
-  async getByShortCode(code: string): Promise<Instrument | null> {
-    return await database(this.TABLE_NAME)
-      .where({
-        name: code,
-      })
-      .first()
-      .then((instrument: InstrumentRecord | null) => {
-        return instrument ? createInstrumentObject(instrument) : null;
-      });
-  }
   async create(
     instrument: InstrumentCreationEventPayload
   ): Promise<Instrument> {
