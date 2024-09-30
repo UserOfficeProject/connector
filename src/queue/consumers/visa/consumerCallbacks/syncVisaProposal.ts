@@ -56,7 +56,7 @@ async function deleteMissingUsersFromExperiment(
 
   for (const experimentUser of experimentUsers) {
     if (
-      !allProposalUsers.some((member) => member.email === experimentUser.email)
+      !allProposalUsers.some((member) => member.oidcSub === experimentUser.id)
     ) {
       await experimentUserDataSource.delete({
         experimentId: experiment.id,
@@ -87,7 +87,9 @@ export async function syncVisaProposal(
   }
   // Get Instrument
   for (const proposalInstrument of proposalWithNewStatus.instruments) {
-    let instrument = await instrumentDataSource.get(proposalInstrument.id);
+    let instrument = await instrumentDataSource.getByShortCode(
+      proposalInstrument.shortCode
+    );
 
     if (!instrument) {
       instrument = await instrumentDataSource.create({
