@@ -271,6 +271,7 @@ describe('SynapseService', () => {
     });
   });
 
+
   describe('getRoomMembers', () => {
     const unknownError = 'unknown Error';
 
