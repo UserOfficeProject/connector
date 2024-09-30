@@ -222,10 +222,11 @@ export class SynapseService {
   }
 
   async getUserByEmail(email: string) {
+    const lowerCaseEmail = email.toLowerCase();
     const result = await this.client.http
       .authedRequest<UserId>(
         Method.Get,
-        `/threepid/${thirdPartyId}/users/${email}`,
+        `/threepid/${thirdPartyId}/users/${lowerCaseEmail}`,
         {},
         undefined,
         {
