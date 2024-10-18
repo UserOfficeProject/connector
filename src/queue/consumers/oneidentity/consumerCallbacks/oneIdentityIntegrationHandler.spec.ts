@@ -90,6 +90,7 @@ describe('oneIdentityIntegrationHandler', () => {
         'proposal-UID_ESet',
         'member-uid'
       );
+      expect(logger.logError).not.toHaveBeenCalled();
       expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
         uidESet: 'proposal-UID_ESet',
         uidPersons: ['proposer-uid', 'member-uid'],
