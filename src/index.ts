@@ -9,7 +9,7 @@ import { Tokens } from './config/Tokens';
 import { str2Bool } from './config/utils';
 import validateEnv from './config/validateEnv';
 import healthCheck from './middlewares/healthCheck';
-import metrics from './middlewares/metrics';
+import metrics from './middlewares/metrics/metrics';
 import readinessCheck from './middlewares/readinessCheck';
 import startKafkaTopicHandling from './queue/kafkaTopicHandling';
 import startRabbitMQHandling from './queue/queueHandling';
