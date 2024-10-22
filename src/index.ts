@@ -9,6 +9,7 @@ import { Tokens } from './config/Tokens';
 import { str2Bool } from './config/utils';
 import validateEnv from './config/validateEnv';
 import healthCheck from './middlewares/healthCheck';
+import metrics from './middlewares/metrics';
 import readinessCheck from './middlewares/readinessCheck';
 import startKafkaTopicHandling from './queue/kafkaTopicHandling';
 import startRabbitMQHandling from './queue/queueHandling';
@@ -63,7 +64,7 @@ async function bootstrap() {
     Sync_Visa_Proposals: enableSyncVisaProposals,
   });
 
-  app.use(healthCheck()).use(readinessCheck());
+  app.use(metrics).use(healthCheck()).use(readinessCheck());
 
   app.listen(PORT);
 
