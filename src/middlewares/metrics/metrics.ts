@@ -1,11 +1,7 @@
 import express, { Request, Response } from 'express';
-import promClient from 'prom-client';
-
-const collectDefaultMetrics = promClient.collectDefaultMetrics;
+import { collectDefaultMetrics, register } from 'prom-client';
 
 collectDefaultMetrics();
-
-const register = promClient.register;
 
 const router = express.Router();
 
