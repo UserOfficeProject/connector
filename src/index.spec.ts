@@ -8,6 +8,7 @@ jest.mock('express', () => {
 });
 
 jest.mock('@user-office-software/duo-logger');
+jest.mock('./middlewares/metrics/metrics', () => jest.fn());
 jest.mock('./middlewares/healthCheck', () => jest.fn());
 jest.mock('./middlewares/readinessCheck', () => jest.fn());
 jest.mock('tsyringe');
