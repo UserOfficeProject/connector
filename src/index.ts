@@ -64,7 +64,7 @@ async function bootstrap() {
     Sync_Visa_Proposals: enableSyncVisaProposals,
   });
 
-  app.use(metrics).use(healthCheck()).use(readinessCheck());
+  app.use(metrics).use(healthCheck).use(readinessCheck);
 
   app.listen(PORT);
 

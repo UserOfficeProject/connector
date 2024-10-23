@@ -9,6 +9,4 @@ router.get('/health', (req: Request, res: Response) => {
   res.status(200).send(JSON.stringify(body));
 });
 
-export default function () {
-  return router;
-}
+export default router;
