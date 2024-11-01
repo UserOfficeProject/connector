@@ -2,11 +2,13 @@ import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../models/Event';
+import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../QueueConsumer';
 import { hasTriggeringStatus } from '../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../utils/hasTriggeringType';
 import { validateProposalMessage } from '../../utils/validateProposalMessage';
 import { syncVisaProposal } from '../consumerCallbacks/syncVisaProposal';
+import { sanitizeProposalMessage } from '../utils/sanitizeProposalMessage';
 
 const EVENTS_FOR_HANDLING = [
   Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
@@ -40,7 +42,10 @@ export class SyncProposalQueueConsumer extends QueueConsumer {
     if (!hasStatus) {
       return;
     }
-    const proposalMessage = validateProposalMessage(message);
+
+    const proposalMessage = validateProposalMessage(
+      sanitizeProposalMessage(message as ProposalMessageData)
+    );
 
     await syncVisaProposal(proposalMessage);
   };

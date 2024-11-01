@@ -81,6 +81,14 @@ async function handleConnectionsBetweenProposalAndPersons(
   const userPersonConnections = await oneIdentity.getPersons(users);
   const uidPersons = getUidPersons(userPersonConnections);
 
+  // Log an error if not all users are found in One Identity to be able to investigate
+  if (uidPersons.length !== users.length) {
+    logger.logError('Not all users found in One Identity (investigate)', {
+      users,
+      uidPersons,
+    });
+  }
+
   logger.logInfo('Found persons in One Identity', { uidPersons });
 
   // Get all connections between UID_ESet and UID_Person

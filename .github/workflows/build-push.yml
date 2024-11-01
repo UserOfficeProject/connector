@@ -40,7 +40,9 @@ jobs:
         with:
           images: ghcr.io/userofficeproject/connector
           flavor: latest=true # adds :latest tag to outputs.tags
-          tags: type=sha,format=long,prefix= # adds :<sha> tag to outputs.tags.
+          tags: | # adds :<sha> tag to outputs.tags
+            type=sha,format=long,prefix=
+            type=raw,value=${{ steps.extract_branch.outputs.branch }}
 
       - name: Build and push
         id: docker_build

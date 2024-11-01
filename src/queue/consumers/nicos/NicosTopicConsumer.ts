@@ -1,8 +1,8 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import ConsumerService from '../KafkaConsumer';
 import { postNicosMessage } from './consumerCallbacks/postNicosMessage';
 import { validateNicosMessage } from './utils/validateNicosMessage';
-import ConsumerService from '../KafkaConsumer';
 
 export class TopicSciChatConsumer {
   constructor(private _consumer: ConsumerService) {}

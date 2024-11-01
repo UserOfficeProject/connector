@@ -12,6 +12,7 @@ import {
   ESSOneIdentity,
   PersonHasESETValues,
   UID_ESet,
+  UserPersonConnection,
 } from '../utils/ESSOneIdentity';
 
 const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
@@ -29,22 +30,25 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
 const setupMocks = (data: {
   getProposal: UID_ESet | undefined;
   getProposalPersonConnections?: PersonHasESETValues[];
+  getPersons?: UserPersonConnection[];
 }) => {
   mockOneIdentity.createProposal.mockResolvedValueOnce('proposal-UID_ESet');
   mockOneIdentity.getProposal.mockResolvedValueOnce(data.getProposal);
   mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce(
     data.getProposalPersonConnections ?? []
   );
-  mockOneIdentity.getPersons.mockResolvedValueOnce([
-    {
-      email: 'proposer@email',
-      uidPerson: 'proposer-uid',
-    },
-    {
-      email: 'member@email',
-      uidPerson: 'member-uid',
-    },
-  ]);
+  mockOneIdentity.getPersons.mockResolvedValueOnce(
+    data.getPersons ?? [
+      {
+        email: 'proposer@email',
+        uidPerson: 'proposer-uid',
+      },
+      {
+        email: 'member@email',
+        uidPerson: 'member-uid',
+      },
+    ]
+  );
 };
 
 const proposalMessage = {
@@ -86,11 +90,38 @@ describe('oneIdentityIntegrationHandler', () => {
         'proposal-UID_ESet',
         'member-uid'
       );
+      expect(logger.logError).not.toHaveBeenCalled();
       expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
         uidESet: 'proposal-UID_ESet',
         uidPersons: ['proposer-uid', 'member-uid'],
       });
       expect(mockOneIdentity.logout).toHaveBeenCalled();
+    });
+
+    it('should log error if some of the users are not found in One Identity', async () => {
+      setupMocks({
+        getProposal: undefined,
+        getProposalPersonConnections: [],
+        getPersons: [
+          {
+            email: 'proposer@email',
+            uidPerson: 'proposer-uid',
+          },
+        ],
+      });
+
+      await oneIdentityIntegrationHandler(
+        proposalMessage,
+        Event.PROPOSAL_ACCEPTED
+      );
+
+      expect(logger.logError).toHaveBeenCalledWith(
+        'Not all users found in One Identity (investigate)',
+        {
+          users: [{ email: 'member@email' }, { email: 'proposer@email' }],
+          uidPersons: ['proposer-uid'],
+        }
+      );
     });
 
     describe('when proposal already exists in One Identity (Retry logic)', () => {
