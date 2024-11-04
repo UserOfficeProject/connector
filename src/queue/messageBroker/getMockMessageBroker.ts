@@ -37,7 +37,7 @@ class MockMessageBroker implements MessageBroker {
   sendBroadcast(queue: Queue, type: string, message: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
-  listenOn(queue: Queue, cb: ConsumerCallback): void {
+  listenOn(queue: Queue, cb: ConsumerCallback): Promise<void> {
     throw new Error('Method not implemented.');
   }
   listenOnBroadcast(cb: ConsumerCallback): void {
