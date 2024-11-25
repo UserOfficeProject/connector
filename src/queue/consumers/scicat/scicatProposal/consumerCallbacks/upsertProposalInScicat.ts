@@ -160,7 +160,13 @@ const checkProposalExists = async (
       },
     },
     true
-  );
+  ).catch((error) => {
+    const parsedError = JSON.parse(error.message.match(/\{.*\}/)?.[0] || '{}');
+    if (parsedError.statusCode === 404) {
+      return false;
+    }
+    throw error;
+  });
 
   if (fetchedProposalDataAsText) {
     return true;
