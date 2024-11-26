@@ -27,7 +27,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.13",
     "@types/knex": "^0.16.1",
-    "@types/node": "^22.7.7",
+    "@types/node": "^22.9.0",
     "@types/pg": "^8.11.10",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.18.0",
@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@user-office-software/duo-logger": "^2.2.1",
-    "@user-office-software/duo-message-broker": "^1.6.0",
+    "@user-office-software/duo-message-broker": "^1.7.0",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
