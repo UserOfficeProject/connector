@@ -10,20 +10,15 @@ const sciCatPassword = process.env.SCICAT_PASSWORD;
 
 async function request<TResponse>(
   url: string,
-  config: RequestInit,
-  fetchAsPlainText = false
+  config: RequestInit
 ): Promise<TResponse> {
   // NOTE: Node v18 comes with fetch API by default
   const response = await fetch(url, config);
 
   if (!response.ok) {
-    return response.text().then((text) => {
-      throw new Error(`An error occurred while sending the request: ${text}`);
+    return response.text().then((errorDetail) => {
+      throw new Error(errorDetail);
     });
-  }
-
-  if (fetchAsPlainText) {
-    return (await response.text()) as TResponse;
   }
 
   return (await response.json()) as TResponse;
@@ -151,28 +146,20 @@ const checkProposalExists = async (
 ) => {
   // NOTE: Get proposal by id in scicat-backend-next returns 200 always even if proposal does not exist. This is why we check if there is something in the body.
   const url = `${sciCatBaseUrl}/Proposals/${proposalId}`;
-  const fetchedProposalDataAsText = await request<string>(
-    url,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sciCatAccessToken}`,
-      },
+  await request<string>(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sciCatAccessToken}`,
     },
-    true
-  ).catch((error) => {
-    const parsedError = JSON.parse(error.message.match(/\{.*\}/)?.[0] || '{}');
+  }).catch((error) => {
+    const parsedError = JSON.parse(error.message || {});
     if (parsedError.statusCode === 404) {
       return false;
     }
     throw error;
   });
 
-  if (fetchedProposalDataAsText) {
-    return true;
-  } else {
-    return false;
-  }
+  return true;
 };
 
 const upsertProposalInScicat = async (
