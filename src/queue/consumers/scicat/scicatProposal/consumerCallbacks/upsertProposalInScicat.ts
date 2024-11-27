@@ -144,7 +144,6 @@ const checkProposalExists = async (
   proposalId: string,
   sciCatAccessToken: string
 ) => {
-  // NOTE: Get proposal by id in scicat-backend-next returns 200 always even if proposal does not exist. This is why we check if there is something in the body.
   const url = `${sciCatBaseUrl}/Proposals/${proposalId}`;
   const response = await request<string>(url, {
     headers: {
