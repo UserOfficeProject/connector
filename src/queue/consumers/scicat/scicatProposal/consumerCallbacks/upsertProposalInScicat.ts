@@ -151,9 +151,16 @@ const checkProposalExists = async (
       Authorization: `Bearer ${sciCatAccessToken}`,
     },
   }).catch((error) => {
-    const parsedError = JSON.parse(error.message || '{}');
-    if (parsedError.statusCode === 404) {
-      return false;
+    try {
+      const parsedError = JSON.parse(error.message);
+      if (parsedError.statusCode === 404) {
+        return false;
+      }
+    } catch (reason) {
+      logger.logError('Error parsing error message', {
+        error,
+        reason,
+      });
     }
     throw error;
   });
