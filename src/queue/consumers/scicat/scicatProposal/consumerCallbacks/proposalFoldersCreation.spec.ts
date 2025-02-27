@@ -85,7 +85,7 @@ describe('proposalFoldersCreation', () => {
 
     expect(exec).toHaveBeenCalledTimes(1);
     expect(exec).toHaveBeenCalledWith(
-      'command shortcode 2024 shortCode group_prefix_shortCode test.proposer@email.com test.member@email.com',
+      'command shortcode 2025 shortCode group_prefix_shortCode test.proposer@email.com test.member@email.com',
       expect.any(Function)
     );
   });
