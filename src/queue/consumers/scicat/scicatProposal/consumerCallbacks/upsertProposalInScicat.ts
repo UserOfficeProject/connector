@@ -157,7 +157,10 @@ const checkProposalExists = async (
         return false;
       }
     } catch (reason) {
-      logger.logError('Error parsing error message', { reason });
+      logger.logError('Error parsing error message', {
+        error,
+        reason,
+      });
     }
     throw error;
   });
