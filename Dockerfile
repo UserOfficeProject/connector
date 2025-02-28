@@ -1,4 +1,4 @@
-FROM node:18-alpine AS build-stage
+FROM node:22-alpine AS build-stage
 
 USER node
 
@@ -14,7 +14,7 @@ COPY --chown=node:node . .
 
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:22-alpine
 
 USER node
 
