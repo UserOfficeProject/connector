@@ -40,11 +40,11 @@ const setupMocks = (data: {
   mockOneIdentity.getPersons.mockResolvedValueOnce(
     data.getPersons ?? [
       {
-        email: 'proposer@email',
+        oidcSub: 'proposer-oidc-sub',
         uidPerson: 'proposer-uid',
       },
       {
-        email: 'member@email',
+        oidcSub: 'member-oidc-sub',
         uidPerson: 'member-uid',
       },
     ]
@@ -53,8 +53,8 @@ const setupMocks = (data: {
 
 const proposalMessage = {
   shortCode: 'shortCode',
-  proposer: { email: 'proposer@email' },
-  members: [{ email: 'member@email' }],
+  proposer: { oidcSub: 'proposer-oidc-sub' },
+  members: [{ oidcSub: 'member-oidc-sub' }],
 } as ProposalMessageData;
 
 describe('oneIdentityIntegrationHandler', () => {
@@ -104,7 +104,7 @@ describe('oneIdentityIntegrationHandler', () => {
         getProposalPersonConnections: [],
         getPersons: [
           {
-            email: 'proposer@email',
+            oidcSub: 'proposer-oidc-sub',
             uidPerson: 'proposer-uid',
           },
         ],
@@ -118,7 +118,10 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(logger.logError).toHaveBeenCalledWith(
         'Not all users found in One Identity (investigate)',
         {
-          users: [{ email: 'member@email' }, { email: 'proposer@email' }],
+          users: [
+            { oidcSub: 'member-oidc-sub' },
+            { oidcSub: 'proposer-oidc-sub' },
+          ],
           uidPersons: ['proposer-uid'],
         }
       );

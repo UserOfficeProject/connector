@@ -106,7 +106,7 @@ function getUidPersons(
 ): UID_Person[] {
   return userPersonConnections
     .filter(
-      (connection): connection is { email: string; uidPerson: UID_Person } =>
+      (connection): connection is { oidcSub: string; uidPerson: UID_Person } =>
         connection.uidPerson !== undefined
     )
     .map(({ uidPerson }) => uidPerson);
