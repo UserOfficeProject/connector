@@ -113,18 +113,17 @@ describe('ESSOneIdentity', () => {
       ]);
 
       const result = await essOneIdentity.getPerson({
-        email: 'foo@email',
+        oidcSub: '0000-0000-0000-0000',
       });
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'Person',
-        "ContactEmail='foo@email' OR DefaultEmailAddress='foo@email'"
+        "CentralAccount='0000-0000-0000-0000'"
       );
       expect(result).toEqual({ UID_Person: 'person-uid' });
     });
 
-    // Currently, the ContactEmail field is not unique in the 1IM.Person table.
-    // This means that it is possible to have multiple persons with the same email.
+    // The CentralAccount is unique, but the response is an array of entities
     it('should return the first person if multiple persons are found', async () => {
       mockOneIdentityApi.getEntities.mockResolvedValueOnce([
         {
@@ -140,7 +139,7 @@ describe('ESSOneIdentity', () => {
       ]);
 
       const result = await essOneIdentity.getPerson({
-        email: 'foo@email',
+        oidcSub: '0000-0000-0000-0000',
       });
 
       expect(result).toEqual({ UID_Person: 'person-1-uid' });
@@ -152,8 +151,7 @@ describe('ESSOneIdentity', () => {
       mockOneIdentityApi.getEntities.mockImplementation((table, filter) => {
         if (
           table === 'Person' &&
-          filter ===
-            "ContactEmail='unknown-email' OR DefaultEmailAddress='unknown-email'"
+          filter === "CentralAccount='unknown-oidc-sub'"
         )
           return Promise.resolve([]);
         else
@@ -168,20 +166,20 @@ describe('ESSOneIdentity', () => {
 
       const result = await essOneIdentity.getPersons([
         {
-          email: 'unknown-email',
+          oidcSub: 'unknown-oidc-sub',
         } as ProposalUser,
         {
-          email: 'known-email',
+          oidcSub: 'known-oidc-sub',
         } as ProposalUser,
       ]);
 
       expect(result).toEqual([
         {
-          email: 'unknown-email',
+          oidcSub: 'unknown-oidc-sub',
           uidPerson: undefined,
         },
         {
-          email: 'known-email',
+          oidcSub: 'known-oidc-sub',
           uidPerson: 'known-person-uid',
         },
       ]);

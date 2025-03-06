@@ -29,7 +29,7 @@ export interface PersonHasESETValues {
 }
 
 export interface UserPersonConnection {
-  email: string;
+  oidcSub: string;
   uidPerson: UID_Person | undefined;
 }
 
@@ -95,15 +95,13 @@ export class ESSOneIdentity {
   }
 
   public async getPerson(
-    user: Pick<ProposalUser, 'email'>
+    user: Pick<ProposalUser, 'oidcSub'>
   ): Promise<PersonValues | undefined> {
     const entities = await this.oneIdentityApi.getEntities<PersonValues>(
       'Person',
-      `ContactEmail='${user.email}' OR DefaultEmailAddress='${user.email}'` // ContactEmail is for scienceusers, DefaultEmailAddress is for ESS employees
+      `CentralAccount='${user.oidcSub}'`
     );
 
-    // In theory there should be only one person with the same email, but the 1IM.Person table has no unique constraint on ContactEmail.
-    // We can't control this, so we just take the first one.
     return entities[0]?.values;
   }
 
@@ -116,7 +114,7 @@ export class ESSOneIdentity {
         .map(async (user) => {
           const uidPerson = (await this.getPerson(user))?.UID_Person;
 
-          return { email: user.email, uidPerson };
+          return { oidcSub: user.oidcSub, uidPerson };
         })
     );
   }
