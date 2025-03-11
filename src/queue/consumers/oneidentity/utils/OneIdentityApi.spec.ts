@@ -47,6 +47,23 @@ describe('OneIdentityApi', () => {
         }
       );
     });
+
+    it('should throw error when no cookie is set', async () => {
+      (axios.post as jest.Mock).mockResolvedValueOnce({
+        headers: {},
+      });
+
+      await expect(api.login('user', 'password')).rejects.toThrow(
+        'No cookie set'
+      );
+    });
+
+    it('should handle API errors during login', async () => {
+      const errorMessage = 'Authentication failed';
+      (axios.post as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+
+      await expect(api.login('user', 'password')).rejects.toThrow(errorMessage);
+    });
   });
 
   describe('logout', () => {
@@ -96,6 +113,26 @@ describe('OneIdentityApi', () => {
       await api.deleteEntity('testTable', '1');
 
       expect(axios.delete).toHaveBeenCalledWith('/entity/testTable/1');
+    });
+  });
+
+  describe('callScript', () => {
+    it('should call script successfully', async () => {
+      const mockResponse = {
+        IsSuccess: true,
+        Data: [{ id: 1, name: 'test' }],
+        Message: 'Success',
+      };
+      (axios.put as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+
+      const scriptName = 'TestScript';
+      const parameters = ['param1', 'param2'];
+      const result = await api.callScript(scriptName, parameters);
+
+      expect(axios.put).toHaveBeenCalledWith('/script/TestScript', {
+        parameters: ['param1', 'param2'],
+      });
+      expect(result).toEqual(mockResponse);
     });
   });
 });
