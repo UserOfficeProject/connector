@@ -265,7 +265,7 @@ describe('ESSOneIdentity', () => {
     });
   });
 
-  describe('createSiteAccess', () => {
+  describe('createPersonWantsOrg', () => {
     const role = PersonWantsOrgRole.SITE_ACCESS;
     const centralAccount = 'user123';
     const startDate = '2023-01-01';
@@ -285,7 +285,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      const result = await essOneIdentity.createSiteAccess(
+      const result = await essOneIdentity.createPersonWantsOrg(
         role,
         centralAccount,
         startDate,
@@ -307,7 +307,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      const result = await essOneIdentity.createSiteAccess(
+      const result = await essOneIdentity.createPersonWantsOrg(
         role,
         centralAccount,
         startDate,
@@ -339,7 +339,7 @@ describe('ESSOneIdentity', () => {
       });
 
       await expect(
-        essOneIdentity.createSiteAccess(
+        essOneIdentity.createPersonWantsOrg(
           role,
           centralAccount,
           startDate,
@@ -353,7 +353,7 @@ describe('ESSOneIdentity', () => {
     });
   });
 
-  describe('cancelSiteAccess', () => {
+  describe('cancelPersonWantsOrg', () => {
     const uidPersonWantsOrg = 'pwo-123';
 
     it('should successfully cancel site access', async () => {
@@ -362,7 +362,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      await essOneIdentity.cancelSiteAccess(uidPersonWantsOrg);
+      await essOneIdentity.cancelPersonWantsOrg(uidPersonWantsOrg);
 
       expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
         'SCProposalSiteAccessCancel',
@@ -378,7 +378,7 @@ describe('ESSOneIdentity', () => {
       });
 
       await expect(
-        essOneIdentity.cancelSiteAccess(uidPersonWantsOrg)
+        essOneIdentity.cancelPersonWantsOrg(uidPersonWantsOrg)
       ).rejects.toThrow(`Failed to cancel site access:${errorMessage}`);
       expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
         'SCProposalSiteAccessCancel',

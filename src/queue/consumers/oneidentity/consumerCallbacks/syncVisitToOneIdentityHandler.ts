@@ -65,7 +65,7 @@ async function createAccessInOneIdentity(
   centralAccount: string
 ) {
   // Create site access
-  const [pwo] = await oneIdentity.createSiteAccess(
+  const [pwo] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
     startAt,
@@ -74,7 +74,7 @@ async function createAccessInOneIdentity(
 
   // Create system access
   // It starts when the message arrives and ends 30 days after the site access ends
-  await oneIdentity.createSiteAccess(
+  await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
     toIsoString(Date.now()),
@@ -122,8 +122,8 @@ async function removeAccessFromOneIdentity(
   }
 
   // Cancel site and system access
-  await oneIdentity.cancelSiteAccess(siteAccess.UID_PersonWantsOrg);
-  await oneIdentity.cancelSiteAccess(systemAccess.UID_PersonWantsOrg);
+  await oneIdentity.cancelPersonWantsOrg(siteAccess.UID_PersonWantsOrg);
+  await oneIdentity.cancelPersonWantsOrg(systemAccess.UID_PersonWantsOrg);
 }
 
 function toIsoString(date: string | number) {

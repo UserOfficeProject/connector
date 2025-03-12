@@ -144,7 +144,7 @@ export class ESSOneIdentity {
     return entities.map(({ values }) => values);
   }
 
-  public async createSiteAccess(
+  public async createPersonWantsOrg(
     role: PersonWantsOrgRole,
     centralAccount: string,
     startDate: string,
@@ -171,7 +171,7 @@ export class ESSOneIdentity {
     return res.Data;
   }
 
-  public async cancelSiteAccess(uidPersonWantsOrg: string): Promise<void> {
+  public async cancelPersonWantsOrg(uidPersonWantsOrg: string): Promise<void> {
     const res =
       await this.oneIdentityApi.callScript<SCProposalSiteAccessCancelResponse>(
         'SCProposalSiteAccessCancel',

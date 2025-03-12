@@ -34,8 +34,8 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   connectPersonToProposal: jest.fn(),
   getProposalPersonConnections: jest.fn(),
   removeConnectionBetweenPersonAndProposal: jest.fn(),
-  createSiteAccess: jest.fn(),
-  cancelSiteAccess: jest.fn(),
+  createPersonWantsOrg: jest.fn(),
+  cancelPersonWantsOrg: jest.fn(),
 };
 
 const visitMessage: VisitMessage = {
@@ -69,7 +69,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         'Visitor is not a Science User, skipping',
         {}
       );
-      expect(mockOneIdentity.createSiteAccess).not.toHaveBeenCalled();
+      expect(mockOneIdentity.createPersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
   });
@@ -89,8 +89,8 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
 
-      // Mock createSiteAccess to return a specific value for the first call
-      mockOneIdentity.createSiteAccess.mockImplementationOnce(() =>
+      // Mock createPersonWantsOrg to return a specific value for the first call
+      mockOneIdentity.createPersonWantsOrg.mockImplementationOnce(() =>
         Promise.resolve([
           { UID_PersonWantsOrg: 'site-access-uid' } as PersonWantsOrg,
         ])
@@ -108,8 +108,8 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify site access creation
-      expect(mockOneIdentity.createSiteAccess).toHaveBeenCalledTimes(2);
-      expect(mockOneIdentity.createSiteAccess).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenCalledTimes(2);
+      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
         PersonWantsOrgRole.SITE_ACCESS,
         visitMessage.visitorId,
@@ -118,7 +118,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify system access creation with the current time and extended end date
-      expect(mockOneIdentity.createSiteAccess).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
         visitMessage.visitorId,
@@ -180,12 +180,12 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.getPersonWantsOrg).toHaveBeenCalledWith(
         'visitor-uid'
       );
-      expect(mockOneIdentity.cancelSiteAccess).toHaveBeenCalledTimes(2);
-      expect(mockOneIdentity.cancelSiteAccess).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledTimes(2);
+      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
         'site-access-uid'
       );
-      expect(mockOneIdentity.cancelSiteAccess).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         'system-access-uid'
       );
@@ -212,7 +212,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         {}
       );
       expect(mockOneIdentity.getPersonWantsOrg).not.toHaveBeenCalled();
-      expect(mockOneIdentity.cancelSiteAccess).not.toHaveBeenCalled();
+      expect(mockOneIdentity.cancelPersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
@@ -230,7 +230,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         oidcSub: 'visitor-oidc-sub',
       });
       expect(mockOneIdentity.getPersonWantsOrg).not.toHaveBeenCalled();
-      expect(mockOneIdentity.cancelSiteAccess).not.toHaveBeenCalled();
+      expect(mockOneIdentity.cancelPersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
