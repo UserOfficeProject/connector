@@ -5,7 +5,7 @@ jest.mock('../QueueConsumer', () => ({
   })),
 }));
 jest.mock('./consumerCallbacks/syncProposalAndMembersToOneIdentityHandler');
-jest.mock('./consumerCallbacks/syncVisitorToOneIdentityHandler');
+jest.mock('./consumerCallbacks/syncVisitToOneIdentityHandler');
 jest.mock('axios', () => ({
   isAxiosError: jest.fn(),
 }));
@@ -16,9 +16,9 @@ import { MessageProperties } from 'amqplib';
 import { isAxiosError } from 'axios';
 
 import { syncProposalAndMembersToOneIdentityHandler } from './consumerCallbacks/syncProposalAndMembersToOneIdentityHandler';
-import { syncVisitorToOneIdentityHandler } from './consumerCallbacks/syncVisitorToOneIdentityHandler';
+import { syncVisitToOneIdentityHandler } from './consumerCallbacks/syncVisitToOneIdentityHandler';
 import { OneIdentityIntegrationQueueConsumer } from './OneIdentityIntegrationQueueConsumer';
-import { VisitorMessage } from './utils/interfaces/VisitorMessage';
+import { VisitMessage } from './utils/interfaces/VisitMessage';
 import { Event } from '../../../models/Event';
 import { ProposalMessageData } from '../../../models/ProposalMessage';
 
@@ -160,22 +160,22 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
       });
     });
 
-    describe('syncVisitorToOneIdentityHandler', () => {
-      it('should call syncVisitorToOneIdentityHandler and log message handled', async () => {
+    describe('syncVisitToOneIdentityHandler', () => {
+      it('should call syncVisitToOneIdentityHandler and log message handled', async () => {
         const message = {
           visitorId: 'visitor-id',
           startAt: '2021-01-01T00:00:00Z',
           endAt: '2021-01-02T00:00:00Z',
-        } as VisitorMessage;
-        const type = Event.VISITOR_CREATED;
+        } as VisitMessage;
+        const type = Event.VISIT_CREATED;
 
-        jest.mock('./utils/validateVisitorMessage', () => ({
-          validateVisitorMessage: jest.fn().mockReturnValue(message),
+        jest.mock('./utils/validateVisitMessage', () => ({
+          validateVisitMessage: jest.fn().mockReturnValue(message),
         }));
 
         await consumer.onMessage(type, message as any, {} as MessageProperties);
 
-        expect(syncVisitorToOneIdentityHandler).toHaveBeenCalledWith(
+        expect(syncVisitToOneIdentityHandler).toHaveBeenCalledWith(
           message,
           type
         );
@@ -198,13 +198,13 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         expect(logger.logException).not.toHaveBeenCalled();
       });
 
-      it('should log exception with Axios error details when syncVisitorToOneIdentityHandler throws an Axios error', async () => {
+      it('should log exception with Axios error details when syncVisitToOneIdentityHandler throws an Axios error', async () => {
         const message = {
           visitorId: 'visitor-id',
           startAt: '2021-01-01T00:00:00Z',
           endAt: '2021-01-02T00:00:00Z',
-        } as VisitorMessage;
-        const type = Event.VISITOR_CREATED;
+        } as VisitMessage;
+        const type = Event.VISIT_CREATED;
 
         const axiosError = new Error('Axios Error');
         const mockResponse = {
@@ -218,12 +218,12 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
           response: mockResponse,
         });
 
-        jest.mock('./utils/validateVisitorMessage', () => ({
-          validateVisitorMessage: jest.fn().mockReturnValue(message),
+        jest.mock('./utils/validateVisitMessage', () => ({
+          validateVisitMessage: jest.fn().mockReturnValue(message),
         }));
 
         (isAxiosError as unknown as jest.Mock).mockReturnValueOnce(true);
-        (syncVisitorToOneIdentityHandler as jest.Mock) = jest
+        (syncVisitToOneIdentityHandler as jest.Mock) = jest
           .fn()
           .mockRejectedValueOnce(axiosError);
 

@@ -7,10 +7,10 @@ import {
   OrderState,
   PersonWantsOrgRole,
 } from '../utils/interfaces/PersonWantsOrg';
-import { VisitorMessage } from '../utils/interfaces/VisitorMessage';
+import { VisitMessage } from '../utils/interfaces/VisitMessage';
 
-export async function syncVisitorToOneIdentityHandler(
-  { startAt, endAt, visitorId }: VisitorMessage,
+export async function syncVisitToOneIdentityHandler(
+  { startAt, endAt, visitorId }: VisitMessage,
   type: Event
 ): Promise<void> {
   const oneIdentity = new ESSOneIdentity();
@@ -27,9 +27,9 @@ export async function syncVisitorToOneIdentityHandler(
       return;
     }
 
-    if (type === Event.VISITOR_CREATED) {
+    if (type === Event.VISIT_CREATED) {
       await createAccessInOneIdentity(oneIdentity, startAt, endAt, visitorId);
-    } else if (type === Event.VISITOR_DELETED) {
+    } else if (type === Event.VISIT_DELETED) {
       await removeAccessFromOneIdentity(oneIdentity, startAt, endAt, uidPerson);
     }
   } finally {
@@ -73,7 +73,7 @@ async function createAccessInOneIdentity(
   );
 
   // Create system access
-  // It starts when the message arrives and ends 30 days after the visitor leaves
+  // It starts when the message arrives and ends 30 days after the site access ends
   await oneIdentity.createSiteAccess(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,

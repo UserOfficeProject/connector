@@ -1,19 +1,19 @@
-import { validateVisitorMessage } from './validateVisitorMessage';
+import { validateVisitMessage } from './validateVisitMessage';
 
-describe('validateVisitorMessage', () => {
+describe('validateVisitMessage', () => {
   it('should throw an error if message is not an object', () => {
     const message = 'not an object';
 
-    expect(() => validateVisitorMessage(message)).toThrow(
-      'Invalid Visitor message'
+    expect(() => validateVisitMessage(message)).toThrow(
+      'Invalid Visit message'
     );
   });
 
   it('should throw an error if message is null', () => {
     const message = null;
 
-    expect(() => validateVisitorMessage(message)).toThrow(
-      'Invalid Visitor message'
+    expect(() => validateVisitMessage(message)).toThrow(
+      'Invalid Visit message'
     );
   });
 
@@ -23,8 +23,8 @@ describe('validateVisitorMessage', () => {
       endAt: '2023-01-02T00:00:00Z',
     };
 
-    expect(() => validateVisitorMessage(message)).toThrow(
-      'Invalid Visitor message'
+    expect(() => validateVisitMessage(message)).toThrow(
+      'Invalid Visit message'
     );
   });
 
@@ -34,8 +34,8 @@ describe('validateVisitorMessage', () => {
       endAt: '2023-01-02T00:00:00Z',
     };
 
-    expect(() => validateVisitorMessage(message)).toThrow(
-      'Invalid Visitor message'
+    expect(() => validateVisitMessage(message)).toThrow(
+      'Invalid Visit message'
     );
   });
 
@@ -45,8 +45,8 @@ describe('validateVisitorMessage', () => {
       startAt: '2023-01-01T00:00:00Z',
     };
 
-    expect(() => validateVisitorMessage(message)).toThrow(
-      'Invalid Visitor message'
+    expect(() => validateVisitMessage(message)).toThrow(
+      'Invalid Visit message'
     );
   });
 
@@ -57,6 +57,6 @@ describe('validateVisitorMessage', () => {
       endAt: '2023-01-02T00:00:00Z',
     };
 
-    expect(validateVisitorMessage(message)).toEqual(message);
+    expect(validateVisitMessage(message)).toEqual(message);
   });
 });

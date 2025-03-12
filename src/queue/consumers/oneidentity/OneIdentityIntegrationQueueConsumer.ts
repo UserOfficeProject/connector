@@ -3,12 +3,12 @@ import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 import { isAxiosError } from 'axios';
 
 import { syncProposalAndMembersToOneIdentityHandler } from './consumerCallbacks/syncProposalAndMembersToOneIdentityHandler';
-import { syncVisitorToOneIdentityHandler } from './consumerCallbacks/syncVisitorToOneIdentityHandler';
+import { syncVisitToOneIdentityHandler } from './consumerCallbacks/syncVisitToOneIdentityHandler';
 import { validateProposalMessage } from './utils/validateProposalMessage';
 import { Event } from '../../../models/Event';
 import { QueueConsumer } from '../QueueConsumer';
 import { hasTriggeringType } from '../utils/hasTriggeringType';
-import { validateVisitorMessage } from './utils/validateVisitorMessage';
+import { validateVisitMessage } from './utils/validateVisitMessage';
 
 const ONE_IDENTITY_INTEGRATION_QUEUE_NAME =
   process.env.ONE_IDENTITY_INTEGRATION_QUEUE_NAME || '';
@@ -21,10 +21,10 @@ const SYNC_PROPOSAL_AND_MEMBERS_EVENTS_FOR_HANDLING = [
   Event.PROPOSAL_UPDATED,
 ];
 
-// Events that trigger the handling of syncing visitors to One Identity
-const SYNC_VISITOR_EVENTS_FOR_HANDLING = [
-  Event.VISITOR_CREATED,
-  Event.VISITOR_DELETED,
+// Events that trigger the handling of syncing visits to One Identity
+const SYNC_VISIT_EVENTS_FOR_HANDLING = [
+  Event.VISIT_CREATED,
+  Event.VISIT_DELETED,
 ];
 
 // Class for consuming messages from the ESS One Identity Integration Queue
@@ -43,12 +43,12 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
       eventType,
       SYNC_PROPOSAL_AND_MEMBERS_EVENTS_FOR_HANDLING
     );
-    const isVisitorEvent = hasTriggeringType(
+    const isVisitEvent = hasTriggeringType(
       eventType,
-      SYNC_VISITOR_EVENTS_FOR_HANDLING
+      SYNC_VISIT_EVENTS_FOR_HANDLING
     );
 
-    if (!isProposalEvent && !isVisitorEvent) return;
+    if (!isProposalEvent && !isVisitEvent) return;
 
     logger.logInfo('OneIdentityIntegrationQueueConsumer', {
       type,
@@ -62,9 +62,9 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
           proposalMessage,
           eventType
         );
-      } else if (isVisitorEvent) {
-        const visitorMessage = validateVisitorMessage(message);
-        await syncVisitorToOneIdentityHandler(visitorMessage, eventType);
+      } else if (isVisitEvent) {
+        const visitMessage = validateVisitMessage(message);
+        await syncVisitToOneIdentityHandler(visitMessage, eventType);
       }
 
       logger.logInfo('Message handled by OneIdentityIntegrationQueueConsumer', {

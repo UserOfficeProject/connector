@@ -12,7 +12,7 @@ jest.mock('../utils/ESSOneIdentity', () => ({
 
 import { logger } from '@user-office-software/duo-logger';
 
-import { syncVisitorToOneIdentityHandler } from './syncVisitorToOneIdentityHandler';
+import { syncVisitToOneIdentityHandler } from './syncVisitToOneIdentityHandler';
 import { Event } from '../../../../models/Event';
 import { ESSOneIdentity } from '../utils/ESSOneIdentity';
 import { IdentityType, Person } from '../utils/interfaces/Person';
@@ -21,7 +21,7 @@ import {
   PersonWantsOrg,
   PersonWantsOrgRole,
 } from '../utils/interfaces/PersonWantsOrg';
-import { VisitorMessage } from '../utils/interfaces/VisitorMessage';
+import { VisitMessage } from '../utils/interfaces/VisitMessage';
 
 const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   login: jest.fn(),
@@ -38,13 +38,13 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   cancelSiteAccess: jest.fn(),
 };
 
-const visitorMessage: VisitorMessage = {
+const visitMessage: VisitMessage = {
   visitorId: 'visitor-oidc-sub',
   startAt: '2023-01-01T00:00:00.000Z',
   endAt: '2023-01-10T00:00:00.000Z',
 };
 
-describe('syncVisitorToOneIdentityHandler', () => {
+describe('syncVisitToOneIdentityHandler', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -59,10 +59,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
 
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
 
-      await syncVisitorToOneIdentityHandler(
-        visitorMessage,
-        Event.VISITOR_CREATED
-      );
+      await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_CREATED);
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
@@ -99,10 +96,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
         ])
       );
 
-      await syncVisitorToOneIdentityHandler(
-        visitorMessage,
-        Event.VISITOR_CREATED
-      );
+      await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_CREATED);
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
@@ -118,18 +112,18 @@ describe('syncVisitorToOneIdentityHandler', () => {
       expect(mockOneIdentity.createSiteAccess).toHaveBeenNthCalledWith(
         1,
         PersonWantsOrgRole.SITE_ACCESS,
-        visitorMessage.visitorId,
-        visitorMessage.startAt,
-        visitorMessage.endAt
+        visitMessage.visitorId,
+        visitMessage.startAt,
+        visitMessage.endAt
       );
 
       // Verify system access creation with the current time and extended end date
       expect(mockOneIdentity.createSiteAccess).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
-        visitorMessage.visitorId,
+        visitMessage.visitorId,
         mockNowDate.toISOString(),
-        new Date(new Date(visitorMessage.endAt).setDate(30)).toISOString(),
+        new Date(new Date(visitMessage.endAt).setDate(30)).toISOString(),
         'site-access-uid'
       );
 
@@ -177,10 +171,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
         mockPersonWantsOrgs
       );
 
-      await syncVisitorToOneIdentityHandler(
-        visitorMessage,
-        Event.VISITOR_DELETED
-      );
+      await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED);
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
@@ -210,10 +201,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
 
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
 
-      await syncVisitorToOneIdentityHandler(
-        visitorMessage,
-        Event.VISITOR_DELETED
-      );
+      await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED);
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
@@ -232,7 +220,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
       mockOneIdentity.getPerson.mockResolvedValueOnce(undefined);
 
       await expect(
-        syncVisitorToOneIdentityHandler(visitorMessage, Event.VISITOR_DELETED)
+        syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
       ).rejects.toThrow(
         'Person not found in One Identity, cannot remove access'
       );
@@ -278,7 +266,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
       );
 
       await expect(
-        syncVisitorToOneIdentityHandler(visitorMessage, Event.VISITOR_DELETED)
+        syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
       ).rejects.toThrow(
         'Site access not found in One Identity, cannot remove access'
       );
@@ -319,7 +307,7 @@ describe('syncVisitorToOneIdentityHandler', () => {
       );
 
       await expect(
-        syncVisitorToOneIdentityHandler(visitorMessage, Event.VISITOR_DELETED)
+        syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
       ).rejects.toThrow(
         'System access not found in One Identity, cannot remove access'
       );
