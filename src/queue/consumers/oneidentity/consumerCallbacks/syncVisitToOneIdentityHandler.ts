@@ -65,22 +65,36 @@ async function createAccessInOneIdentity(
   centralAccount: string
 ) {
   // Create site access
-  const [pwo] = await oneIdentity.createPersonWantsOrg(
+  const [pwoSite] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
-    startAt,
-    endAt
+    toIsoString(startAt),
+    toIsoString(endAt)
+  );
+
+  logger.logInfo('Site access created in One Identity', {
+    UID_PersonWantsOrg: pwoSite.UID_PersonWantsOrg,
+  });
+
+  const approvalDate = Date.now();
+  // TODO! read from config
+  const systemAccessEndDate = new Date(endAt).setDate(
+    new Date(endAt).getDate() + 30
   );
 
   // Create system access
   // It starts when the message arrives and ends 30 days after the site access ends
-  await oneIdentity.createPersonWantsOrg(
+  const [pwoSystem] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
-    toIsoString(Date.now()),
-    toIsoString(new Date(endAt).setDate(30)),
-    pwo.UID_PersonWantsOrg // CustomProperty04
+    toIsoString(approvalDate),
+    toIsoString(systemAccessEndDate),
+    pwoSite.UID_PersonWantsOrg // CustomProperty04
   );
+
+  logger.logInfo('System access created in One Identity', {
+    UID_PersonWantsOrg: pwoSystem.UID_PersonWantsOrg,
+  });
 }
 
 async function removeAccessFromOneIdentity(

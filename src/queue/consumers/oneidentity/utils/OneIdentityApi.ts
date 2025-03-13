@@ -111,6 +111,7 @@ export class OneIdentityApi {
       `/script/${name}`,
       {
         parameters,
+        returnRawResult: true, // One Identity API returns the result as a string from the script. Axios will be able to JSON parse it.
       }
     );
 

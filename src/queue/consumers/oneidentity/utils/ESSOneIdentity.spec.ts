@@ -82,6 +82,18 @@ describe('ESSOneIdentity', () => {
       });
       expect(result).toBe('created-uid');
     });
+
+    it('should throw an error when UID_ESetType is not found', async () => {
+      const proposalMessage = {
+        shortCode: 'some-short-code',
+      } as ProposalMessageData;
+
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]);
+
+      await expect(
+        essOneIdentity.createProposal(proposalMessage)
+      ).rejects.toThrow('UID_ESetType not found: PROPOSAL_IDENT_ESET_TYPE');
+    });
   });
 
   describe('getProposal', () => {
@@ -106,6 +118,18 @@ describe('ESSOneIdentity', () => {
       );
       expect(result).toBe('proposal-uid');
     });
+
+    it('should return undefined if proposal is not found', async () => {
+      const proposalMessage = {
+        shortCode: 'some-short-code',
+      } as ProposalMessageData;
+
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]);
+
+      const result = await essOneIdentity.getProposal(proposalMessage);
+
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('getPerson', () => {
@@ -124,7 +148,8 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'Person',
-        "CentralAccount='0000-0000-0000-0000'"
+        "CentralAccount='0000-0000-0000-0000'",
+        ['CCC_EmployeeSubType']
       );
       expect(result).toEqual({ UID_Person: 'person-uid' });
     });

@@ -87,14 +87,20 @@ describe('syncVisitToOneIdentityHandler', () => {
         CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
       } as Person;
 
+      // Mock site access and system access creation responses
+      const mockSiteAccess = {
+        UID_PersonWantsOrg: 'site-access-uid',
+      } as PersonWantsOrg;
+      const mockSystemAccess = {
+        UID_PersonWantsOrg: 'system-access-uid',
+      } as PersonWantsOrg;
+
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
 
-      // Mock createPersonWantsOrg to return a specific value for the first call
-      mockOneIdentity.createPersonWantsOrg.mockImplementationOnce(() =>
-        Promise.resolve([
-          { UID_PersonWantsOrg: 'site-access-uid' } as PersonWantsOrg,
-        ])
-      );
+      // Mock sequential calls to createPersonWantsOrg with different responses
+      mockOneIdentity.createPersonWantsOrg
+        .mockResolvedValueOnce([mockSiteAccess])
+        .mockResolvedValueOnce([mockSystemAccess]);
 
       await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_CREATED);
 
@@ -102,10 +108,6 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
         oidcSub: 'visitor-oidc-sub',
       });
-      expect(logger.logInfo).toHaveBeenCalledWith(
-        'One Identity successfully logged in',
-        {}
-      );
 
       // Verify site access creation
       expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenCalledTimes(2);
@@ -117,24 +119,57 @@ describe('syncVisitToOneIdentityHandler', () => {
         visitMessage.endAt
       );
 
+      // Calculate expected system access end date (30 days after visit end)
+      const expectedEndDate = new Date(visitMessage.endAt);
+      expectedEndDate.setDate(expectedEndDate.getDate() + 30);
+
       // Verify system access creation with the current time and extended end date
       expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
         visitMessage.visitorId,
         mockNowDate.toISOString(),
-        new Date(new Date(visitMessage.endAt).setDate(30)).toISOString(),
+        expectedEndDate.toISOString(),
         'site-access-uid'
       );
 
-      expect(mockOneIdentity.logout).toHaveBeenCalled();
       expect(logger.logInfo).toHaveBeenCalledWith(
-        'One Identity successfully logged out',
-        {}
+        'Site access created in One Identity',
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+        }
       );
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'System access created in One Identity',
+        {
+          UID_PersonWantsOrg: 'system-access-uid',
+        }
+      );
+
+      expect(mockOneIdentity.logout).toHaveBeenCalled();
 
       // Restore original Date.now
       Date.now = originalDateNow;
+    });
+
+    it('should throw an error if site access creation fails', async () => {
+      // Mock person that is a science user
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+      mockOneIdentity.createPersonWantsOrg.mockRejectedValueOnce(
+        new Error('Failed to create site access')
+      );
+
+      await expect(
+        syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_CREATED)
+      ).rejects.toThrow('Failed to create site access');
+
+      expect(mockOneIdentity.login).toHaveBeenCalled();
+      expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
   });
 

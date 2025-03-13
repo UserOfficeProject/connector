@@ -88,7 +88,8 @@ export class ESSOneIdentity {
   ): Promise<Person | undefined> {
     const entities = await this.oneIdentityApi.getEntities<Person>(
       'Person',
-      `CentralAccount='${user.oidcSub}'`
+      `CentralAccount='${user.oidcSub}'`,
+      ['CCC_EmployeeSubType']
     );
 
     return entities[0]?.values;

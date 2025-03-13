@@ -127,6 +127,25 @@ describe('oneIdentityIntegrationHandler', () => {
       );
     });
 
+    it('should throw error if proposal creation fails', async () => {
+      // Set up mocks with getProposal returning undefined (proposal doesn't exist)
+      mockOneIdentity.getProposal.mockResolvedValueOnce(undefined);
+
+      // Mock createProposal to return undefined (creation failed)
+      mockOneIdentity.createProposal.mockResolvedValueOnce(undefined);
+
+      // Expect the handler to throw an error
+      await expect(
+        syncProposalAndMembersToOneIdentityHandler(
+          proposalMessage,
+          Event.PROPOSAL_ACCEPTED
+        )
+      ).rejects.toThrow('Proposal creation failed in ESS One Identity');
+
+      // Verify that logout is still called (in the finally block)
+      expect(mockOneIdentity.logout).toHaveBeenCalled();
+    });
+
     describe('when proposal already exists in One Identity (Retry logic)', () => {
       it('should not create proposal but handle connections if proposal exists', async () => {
         setupMocks({

@@ -104,6 +104,18 @@ describe('OneIdentityApi', () => {
       });
       expect(result).toEqual(mockEntities);
     });
+
+    it('should get entities with display columns successfully', async () => {
+      const mockEntities = [{ id: 1, name: 'test' }];
+      (axios.get as jest.Mock).mockResolvedValueOnce({ data: mockEntities });
+
+      const result = await api.getEntities('testTable', 'id=1', ['name']);
+
+      expect(axios.get).toHaveBeenCalledWith('/entities/testTable', {
+        params: { where: 'id=1', displayColumns: 'name' },
+      });
+      expect(result).toEqual(mockEntities);
+    });
   });
 
   describe('deleteEntity', () => {
@@ -118,21 +130,26 @@ describe('OneIdentityApi', () => {
 
   describe('callScript', () => {
     it('should call script successfully', async () => {
-      const mockResponse = {
-        IsSuccess: true,
-        Data: [{ id: 1, name: 'test' }],
-        Message: 'Success',
-      };
-      (axios.put as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
+      const mockResult = { success: true, data: 'script result' };
+      (axios.put as jest.Mock).mockResolvedValueOnce({ data: mockResult });
 
-      const scriptName = 'TestScript';
-      const parameters = ['param1', 'param2'];
-      const result = await api.callScript(scriptName, parameters);
+      const scriptParams = ['param1', 'param2'];
+      const result = await api.callScript('TestScript', scriptParams);
 
       expect(axios.put).toHaveBeenCalledWith('/script/TestScript', {
-        parameters: ['param1', 'param2'],
+        parameters: scriptParams,
+        returnRawResult: true,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should handle errors during script calls', async () => {
+      const errorMessage = 'Script execution failed';
+      (axios.put as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+
+      await expect(api.callScript('TestScript', [])).rejects.toThrow(
+        errorMessage
+      );
     });
   });
 });
