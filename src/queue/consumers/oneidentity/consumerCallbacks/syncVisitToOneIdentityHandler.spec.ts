@@ -206,12 +206,31 @@ describe('syncVisitToOneIdentityHandler', () => {
       await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED);
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
+
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
         oidcSub: 'visitor-oidc-sub',
       });
       expect(mockOneIdentity.getPersonWantsOrg).toHaveBeenCalledWith(
         'visitor-uid'
       );
+
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'One Identity successfully logged in',
+        {}
+      );
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'Site access found in One Identity',
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+        }
+      );
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'System access found in One Identity',
+        {
+          UID_PersonWantsOrg: 'system-access-uid',
+        }
+      );
+
       expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledTimes(2);
       expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
@@ -221,7 +240,20 @@ describe('syncVisitToOneIdentityHandler', () => {
         2,
         'system-access-uid'
       );
+
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'Site and system access cancelled in One Identity',
+        {
+          UID_PersonWantsOrg_Site: 'site-access-uid',
+          UID_PersonWantsOrg_System: 'system-access-uid',
+        }
+      );
+
       expect(mockOneIdentity.logout).toHaveBeenCalled();
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'One Identity successfully logged out',
+        {}
+      );
     });
 
     it('should skip processing if visitor is not a science user', async () => {
@@ -281,15 +313,6 @@ describe('syncVisitToOneIdentityHandler', () => {
           ValidUntil: '2023-01-10T00:00:00.000Z',
           OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
-        {
-          UID_PersonWantsOrg: 'system-access-uid',
-          UID_PersonOrdered: 'visitor-uid',
-          DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
-          ValidFrom: '2023-01-01T00:00:00.000Z',
-          ValidUntil: '2023-01-10T00:00:00.000Z',
-          CustomProperty04: 'site-access-uid',
-          OrderState: OrderState.GRANTED,
-        } as PersonWantsOrg,
       ];
 
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
@@ -312,13 +335,14 @@ describe('syncVisitToOneIdentityHandler', () => {
         UID_Person: 'visitor-uid',
         CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
       } as Person;
+
       const mockPersonWantsOrgs = [
         {
           UID_PersonWantsOrg: 'site-access-uid',
           UID_PersonOrdered: 'visitor-uid',
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
-          ValidFrom: '2023-01-01T00:00:00.000Z',
-          ValidUntil: '2023-01-10T00:00:00.000Z',
+          ValidFrom: visitMessage.startAt,
+          ValidUntil: visitMessage.endAt,
           OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         // No system access with CustomProperty04 matching site-access-uid
@@ -345,6 +369,12 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'Site access found in One Identity',
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+        }
+      );
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
   });

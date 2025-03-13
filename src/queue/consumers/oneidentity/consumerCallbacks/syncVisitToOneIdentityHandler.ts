@@ -121,7 +121,11 @@ async function removeAccessFromOneIdentity(
     );
   }
 
-  // Find system access for the site access
+  logger.logInfo('Site access found in One Identity', {
+    UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
+  });
+
+  // Find system access for the site access (CustomProperty04 is the site access UID)
   const systemAccess = personWantsOrgs.find(
     (pwo) =>
       pwo.CustomProperty04 === siteAccess.UID_PersonWantsOrg &&
@@ -135,9 +139,18 @@ async function removeAccessFromOneIdentity(
     );
   }
 
+  logger.logInfo('System access found in One Identity', {
+    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
+  });
+
   // Cancel site and system access
   await oneIdentity.cancelPersonWantsOrg(siteAccess.UID_PersonWantsOrg);
   await oneIdentity.cancelPersonWantsOrg(systemAccess.UID_PersonWantsOrg);
+
+  logger.logInfo('Site and system access cancelled in One Identity', {
+    UID_PersonWantsOrg_Site: siteAccess.UID_PersonWantsOrg,
+    UID_PersonWantsOrg_System: systemAccess.UID_PersonWantsOrg,
+  });
 }
 
 function toIsoString(date: string | number) {
