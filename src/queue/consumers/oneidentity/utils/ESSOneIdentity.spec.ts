@@ -420,7 +420,7 @@ describe('ESSOneIdentity', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: '2023-01-01',
           ValidUntil: '2023-12-31',
-          OrderState: 'Assigned',
+          OrderState: 'Granted',
         },
       },
       {
@@ -429,7 +429,7 @@ describe('ESSOneIdentity', () => {
           DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
           ValidFrom: '2023-01-01',
           ValidUntil: '2023-12-31',
-          OrderState: 'Assigned',
+          OrderState: 'Granted',
         },
       },
     ];
@@ -443,7 +443,7 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonWantsOrg',
-        "UID_PersonOrdered='person-uid' AND OrderState='Assigned' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
+        "UID_PersonOrdered='person-uid' AND OrderState='Granted' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
         [
           'ValidFrom',
           'ValidUntil',
@@ -493,7 +493,7 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonWantsOrg',
-        "UID_PersonOrdered='person-uid' AND OrderState='Assigned' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
+        "UID_PersonOrdered='person-uid' AND OrderState='Granted' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
         [
           'ValidFrom',
           'ValidUntil',

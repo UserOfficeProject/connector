@@ -189,7 +189,7 @@ export class ESSOneIdentity {
       PersonWantsOrgRole.SITE_ACCESS,
       PersonWantsOrgRole.SYSTEM_ACCESS,
     ],
-    orderState: OrderState = OrderState.ASSIGNED
+    orderState: OrderState = OrderState.GRANTED
   ): Promise<PersonWantsOrg[]> {
     const entities = await this.oneIdentityApi.getEntities<PersonWantsOrg>(
       'PersonWantsOrg',

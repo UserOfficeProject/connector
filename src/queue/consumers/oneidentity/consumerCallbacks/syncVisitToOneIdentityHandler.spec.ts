@@ -1,13 +1,6 @@
 jest.mock('@user-office-software/duo-logger');
 jest.mock('../utils/ESSOneIdentity', () => ({
   ESSOneIdentity: jest.fn().mockImplementation(() => mockOneIdentity),
-  PersonWantsOrgRole: {
-    SITE_ACCESS: 'SITE_ACCESS',
-    SYSTEM_ACCESS: 'SYSTEM_ACCESS',
-  },
-  OrderState: {
-    ASSIGNED: 'ASSIGNED',
-  },
 }));
 
 import { logger } from '@user-office-software/duo-logger';
@@ -192,7 +185,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
-          OrderState: OrderState.ASSIGNED,
+          OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         {
           UID_PersonWantsOrg: 'system-access-uid',
@@ -201,7 +194,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
           CustomProperty04: 'site-access-uid',
-          OrderState: OrderState.ASSIGNED,
+          OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
       ];
 
@@ -286,7 +279,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: '2023-01-02T00:00:00.000Z', // Different from message.startAt
           ValidUntil: '2023-01-10T00:00:00.000Z',
-          OrderState: OrderState.ASSIGNED,
+          OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         {
           UID_PersonWantsOrg: 'system-access-uid',
@@ -295,7 +288,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
           CustomProperty04: 'site-access-uid',
-          OrderState: OrderState.ASSIGNED,
+          OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
       ];
 
@@ -326,7 +319,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
-          OrderState: OrderState.ASSIGNED,
+          OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         // No system access with CustomProperty04 matching site-access-uid
         {
@@ -336,7 +329,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
           CustomProperty04: 'different-site-access-uid',
-          OrderState: OrderState.ASSIGNED,
+          OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
       ];
 

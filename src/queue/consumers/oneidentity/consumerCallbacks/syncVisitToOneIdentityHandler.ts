@@ -112,7 +112,7 @@ async function removeAccessFromOneIdentity(
       pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
       toIsoString(pwo.ValidFrom) === toIsoString(startAt) &&
       toIsoString(pwo.ValidUntil) === toIsoString(endAt) &&
-      pwo.OrderState === OrderState.ASSIGNED
+      pwo.OrderState === OrderState.GRANTED
   );
 
   if (!siteAccess) {
@@ -126,7 +126,7 @@ async function removeAccessFromOneIdentity(
     (pwo) =>
       pwo.CustomProperty04 === siteAccess.UID_PersonWantsOrg &&
       pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
-      pwo.OrderState === OrderState.ASSIGNED
+      pwo.OrderState === OrderState.GRANTED
   );
 
   if (!systemAccess) {

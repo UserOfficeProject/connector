@@ -1,5 +1,5 @@
 export enum OrderState {
-  ASSIGNED = 'Assigned',
+  GRANTED = 'Granted',
   ABORTED = 'Aborted',
 }
 
