@@ -296,9 +296,7 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       await expect(
         syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
-      ).rejects.toThrow(
-        'Person not found in One Identity, cannot remove access'
-      );
+      ).rejects.toThrow('Person not found in One Identity');
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({

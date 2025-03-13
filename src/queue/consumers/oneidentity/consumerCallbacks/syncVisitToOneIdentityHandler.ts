@@ -56,7 +56,7 @@ async function getScienceUser(
   });
 
   if (!person) {
-    throw new Error('Person not found in One Identity, cannot remove access');
+    throw new Error('Person not found in One Identity');
   }
 
   if (person.CCC_EmployeeSubType === IdentityType.ESSSCIENCEUSER)
