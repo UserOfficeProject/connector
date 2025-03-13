@@ -1,3 +1,5 @@
+import process from 'process';
+
 import { logger } from '@user-office-software/duo-logger';
 
 import { Event } from '../../../../models/Event';
@@ -8,6 +10,10 @@ import {
   PersonWantsOrgRole,
 } from '../utils/interfaces/PersonWantsOrg';
 import { VisitMessage } from '../utils/interfaces/VisitMessage';
+
+const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = parseInt(
+  process.env.ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS || '30'
+);
 
 export async function syncVisitToOneIdentityHandler(
   { startAt, endAt, visitorId }: VisitMessage,
@@ -79,11 +85,11 @@ async function createAccessInOneIdentity(
   // validFrom in One Identity should be in the future so that the access is not immediately available
   // validFrom is set to 1 hour from now (to avoid time conflicts)
   const validFrom = Date.now() + 60 * 60 * 1000;
-  // TODO! read from config
-  const validUntil = new Date(endAt).setDate(new Date(endAt).getDate() + 30);
+  const validUntil = new Date(endAt).setDate(
+    new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
+  );
 
   // Create system access
-  // It starts when the message arrives and ends 30 days after the site access ends
   const [pwoSystem] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,

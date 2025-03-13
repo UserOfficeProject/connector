@@ -3,6 +3,14 @@ jest.mock('../utils/ESSOneIdentity', () => ({
   ESSOneIdentity: jest.fn().mockImplementation(() => mockOneIdentity),
 }));
 
+const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = '45';
+
+jest.mock('process', () => ({
+  env: {
+    ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS,
+  },
+}));
+
 import { logger } from '@user-office-software/duo-logger';
 
 import { syncVisitToOneIdentityHandler } from './syncVisitToOneIdentityHandler';
@@ -118,7 +126,10 @@ describe('syncVisitToOneIdentityHandler', () => {
         mockNowDate.getTime() + 60 * 60 * 1000
       );
       const expectedEndDate = new Date(visitMessage.endAt);
-      expectedEndDate.setDate(expectedEndDate.getDate() + 30);
+      expectedEndDate.setDate(
+        expectedEndDate.getDate() +
+          parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
+      );
 
       // Verify system access creation with validFrom as 1 hour from now
       expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
