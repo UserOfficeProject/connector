@@ -76,19 +76,19 @@ async function createAccessInOneIdentity(
     UID_PersonWantsOrg: pwoSite.UID_PersonWantsOrg,
   });
 
-  const approvalDate = Date.now();
+  // validFrom in One Identity should be in the future so that the access is not immediately available
+  // validFrom is set to 1 hour from now (to avoid time conflicts)
+  const validFrom = Date.now() + 60 * 60 * 1000;
   // TODO! read from config
-  const systemAccessEndDate = new Date(endAt).setDate(
-    new Date(endAt).getDate() + 30
-  );
+  const validUntil = new Date(endAt).setDate(new Date(endAt).getDate() + 30);
 
   // Create system access
   // It starts when the message arrives and ends 30 days after the site access ends
   const [pwoSystem] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
-    toIsoString(approvalDate),
-    toIsoString(systemAccessEndDate),
+    toIsoString(validFrom),
+    toIsoString(validUntil),
     pwoSite.UID_PersonWantsOrg // CustomProperty04
   );
 

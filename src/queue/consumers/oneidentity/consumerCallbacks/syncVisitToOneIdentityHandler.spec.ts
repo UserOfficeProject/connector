@@ -119,16 +119,20 @@ describe('syncVisitToOneIdentityHandler', () => {
         visitMessage.endAt
       );
 
-      // Calculate expected system access end date (30 days after visit end)
+      // Calculate expected system access dates
+      // validFrom should be 1 hour from mock now
+      const expectedValidFrom = new Date(
+        mockNowDate.getTime() + 60 * 60 * 1000
+      );
       const expectedEndDate = new Date(visitMessage.endAt);
       expectedEndDate.setDate(expectedEndDate.getDate() + 30);
 
-      // Verify system access creation with the current time and extended end date
+      // Verify system access creation with validFrom as 1 hour from now
       expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
         visitMessage.visitorId,
-        mockNowDate.toISOString(),
+        expectedValidFrom.toISOString(),
         expectedEndDate.toISOString(),
         'site-access-uid'
       );
