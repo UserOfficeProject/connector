@@ -83,8 +83,7 @@ async function createAccessInOneIdentity(
   });
 
   // validFrom in One Identity should be in the future so that the access is not immediately available
-  // validFrom is set to 1 hour from now (to avoid time conflicts)
-  const validFrom = Date.now() + 60 * 60 * 1000;
+  const validFrom = Date.now();
   const validUntil = new Date(endAt).setDate(
     new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
   );
