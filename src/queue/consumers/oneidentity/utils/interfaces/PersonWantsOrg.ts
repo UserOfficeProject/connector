@@ -1,6 +1,10 @@
 export enum OrderState {
   GRANTED = 'Granted',
   ABORTED = 'Aborted',
+  WAITING = 'Waiting',
+  ASSIGNED = 'Assigned',
+  UNSUBSCRIBED = 'Unsubscribed',
+  ORDERPRODUCT = 'OrderProduct',
 }
 
 export enum PersonWantsOrgRole {

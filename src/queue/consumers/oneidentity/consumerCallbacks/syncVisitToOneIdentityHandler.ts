@@ -118,7 +118,7 @@ async function removeAccessFromOneIdentity(
       pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
       toIsoString(pwo.ValidFrom) === toIsoString(startAt) &&
       toIsoString(pwo.ValidUntil) === toIsoString(endAt) &&
-      pwo.OrderState === OrderState.GRANTED
+      pwo.OrderState !== OrderState.ABORTED
   );
 
   if (!siteAccess) {
@@ -127,7 +127,9 @@ async function removeAccessFromOneIdentity(
     );
   }
 
-  logger.logInfo('Site access found in One Identity', {
+  await oneIdentity.cancelPersonWantsOrg(siteAccess.UID_PersonWantsOrg);
+
+  logger.logInfo('Site access cancelled in One Identity', {
     UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
   });
 
@@ -136,7 +138,7 @@ async function removeAccessFromOneIdentity(
     (pwo) =>
       pwo.CustomProperty04 === siteAccess.UID_PersonWantsOrg &&
       pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
-      pwo.OrderState === OrderState.GRANTED
+      pwo.OrderState !== OrderState.UNSUBSCRIBED
   );
 
   if (!systemAccess) {
@@ -145,17 +147,10 @@ async function removeAccessFromOneIdentity(
     );
   }
 
-  logger.logInfo('System access found in One Identity', {
-    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
-  });
-
-  // Cancel site and system access
-  await oneIdentity.cancelPersonWantsOrg(siteAccess.UID_PersonWantsOrg);
   await oneIdentity.cancelPersonWantsOrg(systemAccess.UID_PersonWantsOrg);
 
-  logger.logInfo('Site and system access cancelled in One Identity', {
-    UID_PersonWantsOrg_Site: siteAccess.UID_PersonWantsOrg,
-    UID_PersonWantsOrg_System: systemAccess.UID_PersonWantsOrg,
+  logger.logInfo('System access cancelled in One Identity', {
+    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
   });
 }
 

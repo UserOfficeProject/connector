@@ -5,7 +5,6 @@ import { EsetType } from './interfaces/EsetType';
 import { Person, UID_Person } from './interfaces/Person';
 import { PersonHasESET } from './interfaces/PersonHasESET';
 import {
-  OrderState,
   PersonWantsOrg,
   PersonWantsOrgRole,
 } from './interfaces/PersonWantsOrg';
@@ -167,7 +166,7 @@ export class ESSOneIdentity {
       );
 
     if (!res.IsSuccess)
-      throw new Error('Failed to create site access:' + res.Message);
+      throw new Error('Failed to create site access: ' + res.Message);
 
     return res.Data;
   }
@@ -188,12 +187,11 @@ export class ESSOneIdentity {
     displayOrgs: PersonWantsOrgRole[] = [
       PersonWantsOrgRole.SITE_ACCESS,
       PersonWantsOrgRole.SYSTEM_ACCESS,
-    ],
-    orderState: OrderState = OrderState.GRANTED
+    ]
   ): Promise<PersonWantsOrg[]> {
     const entities = await this.oneIdentityApi.getEntities<PersonWantsOrg>(
       'PersonWantsOrg',
-      `UID_PersonOrdered='${uidPerson}' AND OrderState='${orderState}' AND (${displayOrgs
+      `UID_PersonOrdered='${uidPerson}' AND (${displayOrgs
         .map((org) => `DisplayOrg='${org}'`)
         .join(' OR ')})`,
       [

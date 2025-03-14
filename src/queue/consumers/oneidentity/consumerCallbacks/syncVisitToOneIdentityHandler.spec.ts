@@ -229,36 +229,32 @@ describe('syncVisitToOneIdentityHandler', () => {
         'One Identity successfully logged in',
         {}
       );
-      expect(logger.logInfo).toHaveBeenCalledWith(
-        'Site access found in One Identity',
-        {
-          UID_PersonWantsOrg: 'site-access-uid',
-        }
-      );
-      expect(logger.logInfo).toHaveBeenCalledWith(
-        'System access found in One Identity',
-        {
-          UID_PersonWantsOrg: 'system-access-uid',
-        }
-      );
 
-      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledTimes(2);
       expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
         'site-access-uid'
       );
+
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'Site access cancelled in One Identity',
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+        }
+      );
+
       expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         'system-access-uid'
       );
 
       expect(logger.logInfo).toHaveBeenCalledWith(
-        'Site and system access cancelled in One Identity',
+        'System access cancelled in One Identity',
         {
-          UID_PersonWantsOrg_Site: 'site-access-uid',
-          UID_PersonWantsOrg_System: 'system-access-uid',
+          UID_PersonWantsOrg: 'system-access-uid',
         }
       );
+
+      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledTimes(2);
 
       expect(mockOneIdentity.logout).toHaveBeenCalled();
       expect(logger.logInfo).toHaveBeenCalledWith(
@@ -378,8 +374,11 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
+      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledWith(
+        'site-access-uid'
+      );
       expect(logger.logInfo).toHaveBeenCalledWith(
-        'Site access found in One Identity',
+        'Site access cancelled in One Identity',
         {
           UID_PersonWantsOrg: 'site-access-uid',
         }

@@ -11,7 +11,6 @@ jest.mock('process', () => ({
 
 import { ESSOneIdentity } from './ESSOneIdentity';
 import {
-  OrderState,
   PersonWantsOrg,
   PersonWantsOrgRole,
 } from './interfaces/PersonWantsOrg';
@@ -370,7 +369,7 @@ describe('ESSOneIdentity', () => {
           startDate,
           endDate
         )
-      ).rejects.toThrow(`Failed to create site access:${errorMessage}`);
+      ).rejects.toThrow(`Failed to create site access: ${errorMessage}`);
       expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
         'SCProposalSiteAccess',
         [role, centralAccount, centralAccount, startDate, endDate, '', '']
@@ -443,7 +442,7 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonWantsOrg',
-        "UID_PersonOrdered='person-uid' AND OrderState='Granted' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
+        "UID_PersonOrdered='person-uid' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
         [
           'ValidFrom',
           'ValidUntil',
@@ -463,15 +462,13 @@ describe('ESSOneIdentity', () => {
         mockPersonWantsOrgData
       );
 
-      const result = await essOneIdentity.getPersonWantsOrg(
-        'person-uid',
-        [PersonWantsOrgRole.SITE_ACCESS],
-        OrderState.ABORTED
-      );
+      const result = await essOneIdentity.getPersonWantsOrg('person-uid', [
+        PersonWantsOrgRole.SITE_ACCESS,
+      ]);
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonWantsOrg',
-        "UID_PersonOrdered='person-uid' AND OrderState='Aborted' AND (DisplayOrg='Experiment visit - site access')",
+        "UID_PersonOrdered='person-uid' AND (DisplayOrg='Experiment visit - site access')",
         [
           'ValidFrom',
           'ValidUntil',
@@ -493,7 +490,7 @@ describe('ESSOneIdentity', () => {
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'PersonWantsOrg',
-        "UID_PersonOrdered='person-uid' AND OrderState='Granted' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
+        "UID_PersonOrdered='person-uid' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
         [
           'ValidFrom',
           'ValidUntil',
