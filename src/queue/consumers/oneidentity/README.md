@@ -95,7 +95,7 @@ The handler manages site and system access in One Identity based on visit creati
 
 ### Access Cancellation
 - System access cancellation depends on finding the parent site access first
-- Both must be cancelled separately but in the correct order
+- Both must be cancelled
 
 ### Error Handling
 - Proper error messages when person or access records are not found

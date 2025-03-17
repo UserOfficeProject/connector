@@ -177,6 +177,34 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
+
+    it('should throw an error when provided with an invalid date', async () => {
+      // Mock person that is a science user
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+
+      // Create a message with an invalid date
+      const invalidVisitMessage: VisitMessage = {
+        visitorId: 'visitor-oidc-sub',
+        startAt: 'invalid-date',
+        endAt: '2023-01-10T00:00:00.000Z',
+      };
+
+      await expect(
+        syncVisitToOneIdentityHandler(invalidVisitMessage, Event.VISIT_CREATED)
+      ).rejects.toThrow('Invalid date provided to toIsoString: invalid-date');
+
+      expect(mockOneIdentity.login).toHaveBeenCalled();
+      expect(mockOneIdentity.getPerson).toHaveBeenCalledWith({
+        oidcSub: 'visitor-oidc-sub',
+      });
+      expect(mockOneIdentity.createPersonWantsOrg).not.toHaveBeenCalled();
+      expect(mockOneIdentity.logout).toHaveBeenCalled();
+    });
   });
 
   describe('VISITOR_DELETED', () => {

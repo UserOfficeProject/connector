@@ -154,5 +154,11 @@ async function removeAccessFromOneIdentity(
 }
 
 function toIsoString(date: string | number) {
-  return new Date(date).toISOString();
+  const parsedDate = new Date(date);
+
+  if (isNaN(parsedDate.getTime())) {
+    throw new Error(`Invalid date provided to toIsoString: ${date}`);
+  }
+
+  return parsedDate.toISOString();
 }

@@ -96,7 +96,12 @@ export class OneIdentityApi {
       T,
       AxiosResponse<EntityValues<T>[]>
     >(`/entities/${table}`, {
-      params: { where, displayColumns: displayColumns?.join(',') },
+      params: {
+        where,
+        ...(displayColumns && displayColumns.length > 0
+          ? { displayColumns: displayColumns.join(',') }
+          : {}),
+      },
     });
 
     return data;
