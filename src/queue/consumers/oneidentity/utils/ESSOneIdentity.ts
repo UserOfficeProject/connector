@@ -1,32 +1,20 @@
 import { env } from 'process';
 
+import { Eset, UID_ESet } from './interfaces/Eset';
+import { EsetType } from './interfaces/EsetType';
+import { Person, UID_Person } from './interfaces/Person';
+import { PersonHasESET } from './interfaces/PersonHasESET';
+import {
+  PersonWantsOrg,
+  PersonWantsOrgRole,
+} from './interfaces/PersonWantsOrg';
+import {
+  SCProposalSiteAccessCancelResponse,
+  SCProposalSiteAccessResponse,
+} from './interfaces/SCProposalSiteAccessResponse';
 import { OneIdentityApi } from './OneIdentityApi';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ProposalUser } from '../../scicat/scicatProposal/dto';
-
-type UID_ESetType = string;
-export type UID_Person = string;
-export type UID_ESet = string;
-
-interface EsetValues {
-  UID_ESet: UID_ESet;
-  UID_ESetType: UID_ESetType;
-  Ident_ESet: string;
-  DisplayName: string;
-}
-
-interface EsetTypeValues {
-  UID_ESetType: UID_ESetType;
-}
-
-interface PersonValues {
-  UID_Person: UID_Person;
-}
-
-export interface PersonHasESETValues {
-  UID_Person: UID_Person;
-  UID_ESet: UID_ESet;
-}
 
 export interface UserPersonConnection {
   oidcSub: string;
@@ -60,7 +48,7 @@ export class ESSOneIdentity {
     proposalMessage: ProposalMessageData
   ): Promise<UID_ESet | undefined> {
     // get "Science Proposal" UID_ESetType from ESS One Identity
-    const entities = await this.oneIdentityApi.getEntities<EsetTypeValues>(
+    const entities = await this.oneIdentityApi.getEntities<EsetType>(
       'EsetType',
       `Ident_ESetType='${PROPOSAL_IDENT_ESET_TYPE}'`
     );
@@ -73,7 +61,7 @@ export class ESSOneIdentity {
 
     // create proposal in ESS One Identity
     const esetResponse = await this.oneIdentityApi.createEntity<
-      Omit<EsetValues, 'UID_ESet'>
+      Omit<Eset, 'UID_ESet'>
     >('ESET', {
       UID_ESetType: uidESetType,
       Ident_ESet: proposalMessage.shortCode,
@@ -86,7 +74,7 @@ export class ESSOneIdentity {
   public async getProposal(
     proposalMessage: ProposalMessageData
   ): Promise<UID_ESet | undefined> {
-    const entities = await this.oneIdentityApi.getEntities<EsetValues>(
+    const entities = await this.oneIdentityApi.getEntities<Eset>(
       'ESET',
       `Ident_ESet='${proposalMessage.shortCode}'`
     );
@@ -96,10 +84,11 @@ export class ESSOneIdentity {
 
   public async getPerson(
     user: Pick<ProposalUser, 'oidcSub'>
-  ): Promise<PersonValues | undefined> {
-    const entities = await this.oneIdentityApi.getEntities<PersonValues>(
+  ): Promise<Person | undefined> {
+    const entities = await this.oneIdentityApi.getEntities<Person>(
       'Person',
-      `CentralAccount='${user.oidcSub}'`
+      `CentralAccount='${user.oidcSub}'`,
+      ['CCC_EmployeeSubType']
     );
 
     return entities[0]?.values;
@@ -123,7 +112,7 @@ export class ESSOneIdentity {
     uidEset: UID_ESet,
     uidPerson: UID_Person
   ): Promise<string | undefined> {
-    const { uid } = await this.oneIdentityApi.createEntity<PersonHasESETValues>(
+    const { uid } = await this.oneIdentityApi.createEntity<PersonHasESET>(
       'PersonHasESET',
       {
         UID_ESet: uidEset,
@@ -146,10 +135,72 @@ export class ESSOneIdentity {
 
   public async getProposalPersonConnections(
     uidEset: UID_ESet
-  ): Promise<PersonHasESETValues[]> {
-    const entities = await this.oneIdentityApi.getEntities<PersonHasESETValues>(
+  ): Promise<PersonHasESET[]> {
+    const entities = await this.oneIdentityApi.getEntities<PersonHasESET>(
       'PersonHasESET',
       `UID_ESet='${uidEset}'`
+    );
+
+    return entities.map(({ values }) => values);
+  }
+
+  public async createPersonWantsOrg(
+    role: PersonWantsOrgRole,
+    centralAccount: string,
+    startDate: string,
+    endDate: string,
+    customData: string = ''
+  ): Promise<PersonWantsOrg[]> {
+    const res =
+      await this.oneIdentityApi.callScript<SCProposalSiteAccessResponse>(
+        'SCProposalSiteAccess',
+        [
+          role, // access type
+          centralAccount, // requester
+          centralAccount, // recipient
+          startDate,
+          endDate,
+          customData, // PersonWantsOrg.CustomProperty04
+          '', // UID_PersonWantsOrg (empty for new)
+        ]
+      );
+
+    if (!res.IsSuccess)
+      throw new Error('Failed to create site access: ' + res.Message);
+
+    return res.Data;
+  }
+
+  public async cancelPersonWantsOrg(uidPersonWantsOrg: string): Promise<void> {
+    const res =
+      await this.oneIdentityApi.callScript<SCProposalSiteAccessCancelResponse>(
+        'SCProposalSiteAccessCancel',
+        [uidPersonWantsOrg]
+      );
+
+    if (!res.IsSuccess)
+      throw new Error('Failed to cancel site access:' + res.Message);
+  }
+
+  public async getPersonWantsOrg(
+    uidPerson: UID_Person,
+    displayOrgs: PersonWantsOrgRole[] = [
+      PersonWantsOrgRole.SITE_ACCESS,
+      PersonWantsOrgRole.SYSTEM_ACCESS,
+    ]
+  ): Promise<PersonWantsOrg[]> {
+    const entities = await this.oneIdentityApi.getEntities<PersonWantsOrg>(
+      'PersonWantsOrg',
+      `UID_PersonOrdered='${uidPerson}' AND (${displayOrgs
+        .map((org) => `DisplayOrg='${org}'`)
+        .join(' OR ')})`,
+      [
+        'ValidFrom',
+        'ValidUntil',
+        'OrderState',
+        'DisplayOrg',
+        'CustomProperty04',
+      ]
     );
 
     return entities.map(({ values }) => values);

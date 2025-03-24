@@ -5,15 +5,12 @@ jest.mock('../utils/ESSOneIdentity', () => ({
 
 import { logger } from '@user-office-software/duo-logger';
 
-import { oneIdentityIntegrationHandler } from './oneIdentityIntegrationHandler';
+import { syncProposalAndMembersToOneIdentityHandler } from './syncProposalAndMembersToOneIdentityHandler';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
-import {
-  ESSOneIdentity,
-  PersonHasESETValues,
-  UID_ESet,
-  UserPersonConnection,
-} from '../utils/ESSOneIdentity';
+import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
+import { UID_ESet } from '../utils/interfaces/Eset';
+import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
 
 const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   login: jest.fn(),
@@ -25,11 +22,14 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   connectPersonToProposal: jest.fn(),
   getProposalPersonConnections: jest.fn(),
   removeConnectionBetweenPersonAndProposal: jest.fn(),
+  getPersonWantsOrg: jest.fn(),
+  createPersonWantsOrg: jest.fn(),
+  cancelPersonWantsOrg: jest.fn(),
 };
 
 const setupMocks = (data: {
   getProposal: UID_ESet | undefined;
-  getProposalPersonConnections?: PersonHasESETValues[];
+  getProposalPersonConnections?: PersonHasESET[];
   getPersons?: UserPersonConnection[];
 }) => {
   mockOneIdentity.createProposal.mockResolvedValueOnce('proposal-UID_ESet');
@@ -65,7 +65,7 @@ describe('oneIdentityIntegrationHandler', () => {
         getProposalPersonConnections: [],
       });
 
-      await oneIdentityIntegrationHandler(
+      await syncProposalAndMembersToOneIdentityHandler(
         proposalMessage,
         Event.PROPOSAL_ACCEPTED
       );
@@ -110,7 +110,7 @@ describe('oneIdentityIntegrationHandler', () => {
         ],
       });
 
-      await oneIdentityIntegrationHandler(
+      await syncProposalAndMembersToOneIdentityHandler(
         proposalMessage,
         Event.PROPOSAL_ACCEPTED
       );
@@ -127,6 +127,25 @@ describe('oneIdentityIntegrationHandler', () => {
       );
     });
 
+    it('should throw error if proposal creation fails', async () => {
+      // Set up mocks with getProposal returning undefined (proposal doesn't exist)
+      mockOneIdentity.getProposal.mockResolvedValueOnce(undefined);
+
+      // Mock createProposal to return undefined (creation failed)
+      mockOneIdentity.createProposal.mockResolvedValueOnce(undefined);
+
+      // Expect the handler to throw an error
+      await expect(
+        syncProposalAndMembersToOneIdentityHandler(
+          proposalMessage,
+          Event.PROPOSAL_ACCEPTED
+        )
+      ).rejects.toThrow('Proposal creation failed in ESS One Identity');
+
+      // Verify that logout is still called (in the finally block)
+      expect(mockOneIdentity.logout).toHaveBeenCalled();
+    });
+
     describe('when proposal already exists in One Identity (Retry logic)', () => {
       it('should not create proposal but handle connections if proposal exists', async () => {
         setupMocks({
@@ -139,7 +158,7 @@ describe('oneIdentityIntegrationHandler', () => {
           ],
         });
 
-        await oneIdentityIntegrationHandler(
+        await syncProposalAndMembersToOneIdentityHandler(
           proposalMessage,
           Event.PROPOSAL_ACCEPTED
         );
@@ -180,7 +199,7 @@ describe('oneIdentityIntegrationHandler', () => {
         ],
       });
 
-      await oneIdentityIntegrationHandler(
+      await syncProposalAndMembersToOneIdentityHandler(
         proposalMessage,
         Event.PROPOSAL_UPDATED
       );
@@ -212,7 +231,7 @@ describe('oneIdentityIntegrationHandler', () => {
         getProposal: undefined,
       });
 
-      await oneIdentityIntegrationHandler(
+      await syncProposalAndMembersToOneIdentityHandler(
         proposalMessage,
         Event.PROPOSAL_UPDATED
       );

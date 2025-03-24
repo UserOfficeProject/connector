@@ -89,13 +89,19 @@ export class OneIdentityApi {
 
   public async getEntities<T>(
     table: string,
-    where: string
+    where: string,
+    displayColumns?: (keyof T)[]
   ): Promise<EntityValues<T>[]> {
     const { data } = await this.axiosInstance.get<
       T,
       AxiosResponse<EntityValues<T>[]>
     >(`/entities/${table}`, {
-      params: { where },
+      params: {
+        where,
+        ...(displayColumns && displayColumns.length > 0
+          ? { displayColumns: displayColumns.join(',') }
+          : {}),
+      },
     });
 
     return data;
@@ -103,5 +109,17 @@ export class OneIdentityApi {
 
   public deleteEntity(table: string, uid: string): Promise<void> {
     return this.axiosInstance.delete(`/entity/${table}/${uid}`);
+  }
+
+  public async callScript<T>(name: string, parameters: string[]): Promise<T> {
+    const { data } = await this.axiosInstance.put<T, AxiosResponse<T>>(
+      `/script/${name}`,
+      {
+        parameters,
+        returnRawResult: true, // One Identity API returns the result as a string from the script. Axios will be able to JSON parse it.
+      }
+    );
+
+    return data;
   }
 }

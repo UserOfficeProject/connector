@@ -1,10 +1,10 @@
-import { validateRequiredProposalMessageFields } from './validateRequiredProposalMessageFields';
+import { validateProposalMessage } from './validateProposalMessage';
 
-describe('validateRequiredProposalMessageFields', () => {
+describe('validateProposalMessage', () => {
   it('should throw an error if message is not an object', () => {
     const message = 'not an object';
 
-    expect(() => validateRequiredProposalMessageFields(message)).toThrow(
+    expect(() => validateProposalMessage(message)).toThrow(
       'Invalid proposal message'
     );
   });
@@ -12,7 +12,7 @@ describe('validateRequiredProposalMessageFields', () => {
   it('should throw an error if message is null', () => {
     const message = null;
 
-    expect(() => validateRequiredProposalMessageFields(message)).toThrow(
+    expect(() => validateProposalMessage(message)).toThrow(
       'Invalid proposal message'
     );
   });
@@ -23,7 +23,7 @@ describe('validateRequiredProposalMessageFields', () => {
       members: [],
     };
 
-    expect(() => validateRequiredProposalMessageFields(message)).toThrow(
+    expect(() => validateProposalMessage(message)).toThrow(
       'Invalid proposal message'
     );
   });
@@ -34,7 +34,7 @@ describe('validateRequiredProposalMessageFields', () => {
       members: [],
     };
 
-    expect(() => validateRequiredProposalMessageFields(message)).toThrow(
+    expect(() => validateProposalMessage(message)).toThrow(
       'Invalid proposal message'
     );
   });
@@ -45,7 +45,7 @@ describe('validateRequiredProposalMessageFields', () => {
       proposer: {},
     };
 
-    expect(() => validateRequiredProposalMessageFields(message)).toThrow(
+    expect(() => validateProposalMessage(message)).toThrow(
       'Invalid proposal message'
     );
   });
@@ -57,6 +57,6 @@ describe('validateRequiredProposalMessageFields', () => {
       members: [],
     };
 
-    expect(validateRequiredProposalMessageFields(message)).toEqual(message);
+    expect(validateProposalMessage(message)).toEqual(message);
   });
 });
