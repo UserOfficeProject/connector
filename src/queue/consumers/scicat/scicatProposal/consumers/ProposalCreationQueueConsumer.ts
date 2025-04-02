@@ -7,7 +7,11 @@ import { hasTriggeringType } from '../../../utils/hasTriggeringType';
 import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 import { upsertProposalInScicat } from '../consumerCallbacks/upsertProposalInScicat';
 
-const EVENT_TYPES = [Event.PROPOSAL_STATUS_ACTION_EXECUTED];
+const EVENT_TYPES = [
+  Event.PROPOSAL_STATUS_ACTION_EXECUTED,
+  Event.PROPOSAL_UPDATED,
+];
+
 const triggeringStatuses =
   process.env.SCICAT_PROPOSAL_TRIGGERING_STATUSES?.split(', ');
 
