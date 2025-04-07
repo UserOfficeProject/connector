@@ -47,6 +47,23 @@ describe('OneIdentityApi', () => {
         }
       );
     });
+
+    it('should throw error when no cookie is set', async () => {
+      (axios.post as jest.Mock).mockResolvedValueOnce({
+        headers: {},
+      });
+
+      await expect(api.login('user', 'password')).rejects.toThrow(
+        'No cookie set'
+      );
+    });
+
+    it('should handle API errors during login', async () => {
+      const errorMessage = 'Authentication failed';
+      (axios.post as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+
+      await expect(api.login('user', 'password')).rejects.toThrow(errorMessage);
+    });
   });
 
   describe('logout', () => {
@@ -87,6 +104,18 @@ describe('OneIdentityApi', () => {
       });
       expect(result).toEqual(mockEntities);
     });
+
+    it('should get entities with display columns successfully', async () => {
+      const mockEntities = [{ id: 1, name: 'test' }];
+      (axios.get as jest.Mock).mockResolvedValueOnce({ data: mockEntities });
+
+      const result = await api.getEntities('testTable', 'id=1', ['name']);
+
+      expect(axios.get).toHaveBeenCalledWith('/entities/testTable', {
+        params: { where: 'id=1', displayColumns: 'name' },
+      });
+      expect(result).toEqual(mockEntities);
+    });
   });
 
   describe('deleteEntity', () => {
@@ -96,6 +125,31 @@ describe('OneIdentityApi', () => {
       await api.deleteEntity('testTable', '1');
 
       expect(axios.delete).toHaveBeenCalledWith('/entity/testTable/1');
+    });
+  });
+
+  describe('callScript', () => {
+    it('should call script successfully', async () => {
+      const mockResult = { success: true, data: 'script result' };
+      (axios.put as jest.Mock).mockResolvedValueOnce({ data: mockResult });
+
+      const scriptParams = ['param1', 'param2'];
+      const result = await api.callScript('TestScript', scriptParams);
+
+      expect(axios.put).toHaveBeenCalledWith('/script/TestScript', {
+        parameters: scriptParams,
+        returnRawResult: true,
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should handle errors during script calls', async () => {
+      const errorMessage = 'Script execution failed';
+      (axios.put as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+
+      await expect(api.callScript('TestScript', [])).rejects.toThrow(
+        errorMessage
+      );
     });
   });
 });

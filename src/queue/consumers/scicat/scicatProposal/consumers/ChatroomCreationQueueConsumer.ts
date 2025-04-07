@@ -8,8 +8,6 @@ import { validateProposalMessage } from '../../../utils/validateProposalMessage'
 import { createChatroom } from '../consumerCallbacks/createChatroom';
 
 const EVENT_TYPES = [
-  Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
-  Event.PROPOSAL_STATUS_CHANGED_BY_USER,
   Event.PROPOSAL_STATUS_ACTION_EXECUTED,
   Event.PROPOSAL_UPDATED,
 ];

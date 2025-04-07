@@ -3,15 +3,12 @@ import { logger } from '@user-office-software/duo-logger';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
-import {
-  ESSOneIdentity,
-  PersonHasESETValues,
-  UID_ESet,
-  UID_Person,
-  UserPersonConnection,
-} from '../utils/ESSOneIdentity';
+import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
+import { UID_ESet } from '../utils/interfaces/Eset';
+import { UID_Person } from '../utils/interfaces/Person';
+import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
 
-export async function oneIdentityIntegrationHandler(
+export async function syncProposalAndMembersToOneIdentityHandler(
   message: ProposalMessageData,
   type: Event
 ): Promise<void> {
@@ -106,7 +103,7 @@ function getUidPersons(
 ): UID_Person[] {
   return userPersonConnections
     .filter(
-      (connection): connection is { email: string; uidPerson: UID_Person } =>
+      (connection): connection is { oidcSub: string; uidPerson: UID_Person } =>
         connection.uidPerson !== undefined
     )
     .map(({ uidPerson }) => uidPerson);
@@ -115,7 +112,7 @@ function getUidPersons(
 async function addNewConnections(
   oneIdentity: ESSOneIdentity,
   uidESet: UID_ESet,
-  connections: PersonHasESETValues[],
+  connections: PersonHasESET[],
   uidPersons: UID_Person[]
 ): Promise<void> {
   const connectionsToAdd = uidPersons.filter(
@@ -132,7 +129,7 @@ async function addNewConnections(
 
 async function removeOldConnections(
   oneIdentity: ESSOneIdentity,
-  connections: PersonHasESETValues[],
+  connections: PersonHasESET[],
   uidPersons: UID_Person[]
 ): Promise<void> {
   const connectionsToRemove = connections.filter(

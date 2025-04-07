@@ -11,8 +11,6 @@ import { syncVisaProposal } from '../consumerCallbacks/syncVisaProposal';
 import { sanitizeProposalMessage } from '../utils/sanitizeProposalMessage';
 
 const EVENTS_FOR_HANDLING = [
-  Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
-  Event.PROPOSAL_STATUS_CHANGED_BY_USER,
   Event.PROPOSAL_STATUS_ACTION_EXECUTED,
   Event.PROPOSAL_UPDATED,
 ];

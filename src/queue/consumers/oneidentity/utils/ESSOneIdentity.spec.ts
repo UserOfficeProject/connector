@@ -10,6 +10,10 @@ jest.mock('process', () => ({
 }));
 
 import { ESSOneIdentity } from './ESSOneIdentity';
+import {
+  PersonWantsOrg,
+  PersonWantsOrgRole,
+} from './interfaces/PersonWantsOrg';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ProposalUser } from '../../scicat/scicatProposal/dto';
 
@@ -19,6 +23,7 @@ const mockOneIdentityApi = {
   createEntity: jest.fn(),
   getEntities: jest.fn(),
   deleteEntity: jest.fn(),
+  callScript: jest.fn(),
 };
 
 describe('ESSOneIdentity', () => {
@@ -76,6 +81,18 @@ describe('ESSOneIdentity', () => {
       });
       expect(result).toBe('created-uid');
     });
+
+    it('should throw an error when UID_ESetType is not found', async () => {
+      const proposalMessage = {
+        shortCode: 'some-short-code',
+      } as ProposalMessageData;
+
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]);
+
+      await expect(
+        essOneIdentity.createProposal(proposalMessage)
+      ).rejects.toThrow('UID_ESetType not found: PROPOSAL_IDENT_ESET_TYPE');
+    });
   });
 
   describe('getProposal', () => {
@@ -100,6 +117,18 @@ describe('ESSOneIdentity', () => {
       );
       expect(result).toBe('proposal-uid');
     });
+
+    it('should return undefined if proposal is not found', async () => {
+      const proposalMessage = {
+        shortCode: 'some-short-code',
+      } as ProposalMessageData;
+
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]);
+
+      const result = await essOneIdentity.getProposal(proposalMessage);
+
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('getPerson', () => {
@@ -113,18 +142,18 @@ describe('ESSOneIdentity', () => {
       ]);
 
       const result = await essOneIdentity.getPerson({
-        email: 'foo@email',
+        oidcSub: '0000-0000-0000-0000',
       });
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'Person',
-        "ContactEmail='foo@email' OR DefaultEmailAddress='foo@email'"
+        "CentralAccount='0000-0000-0000-0000'",
+        ['CCC_EmployeeSubType']
       );
       expect(result).toEqual({ UID_Person: 'person-uid' });
     });
 
-    // Currently, the ContactEmail field is not unique in the 1IM.Person table.
-    // This means that it is possible to have multiple persons with the same email.
+    // The CentralAccount is unique, but the response is an array of entities
     it('should return the first person if multiple persons are found', async () => {
       mockOneIdentityApi.getEntities.mockResolvedValueOnce([
         {
@@ -140,7 +169,7 @@ describe('ESSOneIdentity', () => {
       ]);
 
       const result = await essOneIdentity.getPerson({
-        email: 'foo@email',
+        oidcSub: '0000-0000-0000-0000',
       });
 
       expect(result).toEqual({ UID_Person: 'person-1-uid' });
@@ -152,8 +181,7 @@ describe('ESSOneIdentity', () => {
       mockOneIdentityApi.getEntities.mockImplementation((table, filter) => {
         if (
           table === 'Person' &&
-          filter ===
-            "ContactEmail='unknown-email' OR DefaultEmailAddress='unknown-email'"
+          filter === "CentralAccount='unknown-oidc-sub'"
         )
           return Promise.resolve([]);
         else
@@ -168,20 +196,20 @@ describe('ESSOneIdentity', () => {
 
       const result = await essOneIdentity.getPersons([
         {
-          email: 'unknown-email',
+          oidcSub: 'unknown-oidc-sub',
         } as ProposalUser,
         {
-          email: 'known-email',
+          oidcSub: 'known-oidc-sub',
         } as ProposalUser,
       ]);
 
       expect(result).toEqual([
         {
-          email: 'unknown-email',
+          oidcSub: 'unknown-oidc-sub',
           uidPerson: undefined,
         },
         {
-          email: 'known-email',
+          oidcSub: 'known-oidc-sub',
           uidPerson: 'known-person-uid',
         },
       ]);
@@ -258,6 +286,220 @@ describe('ESSOneIdentity', () => {
           UID_Person: 'person-2-uid',
         },
       ]);
+    });
+  });
+
+  describe('createPersonWantsOrg', () => {
+    const role = PersonWantsOrgRole.SITE_ACCESS;
+    const centralAccount = 'user123';
+    const startDate = '2023-01-01';
+    const endDate = '2023-12-31';
+    const mockPersonWantsOrgData: PersonWantsOrg[] = [
+      {
+        UID_PersonWantsOrg: 'pwo-123',
+        ValidFrom: startDate,
+        ValidUntil: endDate,
+      } as PersonWantsOrg,
+    ];
+
+    it('should successfully create site access', async () => {
+      mockOneIdentityApi.callScript.mockResolvedValueOnce({
+        IsSuccess: true,
+        Data: mockPersonWantsOrgData,
+        Message: 'Success',
+      });
+
+      const result = await essOneIdentity.createPersonWantsOrg(
+        role,
+        centralAccount,
+        startDate,
+        endDate
+      );
+
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCProposalSiteAccess',
+        [role, centralAccount, centralAccount, startDate, endDate, '', '']
+      );
+      expect(result).toEqual(mockPersonWantsOrgData);
+    });
+
+    it('should successfully create site access with custom data', async () => {
+      const customData = 'custom-data-123';
+      mockOneIdentityApi.callScript.mockResolvedValueOnce({
+        IsSuccess: true,
+        Data: mockPersonWantsOrgData,
+        Message: 'Success',
+      });
+
+      const result = await essOneIdentity.createPersonWantsOrg(
+        role,
+        centralAccount,
+        startDate,
+        endDate,
+        customData
+      );
+
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCProposalSiteAccess',
+        [
+          role,
+          centralAccount,
+          centralAccount,
+          startDate,
+          endDate,
+          customData,
+          '',
+        ]
+      );
+      expect(result).toEqual(mockPersonWantsOrgData);
+    });
+
+    it('should throw an error when site access creation fails', async () => {
+      const errorMessage = 'Access denied';
+      mockOneIdentityApi.callScript.mockResolvedValueOnce({
+        IsSuccess: false,
+        Data: null,
+        Message: errorMessage,
+      });
+
+      await expect(
+        essOneIdentity.createPersonWantsOrg(
+          role,
+          centralAccount,
+          startDate,
+          endDate
+        )
+      ).rejects.toThrow(`Failed to create site access: ${errorMessage}`);
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCProposalSiteAccess',
+        [role, centralAccount, centralAccount, startDate, endDate, '', '']
+      );
+    });
+  });
+
+  describe('cancelPersonWantsOrg', () => {
+    const uidPersonWantsOrg = 'pwo-123';
+
+    it('should successfully cancel site access', async () => {
+      mockOneIdentityApi.callScript.mockResolvedValueOnce({
+        IsSuccess: true,
+        Message: 'Success',
+      });
+
+      await essOneIdentity.cancelPersonWantsOrg(uidPersonWantsOrg);
+
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCProposalSiteAccessCancel',
+        [uidPersonWantsOrg]
+      );
+    });
+
+    it('should throw an error when site access cancellation fails', async () => {
+      const errorMessage = 'Access not found';
+      mockOneIdentityApi.callScript.mockResolvedValueOnce({
+        IsSuccess: false,
+        Message: errorMessage,
+      });
+
+      await expect(
+        essOneIdentity.cancelPersonWantsOrg(uidPersonWantsOrg)
+      ).rejects.toThrow(`Failed to cancel site access:${errorMessage}`);
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCProposalSiteAccessCancel',
+        [uidPersonWantsOrg]
+      );
+    });
+  });
+
+  describe('getPersonWantsOrg', () => {
+    const mockPersonWantsOrgData = [
+      {
+        values: {
+          UID_PersonWantsOrg: 'pwo-123',
+          DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+          ValidFrom: '2023-01-01',
+          ValidUntil: '2023-12-31',
+          OrderState: 'Granted',
+        },
+      },
+      {
+        values: {
+          UID_PersonWantsOrg: 'pwo-456',
+          DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
+          ValidFrom: '2023-01-01',
+          ValidUntil: '2023-12-31',
+          OrderState: 'Granted',
+        },
+      },
+    ];
+
+    it('should get person wants org records with default parameters', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce(
+        mockPersonWantsOrgData
+      );
+
+      const result = await essOneIdentity.getPersonWantsOrg('person-uid');
+
+      expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
+        'PersonWantsOrg',
+        "UID_PersonOrdered='person-uid' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
+        [
+          'ValidFrom',
+          'ValidUntil',
+          'OrderState',
+          'DisplayOrg',
+          'CustomProperty04',
+        ]
+      );
+      expect(result).toEqual([
+        mockPersonWantsOrgData[0].values,
+        mockPersonWantsOrgData[1].values,
+      ]);
+    });
+
+    it('should get person wants org records with custom parameters', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce(
+        mockPersonWantsOrgData
+      );
+
+      const result = await essOneIdentity.getPersonWantsOrg('person-uid', [
+        PersonWantsOrgRole.SITE_ACCESS,
+      ]);
+
+      expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
+        'PersonWantsOrg',
+        "UID_PersonOrdered='person-uid' AND (DisplayOrg='Experiment visit - site access')",
+        [
+          'ValidFrom',
+          'ValidUntil',
+          'OrderState',
+          'DisplayOrg',
+          'CustomProperty04',
+        ]
+      );
+      expect(result).toEqual([
+        mockPersonWantsOrgData[0].values,
+        mockPersonWantsOrgData[1].values,
+      ]);
+    });
+
+    it('should return empty array when no records found', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]);
+
+      const result = await essOneIdentity.getPersonWantsOrg('person-uid');
+
+      expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
+        'PersonWantsOrg',
+        "UID_PersonOrdered='person-uid' AND (DisplayOrg='Experiment visit - site access' OR DisplayOrg='Experiment visit - system access')",
+        [
+          'ValidFrom',
+          'ValidUntil',
+          'OrderState',
+          'DisplayOrg',
+          'CustomProperty04',
+        ]
+      );
+      expect(result).toEqual([]);
     });
   });
 });
