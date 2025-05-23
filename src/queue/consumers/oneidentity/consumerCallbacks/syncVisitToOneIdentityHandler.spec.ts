@@ -15,6 +15,7 @@ import { logger } from '@user-office-software/duo-logger';
 
 import { syncVisitToOneIdentityHandler } from './syncVisitToOneIdentityHandler';
 import { Event } from '../../../../models/Event';
+import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ESSOneIdentity } from '../utils/ESSOneIdentity';
 import { IdentityType, Person } from '../utils/interfaces/Person';
 import {
@@ -43,6 +44,9 @@ const visitMessage: VisitMessage = {
   visitorId: 'visitor-oidc-sub',
   startAt: '2023-01-01T00:00:00.000Z',
   endAt: '2023-01-10T00:00:00.000Z',
+  proposal: {
+    shortCode: 'proposal-short-code',
+  } as ProposalMessageData,
 };
 
 describe('syncVisitToOneIdentityHandler', () => {
@@ -117,7 +121,8 @@ describe('syncVisitToOneIdentityHandler', () => {
         PersonWantsOrgRole.SITE_ACCESS,
         visitMessage.visitorId,
         visitMessage.startAt,
-        visitMessage.endAt
+        visitMessage.endAt,
+        visitMessage.proposal.shortCode
       );
 
       // Calculate expected system access dates
@@ -189,9 +194,8 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       // Create a message with an invalid date
       const invalidVisitMessage: VisitMessage = {
-        visitorId: 'visitor-oidc-sub',
+        ...visitMessage,
         startAt: 'invalid-date',
-        endAt: '2023-01-10T00:00:00.000Z',
       };
 
       await expect(

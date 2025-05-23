@@ -3,6 +3,7 @@ import process from 'process';
 import { logger } from '@user-office-software/duo-logger';
 
 import { Event } from '../../../../models/Event';
+import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ESSOneIdentity } from '../utils/ESSOneIdentity';
 import { IdentityType, UID_Person } from '../utils/interfaces/Person';
 import {
@@ -16,7 +17,7 @@ const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = parseInt(
 );
 
 export async function syncVisitToOneIdentityHandler(
-  { startAt, endAt, visitorId }: VisitMessage,
+  { startAt, endAt, visitorId, proposal }: VisitMessage,
   type: Event
 ): Promise<void> {
   const oneIdentity = new ESSOneIdentity();
@@ -34,7 +35,13 @@ export async function syncVisitToOneIdentityHandler(
     }
 
     if (type === Event.VISIT_CREATED) {
-      await createAccessInOneIdentity(oneIdentity, startAt, endAt, visitorId);
+      await createAccessInOneIdentity(
+        oneIdentity,
+        startAt,
+        endAt,
+        visitorId,
+        proposal
+      );
     } else if (type === Event.VISIT_DELETED) {
       await removeAccessFromOneIdentity(oneIdentity, startAt, endAt, uidPerson);
     }
@@ -68,14 +75,16 @@ async function createAccessInOneIdentity(
   oneIdentity: ESSOneIdentity,
   startAt: string,
   endAt: string,
-  centralAccount: string
+  centralAccount: string,
+  proposal: ProposalMessageData
 ) {
   // Create site access
   const [pwoSite] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
     toIsoString(startAt),
-    toIsoString(endAt)
+    toIsoString(endAt),
+    proposal.shortCode // CustomProperty04 - We store the proposal short code for the site access to be able to find it later
   );
 
   logger.logInfo('Site access created in One Identity', {
@@ -94,7 +103,7 @@ async function createAccessInOneIdentity(
     centralAccount,
     toIsoString(validFrom),
     toIsoString(validUntil),
-    pwoSite.UID_PersonWantsOrg // CustomProperty04
+    pwoSite.UID_PersonWantsOrg // CustomProperty04 - We store the site access UID for the system access to be able to find it later
   );
 
   logger.logInfo('System access created in One Identity', {

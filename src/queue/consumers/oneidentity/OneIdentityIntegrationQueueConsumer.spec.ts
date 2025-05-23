@@ -166,6 +166,9 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
           visitorId: 'visitor-id',
           startAt: '2021-01-01T00:00:00Z',
           endAt: '2021-01-02T00:00:00Z',
+          proposal: {
+            shortCode: 'proposal-short-code',
+          },
         } as VisitMessage;
         const type = Event.VISIT_CREATED;
 
@@ -203,6 +206,9 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
           visitorId: 'visitor-id',
           startAt: '2021-01-01T00:00:00Z',
           endAt: '2021-01-02T00:00:00Z',
+          proposal: {
+            shortCode: 'proposal-short-code',
+          },
         } as VisitMessage;
         const type = Event.VISIT_CREATED;
 

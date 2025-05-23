@@ -50,11 +50,26 @@ describe('validateVisitMessage', () => {
     );
   });
 
-  it('should return the message if visitorId, startAt, and endAt are defined', () => {
+  it('should throw an error if proposal is undefined', () => {
     const message = {
       visitorId: 'visitor123',
       startAt: '2023-01-01T00:00:00Z',
       endAt: '2023-01-02T00:00:00Z',
+    };
+
+    expect(() => validateVisitMessage(message)).toThrow(
+      'Invalid Visit message'
+    );
+  });
+
+  it('should return the message if the message is valid', () => {
+    const message = {
+      visitorId: 'visitor123',
+      startAt: '2023-01-01T00:00:00Z',
+      endAt: '2023-01-02T00:00:00Z',
+      proposal: {
+        shortCode: 'proposal-short-code',
+      },
     };
 
     expect(validateVisitMessage(message)).toEqual(message);
