@@ -3,7 +3,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
-import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
+import { ESSOneIdentity } from '../utils/ESSOneIdentity';
 import { UID_ESet } from '../utils/interfaces/Eset';
 import { UID_Person } from '../utils/interfaces/Person';
 import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
@@ -24,10 +24,11 @@ export async function syncProposalAndMembersToOneIdentityHandler(
     logger.logInfo('UID_ESet from One Identity', { uidESet });
 
     if (uidESet) {
+      const users = collectUsersFromProposalMessage(message);
       await handleConnectionsBetweenProposalAndPersons(
         oneIdentity,
         uidESet,
-        message
+        users.map((user) => user.oidcSub)
       );
     }
   } finally {
@@ -65,25 +66,34 @@ async function getUIDESetFromOneIdentity(
   return uidESet;
 }
 
-async function handleConnectionsBetweenProposalAndPersons(
+export async function handleConnectionsBetweenProposalAndPersons(
   oneIdentity: ESSOneIdentity,
   uidESet: UID_ESet,
-  message: ProposalMessageData
+  centralAccounts: string[]
 ) {
-  const users = collectUsersFromProposalMessage(message);
-
-  logger.logInfo('Users from proposal', { users });
+  logger.logInfo('Users to be connected to proposal', {
+    centralAccounts,
+  });
 
   // Get all users from One Identity
-  const userPersonConnections = await oneIdentity.getPersons(users);
-  const uidPersons = getUidPersons(userPersonConnections);
+  const uidPersons = await oneIdentity.getPersons(centralAccounts);
+  //const uidPersons = getUidPersons(userPersonConnections);
 
   // Log an error if not all users are found in One Identity to be able to investigate
-  if (uidPersons.length !== users.length) {
-    logger.logError('Not all users found in One Identity (investigate)', {
-      users,
-      uidPersons,
-    });
+  if (uidPersons.length !== centralAccounts.length) {
+    const foundCentralAccounts = new Set(uidPersons);
+    const missingCentralAccounts = centralAccounts.filter(
+      (acc) => !foundCentralAccounts.has(acc)
+    );
+    logger.logError(
+      'Not all users found in One Identity (Investigate). Missing central accounts:',
+      {
+        totalUsersInput: centralAccounts.length,
+        foundUsersInOneIdentity: [...foundCentralAccounts],
+        missingCentralAccounts,
+        allCentralAccounts: centralAccounts,
+      }
+    );
   }
 
   logger.logInfo('Found persons in One Identity', { uidPersons });
@@ -95,18 +105,6 @@ async function handleConnectionsBetweenProposalAndPersons(
   await addNewConnections(oneIdentity, uidESet, connections, uidPersons);
 
   logger.logInfo('Connections updated', { uidESet, uidPersons });
-}
-
-// Method to get UID_Person from UserPersonConnection
-function getUidPersons(
-  userPersonConnections: UserPersonConnection[]
-): UID_Person[] {
-  return userPersonConnections
-    .filter(
-      (connection): connection is { oidcSub: string; uidPerson: UID_Person } =>
-        connection.uidPerson !== undefined
-    )
-    .map(({ uidPerson }) => uidPerson);
 }
 
 async function addNewConnections(

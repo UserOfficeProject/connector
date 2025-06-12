@@ -17,6 +17,7 @@ The handler manages site and system access in One Identity based on visit creati
 ### Key Relationships
 - System access is linked to site access via `CustomProperty04` which stores the site access UID
 - Both access types are identified by specific roles in `PersonWantsOrgRole` enum
+- Proposal's short code is stored in `CustomProperty04` of the system access record
 
 ## Process Flow Chart
 

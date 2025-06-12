@@ -8,7 +8,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { syncProposalAndMembersToOneIdentityHandler } from './syncProposalAndMembersToOneIdentityHandler';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
-import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
+import { ESSOneIdentity } from '../utils/ESSOneIdentity';
 import { UID_ESet } from '../utils/interfaces/Eset';
 import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
 
@@ -30,7 +30,7 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
 const setupMocks = (data: {
   getProposal: UID_ESet | undefined;
   getProposalPersonConnections?: PersonHasESET[];
-  getPersons?: UserPersonConnection[];
+  getPersons?: string[];
 }) => {
   mockOneIdentity.createProposal.mockResolvedValueOnce('proposal-UID_ESet');
   mockOneIdentity.getProposal.mockResolvedValueOnce(data.getProposal);
@@ -38,16 +38,7 @@ const setupMocks = (data: {
     data.getProposalPersonConnections ?? []
   );
   mockOneIdentity.getPersons.mockResolvedValueOnce(
-    data.getPersons ?? [
-      {
-        oidcSub: 'proposer-oidc-sub',
-        uidPerson: 'proposer-uid',
-      },
-      {
-        oidcSub: 'member-oidc-sub',
-        uidPerson: 'member-uid',
-      },
-    ]
+    data.getPersons ?? ['proposer-uid', 'member-uid']
   );
 };
 
@@ -102,12 +93,7 @@ describe('oneIdentityIntegrationHandler', () => {
       setupMocks({
         getProposal: undefined,
         getProposalPersonConnections: [],
-        getPersons: [
-          {
-            oidcSub: 'proposer-oidc-sub',
-            uidPerson: 'proposer-uid',
-          },
-        ],
+        getPersons: ['proposer-uid'],
       });
 
       await syncProposalAndMembersToOneIdentityHandler(
@@ -116,13 +102,12 @@ describe('oneIdentityIntegrationHandler', () => {
       );
 
       expect(logger.logError).toHaveBeenCalledWith(
-        'Not all users found in One Identity (investigate)',
+        'Not all users found in One Identity (Investigate). Missing central accounts:',
         {
-          users: [
-            { oidcSub: 'member-oidc-sub' },
-            { oidcSub: 'proposer-oidc-sub' },
-          ],
-          uidPersons: ['proposer-uid'],
+          allCentralAccounts: ['member-oidc-sub', 'proposer-oidc-sub'],
+          foundUsersInOneIdentity: ['proposer-uid'],
+          missingCentralAccounts: ['member-oidc-sub', 'proposer-oidc-sub'],
+          totalUsersInput: 2,
         }
       );
     });
