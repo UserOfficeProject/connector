@@ -5,6 +5,7 @@ import { EsetType } from './interfaces/EsetType';
 import { Person, UID_Person } from './interfaces/Person';
 import { PersonHasESET } from './interfaces/PersonHasESET';
 import {
+  OrderState,
   PersonWantsOrg,
   PersonWantsOrgRole,
 } from './interfaces/PersonWantsOrg';
@@ -199,5 +200,21 @@ export class ESSOneIdentity {
     );
 
     return entities.map(({ values }) => values);
+  }
+
+  public async hasPersonSiteAccessToProposal(
+    uidPerson: UID_Person,
+    proposal: UID_ESet
+  ): Promise<boolean> {
+    const personWantsOrgs = await this.getPersonWantsOrg(uidPerson, [
+      PersonWantsOrgRole.SITE_ACCESS,
+    ]);
+
+    return personWantsOrgs.some(
+      (pwo) =>
+        pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
+        pwo.CustomProperty04 === proposal &&
+        pwo.OrderState !== OrderState.ABORTED
+    );
   }
 }
