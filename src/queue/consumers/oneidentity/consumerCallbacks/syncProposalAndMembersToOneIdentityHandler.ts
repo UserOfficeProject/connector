@@ -77,7 +77,6 @@ export async function handleConnectionsBetweenProposalAndPersons(
 
   // Get all users from One Identity
   const uidPersons = await oneIdentity.getPersons(centralAccounts);
-  //const uidPersons = getUidPersons(userPersonConnections);
 
   // Log an error if not all users are found in One Identity to be able to investigate
   if (uidPersons.length !== centralAccounts.length) {
@@ -130,9 +129,29 @@ async function removeOldConnections(
   connections: PersonHasESET[],
   uidPersons: UID_Person[]
 ): Promise<void> {
-  const connectionsToRemove = connections.filter(
+  // Collect connections that are not in the list of current persons (OIM)
+  const potentiallyRemoveableConnections = connections.filter(
     (connection) => !uidPersons.includes(connection.UID_Person)
   );
+
+  const removalChecks = await Promise.all(
+    potentiallyRemoveableConnections.map(async (connectionToRemove) => {
+      const hasAccess = await oneIdentity.hasPersonSiteAccessToProposal(
+        connectionToRemove.UID_Person,
+        connectionToRemove.UID_ESet
+      );
+
+      return {
+        connection: connectionToRemove,
+        shouldRemove: !hasAccess, // Remove if the person does NOT have site access
+      };
+    })
+  );
+
+  // Filter out connections that should not be removed
+  const connectionsToRemove = removalChecks
+    .filter((check) => check.shouldRemove)
+    .map((check) => check.connection);
 
   await Promise.all(
     connectionsToRemove.map((connection) =>

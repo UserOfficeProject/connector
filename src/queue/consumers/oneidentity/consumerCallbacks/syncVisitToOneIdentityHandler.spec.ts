@@ -39,6 +39,7 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   removeConnectionBetweenPersonAndProposal: jest.fn(),
   createPersonWantsOrg: jest.fn(),
   cancelPersonWantsOrg: jest.fn(),
+  hasPersonSiteAccessToProposal: jest.fn(),
 };
 
 const mockUidESet: UID_ESet = 'eset-uid-123';
