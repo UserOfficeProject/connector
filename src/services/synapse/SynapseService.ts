@@ -54,13 +54,36 @@ export class SynapseService {
       baseUrl: serverUrl,
       fetchFn: axiosFetch,
     });
-
     // TODO, If consumer service is started after downtime, and there are some pending messages in the queue
     // then it could be that queue handler will delegate handling of messages before connection to supabase is established
-    this.client.loginWithPassword(
-      serviceAccount.userId,
-      serviceAccount.password
-    );
+  }
+
+  async login(consumerName = 'ChatroomCreationQueueConsumer') {
+    if (!serviceAccount.userId)
+      throw new Error('SYNAPSE_SERVICE_USER is not set');
+    if (!serviceAccount.password)
+      throw new Error('SYNAPSE_SERVICE_PASSWORD is not set');
+
+    try {
+      await this.client.loginWithPassword(
+        serviceAccount.userId,
+        serviceAccount.password
+      );
+    } catch (error) {
+      logger.logError(`Failed to login to Synapse from ${consumerName}`, {
+        error,
+      });
+      throw error;
+    }
+  }
+
+  async logout() {
+    try {
+      await this.client.logout();
+    } catch (error) {
+      logger.logError('Failed to logout from Synapse', { error });
+      throw error;
+    }
   }
 
   async createRoom(name: string, topic: string, members: ProposalUser[]) {
@@ -127,12 +150,6 @@ export class SynapseService {
 
     await this.client
       .sendEvent(roomId, EventType.RoomMessage, messageContent, '')
-      .then(() => {
-        logger.logInfo('Success sending message to chatroom ', {
-          roomId: roomId,
-          message: message,
-        });
-      })
       .catch((reason) => {
         logger.logError('Failed sending message to chatroom', {
           roomId: roomId,

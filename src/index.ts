@@ -49,7 +49,6 @@ async function bootstrap() {
   const enableOneIdentityIntegration = str2Bool(
     process.env.ENABLE_ONE_IDENTITY_INTEGRATION as string
   );
-
   const enableSyncVisaProposals = str2Bool(
     process.env.ENABLE_SYNC_VISA_PROPOSALS as string
   );
