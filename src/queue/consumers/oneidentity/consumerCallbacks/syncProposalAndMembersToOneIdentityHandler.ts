@@ -66,7 +66,7 @@ async function getUIDESetFromOneIdentity(
   return uidESet;
 }
 
-export async function handleConnectionsBetweenProposalAndPersons(
+async function handleConnectionsBetweenProposalAndPersons(
   oneIdentity: ESSOneIdentity,
   uidESet: UID_ESet,
   centralAccounts: string[]
