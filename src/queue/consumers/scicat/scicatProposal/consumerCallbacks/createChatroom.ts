@@ -50,6 +50,7 @@ const createChatroom = async (message: ValidProposalMessageData) => {
   const synapseService: SynapseService = container.resolve(
     Tokens.SynapseService
   );
+  await synapseService.login();
   const allUsersOnProposal = [...message.members, message.proposer];
 
   const { validUsers, invalidUsers } = validateUsersProfile(allUsersOnProposal);
@@ -117,6 +118,8 @@ const createChatroom = async (message: ValidProposalMessageData) => {
     }
   } catch (err: unknown) {
     logger.logException('Error while creating chatroom: ', err, { message });
+  } finally {
+    await synapseService.logout();
   }
 };
 
