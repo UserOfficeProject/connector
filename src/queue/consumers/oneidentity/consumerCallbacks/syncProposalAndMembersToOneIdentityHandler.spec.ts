@@ -115,10 +115,8 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(logger.logError).toHaveBeenCalledWith(
         'Not all users found in One Identity (Investigate). Missing central accounts:',
         {
-          allCentralAccounts: ['member-oidc-sub', 'proposer-oidc-sub'],
+          centralAccounts: ['member-oidc-sub', 'proposer-oidc-sub'],
           foundUsersInOneIdentity: ['proposer-uid'],
-          missingCentralAccounts: ['member-oidc-sub', 'proposer-oidc-sub'],
-          totalUsersInput: 2,
         }
       );
     });
