@@ -95,11 +95,10 @@ export class ESSOneIdentity {
   public async getPersons(centralAccounts: string[]): Promise<string[]> {
     return (
       await Promise.all(
-        centralAccounts.map(async (centralAccount) => {
-          const uidPerson = (await this.getPerson(centralAccount))?.UID_Person;
-
-          return uidPerson;
-        })
+        centralAccounts.map(
+          async (centralAccount) =>
+            (await this.getPerson(centralAccount))?.UID_Person
+        )
       )
     ).filter((uidPerson): uidPerson is string => uidPerson !== undefined);
   }
