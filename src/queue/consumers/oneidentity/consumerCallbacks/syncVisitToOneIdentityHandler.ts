@@ -41,9 +41,6 @@ export async function syncVisitToOneIdentityHandler(
       throw new Error('Proposal not found in One Identity, cannot sync visit');
     }
 
-    // Get all connections between UID_ESet and UID_Person
-    const connections = await oneIdentity.getProposalPersonConnections(uidESet);
-
     if (type === Event.VISIT_CREATED) {
       await createAccessInOneIdentity(
         oneIdentity,
@@ -54,52 +51,18 @@ export async function syncVisitToOneIdentityHandler(
       );
 
       // Every visitor should have access to the proposal folders
-      // So we need to create a connection between the proposal and the visitor like we do for the proposal members
-      if (connections.filter((c) => c.UID_Person === uidPerson).length !== 0) {
-        // Connection already exists, no need to create it again, reasons could be:
-        // - The visitor is a member of the proposal
-        // - The visitor has been added to the proposal in the past
-
-        logger.logInfo('Connection already exists, skipping', {
-          uidPerson,
-          uidESet,
-        });
-      } else {
-        // Create a connection between the proposal and the visitor
-        await oneIdentity.connectPersonToProposal(uidESet, uidPerson);
-        logger.logInfo('Connection created between proposal and visitor', {
-          uidPerson,
-          uidESet,
-        });
-      }
+      await createProposalConnection(oneIdentity, uidESet, uidPerson);
     } else if (type === Event.VISIT_DELETED) {
       await removeAccessFromOneIdentity(oneIdentity, startAt, endAt, uidPerson);
+
       // Remove the connection between the proposal and the visitor
-
-      // Read Proposal's members
-      const members = collectUsersFromProposalMessage(proposal);
-
-      if (members.some((member) => member.oidcSub === oidcSub)) {
-        // If the visitor is a member of the proposal, we do not remove the connection
-        logger.logInfo(
-          'Visitor is a member of the proposal, skipping connection removal',
-          {
-            uidPerson,
-            uidESet,
-          }
-        );
-      } else {
-        // Remove the connection between the proposal and the visitor
-        await oneIdentity.removeConnectionBetweenPersonAndProposal(
-          uidESet,
-          uidPerson
-        );
-
-        logger.logInfo('Connection removed between proposal and visitor', {
-          uidPerson,
-          uidESet,
-        });
-      }
+      await removeProposalConnection(
+        oneIdentity,
+        uidESet,
+        uidPerson,
+        oidcSub,
+        proposal
+      );
     }
   } finally {
     await oneIdentity.logout();
@@ -214,6 +177,61 @@ async function removeAccessFromOneIdentity(
   logger.logInfo('System access cancelled in One Identity', {
     UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
   });
+}
+
+async function createProposalConnection(
+  oneIdentity: ESSOneIdentity,
+  uidESet: string,
+  uidPerson: string
+) {
+  // Check if the connection already exists
+  // If connection already exists, no need to create it again, reasons could be:
+  // - The visitor is a member of the proposal
+  // - The visitor has been added to the proposal in the past
+  const exists = (await oneIdentity.getProposalPersonConnections(uidESet)).some(
+    (c) => c.UID_Person === uidPerson
+  );
+
+  if (exists) {
+    logger.logInfo('Connection already exists, skipping', {
+      uidPerson,
+      uidESet,
+    });
+  } else {
+    await oneIdentity.connectPersonToProposal(uidESet, uidPerson);
+    logger.logInfo('Connection created between proposal and visitor', {
+      uidPerson,
+      uidESet,
+    });
+  }
+}
+
+async function removeProposalConnection(
+  oneIdentity: ESSOneIdentity,
+  uidESet: string,
+  uidPerson: string,
+  oidcSub: string,
+  proposal: ProposalMessageData
+) {
+  const isMember = collectUsersFromProposalMessage(proposal).some(
+    (m) => m.oidcSub === oidcSub
+  );
+
+  if (isMember) {
+    logger.logInfo('Visitor is a proposal member, skipping removal', {
+      uidPerson,
+      uidESet,
+    });
+  } else {
+    await oneIdentity.removeConnectionBetweenPersonAndProposal(
+      uidESet,
+      uidPerson
+    );
+    logger.logInfo('Connection removed between proposal and visitor', {
+      uidPerson,
+      uidESet,
+    });
+  }
 }
 
 function toIsoString(date: string | number) {

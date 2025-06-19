@@ -327,6 +327,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
+          CustomProperty04: 'proposal-short-code',
           OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         {
@@ -424,6 +425,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: '2023-01-01T00:00:00.000Z',
           ValidUntil: '2023-01-10T00:00:00.000Z',
+          CustomProperty04: 'proposal-short-code',
           OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         {
@@ -450,7 +452,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         mockOneIdentity.removeConnectionBetweenPersonAndProposal
       ).not.toHaveBeenCalled();
       expect(logger.logInfo).toHaveBeenCalledWith(
-        'Visitor is a member of the proposal, skipping connection removal',
+        'Visitor is a proposal member, skipping removal',
         {
           uidPerson: mockPerson.UID_Person,
           uidESet: mockUidESet,
@@ -574,6 +576,7 @@ describe('syncVisitToOneIdentityHandler', () => {
           DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
           ValidFrom: visitMessage.startAt,
           ValidUntil: visitMessage.endAt,
+          CustomProperty04: 'proposal-short-code',
           OrderState: OrderState.GRANTED,
         } as PersonWantsOrg,
         // No system access with CustomProperty04 matching site-access-uid
