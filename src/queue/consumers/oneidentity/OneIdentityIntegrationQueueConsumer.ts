@@ -8,7 +8,7 @@ import { validateProposalMessage } from './utils/validateProposalMessage';
 import { Event } from '../../../models/Event';
 import { QueueConsumer } from '../QueueConsumer';
 import { hasTriggeringType } from '../utils/hasTriggeringType';
-import { validateVisitMessage } from './utils/validateVisitMessage';
+import { isVisitMessage } from './utils/isVisitMessage';
 
 const ONE_IDENTITY_INTEGRATION_QUEUE_NAME =
   process.env.ONE_IDENTITY_INTEGRATION_QUEUE_NAME || '';
@@ -63,8 +63,12 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
           eventType
         );
       } else if (isVisitEvent) {
-        const visitMessage = validateVisitMessage(message);
-        await syncVisitToOneIdentityHandler(visitMessage, eventType);
+        if (isVisitMessage(message))
+          await syncVisitToOneIdentityHandler(message, eventType);
+        else
+          throw new Error(
+            `Invalid Visit message received: ${JSON.stringify(message)}`
+          );
       }
 
       logger.logInfo('Message handled by OneIdentityIntegrationQueueConsumer', {

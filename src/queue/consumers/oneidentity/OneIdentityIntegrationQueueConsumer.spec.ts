@@ -6,6 +6,7 @@ jest.mock('../QueueConsumer', () => ({
 }));
 jest.mock('./consumerCallbacks/syncProposalAndMembersToOneIdentityHandler');
 jest.mock('./consumerCallbacks/syncVisitToOneIdentityHandler');
+jest.mock('./utils/isVisitMessage');
 jest.mock('axios', () => ({
   isAxiosError: jest.fn(),
 }));
@@ -19,6 +20,7 @@ import { syncProposalAndMembersToOneIdentityHandler } from './consumerCallbacks/
 import { syncVisitToOneIdentityHandler } from './consumerCallbacks/syncVisitToOneIdentityHandler';
 import { OneIdentityIntegrationQueueConsumer } from './OneIdentityIntegrationQueueConsumer';
 import { VisitMessage } from './utils/interfaces/VisitMessage';
+import { isVisitMessage } from './utils/isVisitMessage';
 import { Event } from '../../../models/Event';
 import { ProposalMessageData } from '../../../models/ProposalMessage';
 
@@ -172,9 +174,7 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         } as VisitMessage;
         const type = Event.VISIT_CREATED;
 
-        jest.mock('./utils/validateVisitMessage', () => ({
-          validateVisitMessage: jest.fn().mockReturnValue(message),
-        }));
+        (isVisitMessage as unknown as jest.Mock).mockReturnValue(true);
 
         await consumer.onMessage(type, message as any, {} as MessageProperties);
 
@@ -224,14 +224,12 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
           response: mockResponse,
         });
 
-        jest.mock('./utils/validateVisitMessage', () => ({
-          validateVisitMessage: jest.fn().mockReturnValue(message),
-        }));
+        (isVisitMessage as unknown as jest.Mock).mockReturnValue(true);
 
         (isAxiosError as unknown as jest.Mock).mockReturnValueOnce(true);
-        (syncVisitToOneIdentityHandler as jest.Mock) = jest
-          .fn()
-          .mockRejectedValueOnce(axiosError);
+        (syncVisitToOneIdentityHandler as jest.Mock).mockRejectedValueOnce(
+          axiosError
+        );
 
         await expect(
           consumer.onMessage(type, message as any, {} as MessageProperties)
@@ -250,6 +248,22 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
             },
           }
         );
+      });
+
+      it('should throw an error if the visit message is invalid', async () => {
+        const message = { some: 'invalid message' };
+        const type = Event.VISIT_CREATED;
+
+        (isVisitMessage as unknown as jest.Mock).mockReturnValue(false);
+
+        await expect(
+          consumer.onMessage(type, message as any, {} as MessageProperties)
+        ).rejects.toThrow(
+          `Invalid Visit message received: ${JSON.stringify(message)}`
+        );
+
+        expect(syncVisitToOneIdentityHandler).not.toHaveBeenCalled();
+        expect(logger.logException).toHaveBeenCalled();
       });
     });
   });
