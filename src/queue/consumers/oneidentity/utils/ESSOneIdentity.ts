@@ -5,6 +5,7 @@ import { EsetType } from './interfaces/EsetType';
 import { Person, UID_Person } from './interfaces/Person';
 import { PersonHasESET } from './interfaces/PersonHasESET';
 import {
+  OrderState,
   PersonWantsOrg,
   PersonWantsOrgRole,
 } from './interfaces/PersonWantsOrg';
@@ -14,7 +15,6 @@ import {
 } from './interfaces/SCProposalSiteAccessResponse';
 import { OneIdentityApi } from './OneIdentityApi';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
-import { ProposalUser } from '../../scicat/scicatProposal/dto';
 
 export interface UserPersonConnection {
   oidcSub: string;
@@ -82,30 +82,25 @@ export class ESSOneIdentity {
     return entities[0]?.values?.UID_ESet;
   }
 
-  public async getPerson(
-    user: Pick<ProposalUser, 'oidcSub'>
-  ): Promise<Person | undefined> {
+  public async getPerson(centralAccount: string): Promise<Person | undefined> {
     const entities = await this.oneIdentityApi.getEntities<Person>(
       'Person',
-      `CentralAccount='${user.oidcSub}'`,
+      `CentralAccount='${centralAccount}'`,
       ['CCC_EmployeeSubType']
     );
 
     return entities[0]?.values;
   }
 
-  public async getPersons(
-    users: ProposalUser[]
-  ): Promise<UserPersonConnection[]> {
-    return await Promise.all(
-      users
-        .filter((user): user is ProposalUser => user !== undefined)
-        .map(async (user) => {
-          const uidPerson = (await this.getPerson(user))?.UID_Person;
-
-          return { oidcSub: user.oidcSub, uidPerson };
-        })
-    );
+  public async getPersons(centralAccounts: string[]): Promise<string[]> {
+    return (
+      await Promise.all(
+        centralAccounts.map(
+          async (centralAccount) =>
+            (await this.getPerson(centralAccount))?.UID_Person
+        )
+      )
+    ).filter((uidPerson): uidPerson is string => uidPerson !== undefined);
   }
 
   public async connectPersonToProposal(
@@ -204,5 +199,21 @@ export class ESSOneIdentity {
     );
 
     return entities.map(({ values }) => values);
+  }
+
+  public async hasPersonSiteAccessToProposal(
+    uidPerson: UID_Person,
+    proposal: UID_ESet
+  ): Promise<boolean> {
+    const personWantsOrgs = await this.getPersonWantsOrg(uidPerson, [
+      PersonWantsOrgRole.SITE_ACCESS,
+    ]);
+
+    return personWantsOrgs.some(
+      (pwo) =>
+        pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
+        pwo.CustomProperty04 === proposal &&
+        pwo.OrderState !== OrderState.ABORTED
+    );
   }
 }

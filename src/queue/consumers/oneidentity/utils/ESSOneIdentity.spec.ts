@@ -13,9 +13,9 @@ import { ESSOneIdentity } from './ESSOneIdentity';
 import {
   PersonWantsOrg,
   PersonWantsOrgRole,
+  OrderState,
 } from './interfaces/PersonWantsOrg';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
-import { ProposalUser } from '../../scicat/scicatProposal/dto';
 
 const mockOneIdentityApi = {
   login: jest.fn(),
@@ -137,20 +137,22 @@ describe('ESSOneIdentity', () => {
         {
           values: {
             UID_Person: 'person-uid',
+            CCC_EmployeeSubType: 'ESSSCIENCEUSER',
           },
         },
       ]);
 
-      const result = await essOneIdentity.getPerson({
-        oidcSub: '0000-0000-0000-0000',
-      });
+      const result = await essOneIdentity.getPerson('0000-0000-0000-0000');
 
       expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
         'Person',
         "CentralAccount='0000-0000-0000-0000'",
         ['CCC_EmployeeSubType']
       );
-      expect(result).toEqual({ UID_Person: 'person-uid' });
+      expect(result).toEqual({
+        UID_Person: 'person-uid',
+        CCC_EmployeeSubType: 'ESSSCIENCEUSER',
+      });
     });
 
     // The CentralAccount is unique, but the response is an array of entities
@@ -159,20 +161,23 @@ describe('ESSOneIdentity', () => {
         {
           values: {
             UID_Person: 'person-1-uid',
+            CCC_EmployeeSubType: 'ESSSCIENCEUSER',
           },
         },
         {
           values: {
             UID_Person: 'person-2-uid',
+            CCC_EmployeeSubType: 'ESSSCIENCEUSER',
           },
         },
       ]);
 
-      const result = await essOneIdentity.getPerson({
-        oidcSub: '0000-0000-0000-0000',
-      });
+      const result = await essOneIdentity.getPerson('0000-0000-0000-0000');
 
-      expect(result).toEqual({ UID_Person: 'person-1-uid' });
+      expect(result).toEqual({
+        UID_Person: 'person-1-uid',
+        CCC_EmployeeSubType: 'ESSSCIENCEUSER',
+      });
     });
   });
 
@@ -195,24 +200,11 @@ describe('ESSOneIdentity', () => {
       });
 
       const result = await essOneIdentity.getPersons([
-        {
-          oidcSub: 'unknown-oidc-sub',
-        } as ProposalUser,
-        {
-          oidcSub: 'known-oidc-sub',
-        } as ProposalUser,
+        'unknown-oidc-sub',
+        'known-oidc-sub',
       ]);
 
-      expect(result).toEqual([
-        {
-          oidcSub: 'unknown-oidc-sub',
-          uidPerson: undefined,
-        },
-        {
-          oidcSub: 'known-oidc-sub',
-          uidPerson: 'known-person-uid',
-        },
-      ]);
+      expect(result).toEqual(['known-person-uid']);
     });
   });
 
@@ -484,7 +476,7 @@ describe('ESSOneIdentity', () => {
     });
 
     it('should return empty array when no records found', async () => {
-      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]);
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]); // No records
 
       const result = await essOneIdentity.getPersonWantsOrg('person-uid');
 
@@ -500,6 +492,130 @@ describe('ESSOneIdentity', () => {
         ]
       );
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('hasPersonSiteAccessToProposal', () => {
+    const uidPerson = 'person-123';
+    const proposalUid = 'proposal-abc';
+
+    it('should return true if person has site access to the proposal', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([
+        {
+          values: {
+            DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+            CustomProperty04: proposalUid,
+            OrderState: OrderState.GRANTED,
+          } as PersonWantsOrg,
+        },
+      ]);
+
+      const result = await essOneIdentity.hasPersonSiteAccessToProposal(
+        uidPerson,
+        proposalUid
+      );
+
+      expect(mockOneIdentityApi.getEntities).toHaveBeenCalledWith(
+        'PersonWantsOrg',
+        `UID_PersonOrdered='${uidPerson}' AND (DisplayOrg='${PersonWantsOrgRole.SITE_ACCESS}')`,
+        [
+          'ValidFrom',
+          'ValidUntil',
+          'OrderState',
+          'DisplayOrg',
+          'CustomProperty04',
+        ]
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should return false if person does not have site access to the proposal (different proposal)', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([
+        {
+          values: {
+            DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+            CustomProperty04: 'other-proposal-uid',
+            OrderState: OrderState.GRANTED,
+          } as PersonWantsOrg,
+        },
+      ]);
+
+      const result = await essOneIdentity.hasPersonSiteAccessToProposal(
+        uidPerson,
+        proposalUid
+      );
+      expect(result).toBe(false);
+    });
+
+    it('should return false if person does not have site access to the proposal (different role)', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([
+        {
+          values: {
+            DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS, // Different role
+            CustomProperty04: proposalUid,
+            OrderState: OrderState.GRANTED,
+          } as PersonWantsOrg,
+        },
+      ]);
+
+      const result = await essOneIdentity.hasPersonSiteAccessToProposal(
+        uidPerson,
+        proposalUid
+      );
+      expect(result).toBe(false);
+    });
+
+    it('should return false if site access is aborted', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([
+        {
+          values: {
+            DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+            CustomProperty04: proposalUid,
+            OrderState: OrderState.ABORTED, // Aborted state
+          } as PersonWantsOrg,
+        },
+      ]);
+
+      const result = await essOneIdentity.hasPersonSiteAccessToProposal(
+        uidPerson,
+        proposalUid
+      );
+      expect(result).toBe(false);
+    });
+
+    it('should return false if no PersonWantsOrg records are found', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([]); // No records
+
+      const result = await essOneIdentity.hasPersonSiteAccessToProposal(
+        uidPerson,
+        proposalUid
+      );
+      expect(result).toBe(false);
+    });
+
+    it('should return true if person has multiple site access records and one matches', async () => {
+      mockOneIdentityApi.getEntities.mockResolvedValueOnce([
+        {
+          values: {
+            DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+            CustomProperty04: 'other-proposal-uid',
+            OrderState: OrderState.GRANTED,
+          } as PersonWantsOrg,
+        },
+        {
+          values: {
+            DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+            CustomProperty04: proposalUid,
+            OrderState: OrderState.GRANTED,
+          } as PersonWantsOrg,
+        },
+      ]);
+
+      const result = await essOneIdentity.hasPersonSiteAccessToProposal(
+        uidPerson,
+        proposalUid
+      );
+      expect(result).toBe(true);
     });
   });
 });

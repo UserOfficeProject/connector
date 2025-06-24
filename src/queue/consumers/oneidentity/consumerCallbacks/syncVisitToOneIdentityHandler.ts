@@ -3,6 +3,8 @@ import process from 'process';
 import { logger } from '@user-office-software/duo-logger';
 
 import { Event } from '../../../../models/Event';
+import { ProposalMessageData } from '../../../../models/ProposalMessage';
+import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
 import { ESSOneIdentity } from '../utils/ESSOneIdentity';
 import { IdentityType, UID_Person } from '../utils/interfaces/Person';
 import {
@@ -16,7 +18,7 @@ const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = parseInt(
 );
 
 export async function syncVisitToOneIdentityHandler(
-  { startAt, endAt, visitorId }: VisitMessage,
+  { startAt, endAt, visitorId: oidcSub, proposal }: VisitMessage,
   type: Event
 ): Promise<void> {
   const oneIdentity = new ESSOneIdentity();
@@ -26,17 +28,41 @@ export async function syncVisitToOneIdentityHandler(
 
   try {
     // Only Science Users' access should be managed!
-    const uidPerson = await getScienceUser(oneIdentity, visitorId);
+    const uidPerson = await getScienceUser(oneIdentity, oidcSub);
     if (!uidPerson) {
       logger.logInfo('Visitor is not a Science User, skipping', {});
 
       return;
     }
 
+    const uidESet = await oneIdentity.getProposal(proposal);
+
+    if (!uidESet) {
+      throw new Error('Proposal not found in One Identity, cannot sync visit');
+    }
+
     if (type === Event.VISIT_CREATED) {
-      await createAccessInOneIdentity(oneIdentity, startAt, endAt, visitorId);
+      await createAccessInOneIdentity(
+        oneIdentity,
+        startAt,
+        endAt,
+        oidcSub,
+        proposal
+      );
+
+      // Every visitor should have access to the proposal folders
+      await createProposalConnection(oneIdentity, uidESet, uidPerson);
     } else if (type === Event.VISIT_DELETED) {
       await removeAccessFromOneIdentity(oneIdentity, startAt, endAt, uidPerson);
+
+      // Remove the connection between the proposal and the visitor
+      await removeProposalConnection(
+        oneIdentity,
+        uidESet,
+        uidPerson,
+        oidcSub,
+        proposal
+      );
     }
   } finally {
     await oneIdentity.logout();
@@ -51,9 +77,7 @@ async function getScienceUser(
   centralAccount: string
 ): Promise<UID_Person | undefined> {
   // Find person UID from oidcSub
-  const person = await oneIdentity.getPerson({
-    oidcSub: centralAccount,
-  });
+  const person = await oneIdentity.getPerson(centralAccount);
 
   if (!person) {
     throw new Error('Person not found in One Identity');
@@ -68,14 +92,16 @@ async function createAccessInOneIdentity(
   oneIdentity: ESSOneIdentity,
   startAt: string,
   endAt: string,
-  centralAccount: string
+  centralAccount: string,
+  proposal: ProposalMessageData
 ) {
   // Create site access
   const [pwoSite] = await oneIdentity.createPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
     toIsoString(startAt),
-    toIsoString(endAt)
+    toIsoString(endAt),
+    proposal.shortCode // CustomProperty04 - We store the proposal short code for the site access to be able to find it later
   );
 
   logger.logInfo('Site access created in One Identity', {
@@ -94,7 +120,7 @@ async function createAccessInOneIdentity(
     centralAccount,
     toIsoString(validFrom),
     toIsoString(validUntil),
-    pwoSite.UID_PersonWantsOrg // CustomProperty04
+    pwoSite.UID_PersonWantsOrg // CustomProperty04 - We store the site access UID for the system access to be able to find it later
   );
 
   logger.logInfo('System access created in One Identity', {
@@ -151,6 +177,61 @@ async function removeAccessFromOneIdentity(
   logger.logInfo('System access cancelled in One Identity', {
     UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
   });
+}
+
+async function createProposalConnection(
+  oneIdentity: ESSOneIdentity,
+  uidESet: string,
+  uidPerson: string
+) {
+  // Check if the connection already exists
+  // If connection already exists, no need to create it again, reasons could be:
+  // - The visitor is a member of the proposal
+  // - The visitor has been added to the proposal in the past
+  const exists = (await oneIdentity.getProposalPersonConnections(uidESet)).some(
+    (c) => c.UID_Person === uidPerson
+  );
+
+  if (exists) {
+    logger.logInfo('Connection already exists, skipping', {
+      uidPerson,
+      uidESet,
+    });
+  } else {
+    await oneIdentity.connectPersonToProposal(uidESet, uidPerson);
+    logger.logInfo('Connection created between proposal and visitor', {
+      uidPerson,
+      uidESet,
+    });
+  }
+}
+
+async function removeProposalConnection(
+  oneIdentity: ESSOneIdentity,
+  uidESet: string,
+  uidPerson: string,
+  oidcSub: string,
+  proposal: ProposalMessageData
+) {
+  const isMember = collectUsersFromProposalMessage(proposal).some(
+    (m) => m.oidcSub === oidcSub
+  );
+
+  if (isMember) {
+    logger.logInfo('Visitor is a proposal member, skipping removal', {
+      uidPerson,
+      uidESet,
+    });
+  } else {
+    await oneIdentity.removeConnectionBetweenPersonAndProposal(
+      uidESet,
+      uidPerson
+    );
+    logger.logInfo('Connection removed between proposal and visitor', {
+      uidPerson,
+      uidESet,
+    });
+  }
 }
 
 function toIsoString(date: string | number) {
