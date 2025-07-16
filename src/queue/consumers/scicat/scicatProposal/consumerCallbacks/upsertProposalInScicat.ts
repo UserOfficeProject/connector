@@ -105,7 +105,7 @@ const createInstrumentsObject = (instruments: Instrument[]) => {
         unit: '',
       };
       instrumentsObject[`instrument_time_${index + 1}`] = {
-        value: instrument.allocatedTime / 86400,
+        value: instrument.allocatedTime / 86400 || NaN,
         unit: 'days',
       };
     }
