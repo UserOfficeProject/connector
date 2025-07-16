@@ -1,5 +1,6 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import { Instrument } from '../../../../../models/ProposalMessage';
 import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 import { CreateProposalDto, UpdateProposalDto } from '../dto';
 
@@ -64,6 +65,7 @@ const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
     startTime: new Date(),
     endTime: new Date(),
     MeasurementPeriodList: [],
+    metadata: createInstrumentsObject(proposalMessage.instruments),
   };
 
   return createProposalDto;
@@ -84,9 +86,32 @@ const getUpdateProposalDto = (proposalMessage: ValidProposalMessageData) => {
     startTime: new Date(),
     endTime: new Date(),
     MeasurementPeriodList: [],
+    metadata: createInstrumentsObject(proposalMessage.instruments),
   };
 
   return updateProposalDto;
+};
+
+const createInstrumentsObject = (instruments: Instrument[]) => {
+  const instrumentsObject: Record<
+    string,
+    { value: string | number; unit: string }
+  > = {};
+
+  instruments.forEach((instrument, index) => {
+    if (instrument) {
+      instrumentsObject[`instrument_${index + 1}`] = {
+        value: instrument.shortCode,
+        unit: '',
+      };
+      instrumentsObject[`instrument_time_${index + 1}`] = {
+        value: instrument.allocatedTime / 86400,
+        unit: 'days',
+      };
+    }
+  });
+
+  return instrumentsObject;
 };
 
 const createProposal = async (
