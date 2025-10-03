@@ -136,7 +136,9 @@ const updateProposal = async (
 ) => {
   const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
   const updateProposalDto = getUpdateProposalDto(proposalMessage);
-
+  updateProposalDto.instrumentIds = await getInstrumentIds(
+    proposalMessage.instruments
+  );
   const updateProposalResponse = await request(url, {
     method: 'PATCH',
     body: JSON.stringify(updateProposalDto),
@@ -149,9 +151,6 @@ const updateProposal = async (
   // RabbitMQ message only provides shortCodes (instrument names).
   // To persist proposals with proper references, we resolve those shortCodes to
   // actual Instrument IDs from SciCat and store the instrumentIds in the record.
-  updateProposalDto.instrumentIds = await getInstrumentIds(
-    proposalMessage.instruments
-  );
 
   logger.logInfo('Patch', { url });
   logger.logInfo('Proposal data', { proposalData: updateProposalDto });
