@@ -19,8 +19,6 @@ export interface InstrumentDto {
   customMetadata: Record<string, unknown>;
 }
 
-export type InstrumentIds = string[];
-
 export enum ProposalStatusDefaultShortCodes {
   DRAFT = 'DRAFT',
   FEASIBILITY_REVIEW = 'FEASIBILITY_REVIEW',
