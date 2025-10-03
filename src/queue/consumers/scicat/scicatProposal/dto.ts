@@ -13,6 +13,7 @@ export type CreateProposalDto = {
   startTime?: Date;
   endTime?: Date;
   MeasurementPeriodList: any[];
+  metadata?: Record<string, unknown>;
 };
 
 export type UpdateProposalDto = {
@@ -29,6 +30,7 @@ export type UpdateProposalDto = {
   startTime?: Date;
   endTime?: Date;
   MeasurementPeriodList?: any[];
+  metadata?: Record<string, unknown>;
 };
 
 export interface Institution {

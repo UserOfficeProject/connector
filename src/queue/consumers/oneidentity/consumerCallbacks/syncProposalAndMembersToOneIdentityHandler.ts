@@ -3,15 +3,12 @@ import { logger } from '@user-office-software/duo-logger';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
-import {
-  ESSOneIdentity,
-  PersonHasESETValues,
-  UID_ESet,
-  UID_Person,
-  UserPersonConnection,
-} from '../utils/ESSOneIdentity';
+import { ESSOneIdentity } from '../utils/ESSOneIdentity';
+import { UID_ESet } from '../utils/interfaces/Eset';
+import { UID_Person } from '../utils/interfaces/Person';
+import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
 
-export async function oneIdentityIntegrationHandler(
+export async function syncProposalAndMembersToOneIdentityHandler(
   message: ProposalMessageData,
   type: Event
 ): Promise<void> {
@@ -27,10 +24,11 @@ export async function oneIdentityIntegrationHandler(
     logger.logInfo('UID_ESet from One Identity', { uidESet });
 
     if (uidESet) {
+      const users = collectUsersFromProposalMessage(message);
       await handleConnectionsBetweenProposalAndPersons(
         oneIdentity,
         uidESet,
-        message
+        users.map((user) => user.oidcSub)
       );
     }
   } finally {
@@ -71,22 +69,24 @@ async function getUIDESetFromOneIdentity(
 async function handleConnectionsBetweenProposalAndPersons(
   oneIdentity: ESSOneIdentity,
   uidESet: UID_ESet,
-  message: ProposalMessageData
+  centralAccounts: string[]
 ) {
-  const users = collectUsersFromProposalMessage(message);
-
-  logger.logInfo('Users from proposal', { users });
+  logger.logInfo('Users to be connected to proposal', {
+    centralAccounts,
+  });
 
   // Get all users from One Identity
-  const userPersonConnections = await oneIdentity.getPersons(users);
-  const uidPersons = getUidPersons(userPersonConnections);
+  const uidPersons = await oneIdentity.getPersons(centralAccounts);
 
   // Log an error if not all users are found in One Identity to be able to investigate
-  if (uidPersons.length !== users.length) {
-    logger.logError('Not all users found in One Identity (investigate)', {
-      users,
-      uidPersons,
-    });
+  if (uidPersons.length !== centralAccounts.length) {
+    logger.logError(
+      'Not all users found in One Identity (Investigate). Missing central accounts:',
+      {
+        centralAccounts,
+        foundUsersInOneIdentity: uidPersons,
+      }
+    );
   }
 
   logger.logInfo('Found persons in One Identity', { uidPersons });
@@ -100,22 +100,10 @@ async function handleConnectionsBetweenProposalAndPersons(
   logger.logInfo('Connections updated', { uidESet, uidPersons });
 }
 
-// Method to get UID_Person from UserPersonConnection
-function getUidPersons(
-  userPersonConnections: UserPersonConnection[]
-): UID_Person[] {
-  return userPersonConnections
-    .filter(
-      (connection): connection is { oidcSub: string; uidPerson: UID_Person } =>
-        connection.uidPerson !== undefined
-    )
-    .map(({ uidPerson }) => uidPerson);
-}
-
 async function addNewConnections(
   oneIdentity: ESSOneIdentity,
   uidESet: UID_ESet,
-  connections: PersonHasESETValues[],
+  connections: PersonHasESET[],
   uidPersons: UID_Person[]
 ): Promise<void> {
   const connectionsToAdd = uidPersons.filter(
@@ -132,12 +120,32 @@ async function addNewConnections(
 
 async function removeOldConnections(
   oneIdentity: ESSOneIdentity,
-  connections: PersonHasESETValues[],
+  connections: PersonHasESET[],
   uidPersons: UID_Person[]
 ): Promise<void> {
-  const connectionsToRemove = connections.filter(
+  // Collect connections that are not in the list of current persons (OIM)
+  const potentiallyRemoveableConnections = connections.filter(
     (connection) => !uidPersons.includes(connection.UID_Person)
   );
+
+  const removalChecks = await Promise.all(
+    potentiallyRemoveableConnections.map(async (connectionToRemove) => {
+      const hasAccess = await oneIdentity.hasPersonSiteAccessToProposal(
+        connectionToRemove.UID_Person,
+        connectionToRemove.UID_ESet
+      );
+
+      return {
+        connection: connectionToRemove,
+        shouldRemove: !hasAccess, // Remove if the person does NOT have site access
+      };
+    })
+  );
+
+  // Filter out connections that should not be removed
+  const connectionsToRemove = removalChecks
+    .filter((check) => check.shouldRemove)
+    .map((check) => check.connection);
 
   await Promise.all(
     connectionsToRemove.map((connection) =>
