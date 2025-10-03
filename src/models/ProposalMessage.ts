@@ -29,6 +29,8 @@ export type ProposalMessageData = {
   newStatus?: ProposalStatusDefaultShortCodes;
   submitted: boolean;
   members: ProposalUser[];
+  dataAccessUsers: ProposalUser[];
+  visitors: ProposalUser[];
   proposer?: ProposalUser;
   instruments?: Instrument[];
 };
