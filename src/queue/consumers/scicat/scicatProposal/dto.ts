@@ -12,6 +12,7 @@ export type CreateProposalDto = {
   abstract: string;
   startTime?: Date;
   endTime?: Date;
+  instrumentIds: string[];
   MeasurementPeriodList: any[];
   metadata?: Record<string, unknown>;
 };
@@ -29,6 +30,7 @@ export type UpdateProposalDto = {
   abstract?: string;
   startTime?: Date;
   endTime?: Date;
+  instrumentIds: string[];
   MeasurementPeriodList?: any[];
   metadata?: Record<string, unknown>;
 };
