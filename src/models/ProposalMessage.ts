@@ -6,6 +6,19 @@ export type Instrument = {
   allocatedTime: number;
 };
 
+export interface InstrumentDto {
+  _id: string;
+  id: string;
+  name: string;
+  pid: string;
+  uniqueName: string;
+  createdBy: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt?: string;
+  customMetadata: Record<string, unknown>;
+}
+
 export enum ProposalStatusDefaultShortCodes {
   DRAFT = 'DRAFT',
   FEASIBILITY_REVIEW = 'FEASIBILITY_REVIEW',
@@ -29,6 +42,8 @@ export type ProposalMessageData = {
   newStatus?: ProposalStatusDefaultShortCodes;
   submitted: boolean;
   members: ProposalUser[];
+  dataAccessUsers: ProposalUser[];
+  visitors: ProposalUser[];
   proposer?: ProposalUser;
   instruments?: Instrument[];
 };

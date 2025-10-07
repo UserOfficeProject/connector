@@ -104,13 +104,15 @@ export async function syncVisaProposal(
     });
   }
 
-  const proposersAndCoproposers = [
+  const experimenters = [
     ...(proposalWithNewStatus.proposer ? [proposalWithNewStatus.proposer] : []),
     ...proposalWithNewStatus.members,
+    ...proposalWithNewStatus.dataAccessUsers,
+    ...proposalWithNewStatus.visitors,
   ];
 
-  // Create new user for the Principal Investigator and Coproposers
-  for (const member of proposersAndCoproposers) {
+  // Create new user for the Principal Investigator, Coproposers, Data Access Users and Visitors
+  for (const member of experimenters) {
     await createUserAndAssignToExperiment(
       member,
       proposalWithNewStatus.proposalPk
@@ -120,6 +122,6 @@ export async function syncVisaProposal(
   // Delete the users that are saved in the experiment users table, but not in the Proposal Payload
   await deleteMissingUsersFromExperiment(
     proposalWithNewStatus.proposalPk,
-    proposersAndCoproposers
+    experimenters
   );
 }
