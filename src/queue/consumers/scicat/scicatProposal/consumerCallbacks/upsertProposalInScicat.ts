@@ -1,5 +1,9 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import {
+  Instrument,
+  InstrumentDto,
+} from '../../../../../models/ProposalMessage';
 import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
 import { CreateProposalDto, UpdateProposalDto } from '../dto';
 
@@ -60,10 +64,12 @@ const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
     lastname: proposalMessage.proposer.lastName,
     abstract: proposalMessage.abstract,
     ownerGroup: proposalMessage.shortCode,
+    instrumentIds: [],
     accessGroups: [],
     startTime: new Date(),
     endTime: new Date(),
     MeasurementPeriodList: [],
+    metadata: {},
   };
 
   return createProposalDto;
@@ -80,10 +86,12 @@ const getUpdateProposalDto = (proposalMessage: ValidProposalMessageData) => {
     lastname: proposalMessage.proposer.lastName,
     abstract: proposalMessage.abstract,
     ownerGroup: proposalMessage.shortCode,
+    instrumentIds: [],
     accessGroups: [],
     startTime: new Date(),
     endTime: new Date(),
     MeasurementPeriodList: [],
+    metadata: {},
   };
 
   return updateProposalDto;
@@ -98,6 +106,13 @@ const createProposal = async (
 
   logger.logInfo('POST', { url });
   logger.logInfo('Proposal data', { proposalData: createProposalDto });
+
+  // RabbitMQ message only provides shortCodes (instrument names).
+  // To persist proposals with proper references, we resolve those shortCodes to
+  // actual Instrument IDs from SciCat and store the instrumentIds in the record.
+  createProposalDto.instrumentIds = await getInstrumentIds(
+    proposalMessage.instruments
+  );
 
   const createProposalResponse = await request<string>(url, {
     method: 'POST',
@@ -122,6 +137,12 @@ const updateProposal = async (
   const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
   const updateProposalDto = getUpdateProposalDto(proposalMessage);
 
+  // RabbitMQ message only provides shortCodes (instrument names).
+  // To persist proposals with proper references, we resolve those shortCodes to
+  // actual Instrument IDs from SciCat and store the instrumentIds in the record.
+  updateProposalDto.instrumentIds = await getInstrumentIds(
+    proposalMessage.instruments
+  );
   const updateProposalResponse = await request(url, {
     method: 'PATCH',
     body: JSON.stringify(updateProposalDto),
@@ -170,6 +191,36 @@ const checkProposalExists = async (
   } else {
     return false;
   }
+};
+
+const getInstrumentIds = async (instruments: Instrument[]) => {
+  const sciCatAccessToken = await getSciCatAccessToken();
+  const instrumentNames = instruments.map((inst) => inst.shortCode);
+
+  const instrumentIds = [];
+
+  for (const name of instrumentNames) {
+    const instrumentNameLowerCase = encodeURIComponent(name.toLowerCase());
+    const url = `${sciCatBaseUrl}/Instruments?filter={"where":{"name":{"like":"${instrumentNameLowerCase}"}}}`;
+
+    try {
+      const res = await request<InstrumentDto[]>(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      });
+
+      instrumentIds.push(res[0].pid);
+    } catch (error) {
+      logger.logError(`Error fetching instrument ID from scicat for ${name}`, {
+        error,
+      });
+    }
+  }
+
+  return instrumentIds;
 };
 
 const upsertProposalInScicat = async (
