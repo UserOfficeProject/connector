@@ -107,8 +107,8 @@ export async function syncVisaProposal(
   const experimenters = [
     ...(proposalWithNewStatus.proposer ? [proposalWithNewStatus.proposer] : []),
     ...proposalWithNewStatus.members,
-    ...proposalWithNewStatus.dataAccessUsers,
-    ...proposalWithNewStatus.visitors,
+    ...(proposalWithNewStatus.dataAccessUsers || []),
+    ...(proposalWithNewStatus.visitors || []),
   ];
 
   // Create new user for the Principal Investigator, Coproposers, Data Access Users and Visitors
