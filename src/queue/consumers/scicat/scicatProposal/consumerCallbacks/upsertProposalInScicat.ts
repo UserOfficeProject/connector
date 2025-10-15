@@ -195,19 +195,32 @@ const checkProposalExists = async (
 
 const getInstrumentIds = async (instruments: Instrument[]) => {
   const sciCatAccessToken = await getSciCatAccessToken();
-  const shortCodes = JSON.stringify(instruments.map((inst) => inst.shortCode));
+  const instrumentNames = instruments.map((inst) => inst.shortCode);
 
-  const url = `${sciCatBaseUrl}/Instruments?filter={"where":{"name":{"$in":${shortCodes}}}}`;
+  const instrumentIds = [];
 
-  const getInstrumentsResponse = await request<InstrumentDto[]>(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sciCatAccessToken}`,
-    },
-  });
+  for (const name of instrumentNames) {
+    const instrumentNameLowerCase = encodeURIComponent(name.toLowerCase());
+    const url = `${sciCatBaseUrl}/Instruments?filter={"where":{"name":{"like":"${instrumentNameLowerCase}"}}}`;
 
-  return getInstrumentsResponse.map((inst) => inst.pid);
+    try {
+      const res = await request<InstrumentDto[]>(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      });
+
+      instrumentIds.push(res[0].pid);
+    } catch (error) {
+      logger.logError(`Error fetching instrument ID from scicat for ${name}`, {
+        error,
+      });
+    }
+  }
+
+  return instrumentIds;
 };
 
 const upsertProposalInScicat = async (
