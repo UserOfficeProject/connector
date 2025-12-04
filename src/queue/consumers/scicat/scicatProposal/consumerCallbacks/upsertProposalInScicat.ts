@@ -201,7 +201,7 @@ const getInstrumentIds = async (instruments: Instrument[]) => {
 
   for (const name of instrumentNames) {
     const instrumentNameLowerCase = encodeURIComponent(name.toLowerCase());
-    const url = `${sciCatBaseUrl}/Instruments?filter={"where":{"name":{"like":"${instrumentNameLowerCase}"}}}`;
+    const url = `${sciCatBaseUrl}/Instruments?filter={"where":{"name":{"ilike":"${instrumentNameLowerCase}"}}}`;
 
     try {
       const res = await request<InstrumentDto[]>(url, {
