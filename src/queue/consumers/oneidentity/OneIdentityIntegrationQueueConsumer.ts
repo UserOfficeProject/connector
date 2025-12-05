@@ -2,13 +2,13 @@ import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 import { isAxiosError } from 'axios';
 
+import { QueueConsumer } from '../QueueConsumer';
 import { syncProposalAndMembersToOneIdentityHandler } from './consumerCallbacks/syncProposalAndMembersToOneIdentityHandler';
 import { syncVisitToOneIdentityHandler } from './consumerCallbacks/syncVisitToOneIdentityHandler';
+import { isVisitMessage } from './utils/isVisitMessage';
 import { validateProposalMessage } from './utils/validateProposalMessage';
 import { Event } from '../../../models/Event';
-import { QueueConsumer } from '../QueueConsumer';
 import { hasTriggeringType } from '../utils/hasTriggeringType';
-import { isVisitMessage } from './utils/isVisitMessage';
 
 const ONE_IDENTITY_INTEGRATION_QUEUE_NAME =
   process.env.ONE_IDENTITY_INTEGRATION_QUEUE_NAME || '';
