@@ -50,10 +50,8 @@ const visitMessage: VisitMessage = {
   endAt: '2023-01-10T00:00:00.000Z',
   proposal: {
     shortCode: 'proposal-short-code',
-    members: [
-      { oidcSub: 'member-oidc-sub' },
-      { oidcSub: 'visitor-oidc-sub' }, // Visitor is also a member
-    ],
+    members: [{ oidcSub: 'member-oidc-sub' }],
+    dataAccessUsers: [{ oidcSub: 'visitor-oidc-sub' }], // Visitor is also a data access user
   } as ProposalMessageData,
 };
 
@@ -61,7 +59,7 @@ const visitMessageVisitorNotMember: VisitMessage = {
   ...visitMessage,
   proposal: {
     ...visitMessage.proposal,
-    members: [{ oidcSub: 'member-oidc-sub' }], // Visitor is NOT a member
+    dataAccessUsers: [], // remove visitor from data access users
   } as ProposalMessageData,
 };
 

@@ -218,6 +218,7 @@ async function removeProposalConnection(
   );
 
   if (isMember) {
+    // [proposer, members, dataAccessUsers] should always have access to the proposal
     logger.logInfo('Visitor is a proposal member, skipping removal', {
       uidPerson,
       uidESet,

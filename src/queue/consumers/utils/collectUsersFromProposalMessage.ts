@@ -4,7 +4,9 @@ import { ProposalUser } from '../scicat/scicatProposal/dto';
 export function collectUsersFromProposalMessage(
   proposalMessage: ProposalMessageData
 ): ProposalUser[] {
-  return [...proposalMessage.members, proposalMessage.proposer].filter(
-    (user): user is ProposalUser => user !== undefined
-  );
+  return [
+    ...proposalMessage.members,
+    proposalMessage.proposer,
+    ...proposalMessage.dataAccessUsers,
+  ].filter((user): user is ProposalUser => user !== undefined);
 }
