@@ -104,7 +104,7 @@ describe('oneIdentityIntegrationHandler', () => {
       setupMocks({
         getProposal: undefined,
         getProposalPersonConnections: [],
-        getPersons: ['proposer-uid'],
+        getPersons: ['proposer-oidc-sub'],
       });
 
       await syncProposalAndMembersToOneIdentityHandler(
@@ -115,8 +115,8 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(logger.logError).toHaveBeenCalledWith(
         'Not all users found in One Identity (Investigate). Missing central accounts:',
         {
-          centralAccounts: ['member-oidc-sub', 'proposer-oidc-sub'],
-          foundUsersInOneIdentity: ['proposer-uid'],
+          missingCentralAccounts: ['member-oidc-sub'],
+          foundUsersInOneIdentity: ['proposer-oidc-sub'],
         }
       );
     });
