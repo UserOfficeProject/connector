@@ -21,8 +21,6 @@ describe('collectUsersFromProposalMessage', () => {
     callId: 2,
     submitted: true,
     members: [],
-    dataAccessUsers: [],
-    visitors: [],
     ...overrides,
   });
 
@@ -54,5 +52,21 @@ describe('collectUsersFromProposalMessage', () => {
     const result = collectUsersFromProposalMessage(message);
 
     expect(result).toEqual([member]);
+  });
+
+  it('handles missing dataAccessUsers by treating it as empty', () => {
+    const member = createUser(1, 'member');
+    const proposer = createUser(2, 'proposer');
+
+    const message = {
+      ...createBaseMessage({
+        members: [member],
+        proposer,
+      }),
+    } as ProposalMessageData;
+
+    const result = collectUsersFromProposalMessage(message);
+
+    expect(result).toEqual([member, proposer]);
   });
 });
