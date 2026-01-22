@@ -80,10 +80,14 @@ async function handleConnectionsBetweenProposalAndPersons(
 
   // Log an error if not all users are found in One Identity to be able to investigate
   if (uidPersons.length !== centralAccounts.length) {
+    const missingCentralAccounts = centralAccounts.filter(
+      (account) => !uidPersons.includes(account)
+    );
+
     logger.logError(
       'Not all users found in One Identity (Investigate). Missing central accounts:',
       {
-        centralAccounts,
+        missingCentralAccounts,
         foundUsersInOneIdentity: uidPersons,
       }
     );

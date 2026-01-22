@@ -107,7 +107,7 @@ The handler manages site and system access in One Identity based on visit creati
 ## One Identity Proposal and Member Sync
 
 ### Purpose
-The handler synchronizes proposal information and its members (proposer and co-proposers) with One Identity. This ensures that proposals and their associated personnel are accurately represented and connected in One Identity.
+The handler synchronizes proposal information and its members (proposer, co-proposers and data access users) with One Identity. This ensures that proposals and their associated personnel are accurately represented and connected in One Identity.
 
 ### Process Overview
 - Triggered by `PROPOSAL_ACCEPTED` and `PROPOSAL_UPDATED` events.
@@ -120,18 +120,18 @@ The handler synchronizes proposal information and its members (proposer and co-p
     - If `PROPOSAL_UPDATED` event:
         - If the proposal does not exist, the process logs this information and concludes, as there's no existing record to update.
 - **User Synchronization**:
-    - Collects all unique user OIDC sub identifiers from the proposal message (proposer and members).
+    - Collects all unique user OIDC sub identifiers from the proposal message (proposer, members and data access users).
     - Retrieves the corresponding `UID_Person` for these users from One Identity.
     - Logs an error if any users from the proposal message are not found in One Identity.
 - **Connection Management**:
     - Fetches all existing `PersonHasESET` connections for the identified proposal (`UID_ESet`).
     - **Remove Old Connections**:
-        - Identifies connections in One Identity for persons who are no longer part of the current proposal members list.
+        - Identifies connections in One Identity for persons who are no longer part of the current proposal members/dataAccessUsers list.
         - Before removing a connection, it checks if the person has "site access" to the proposal (e.g., as a visitor).
         - If the person has site access, their connection to the proposal is *not* removed.
         - Otherwise, the outdated connection is removed.
     - **Add New Connections**:
-        - Identifies persons in the current proposal members list who are not yet connected to the proposal in One Identity.
+        - Identifies persons in the current proposal members/dataAccessUsers list who are not yet connected to the proposal in One Identity.
         - Creates new `PersonHasESET` connections for these persons.
 - **Logout**: Ensures logout from One Identity in a `finally` block, regardless of success or failure.
 
