@@ -66,6 +66,65 @@ async function getUIDESetFromOneIdentity(
   return uidESet;
 }
 
+async function discoverPersonsWithRetry(
+  oneIdentity: ESSOneIdentity,
+  centralAccounts: string[]
+): Promise<UID_Person[]> {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS_MS = [2000, 5000, 10000]; // Progressive delays: 2s, 5s, 10s
+
+  let attempts = 0;
+
+  const attemptDiscovery = async (): Promise<UID_Person[]> => {
+    attempts++;
+    const uidPersons = await oneIdentity.getPersons(centralAccounts);
+
+    if (uidPersons.length !== centralAccounts.length) {
+      const missingCentralAccounts = centralAccounts.filter(
+        (account) => !uidPersons.includes(account)
+      );
+
+      if (attempts < MAX_RETRIES) {
+        const delayMs = RETRY_DELAYS_MS[attempts - 1];
+        logger.logError('discoverOIMPersonsWithRetry: incomplete - retrying', {
+          attempt: attempts,
+          maxRetries: MAX_RETRIES,
+          delayMs,
+          missingCentralAccounts,
+          foundCount: uidPersons.length,
+          expectedCount: centralAccounts.length,
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+        return attemptDiscovery();
+      } else {
+        logger.logError(
+          'discoverOIMPersonsWithRetry: failed after max retries',
+          {
+            attempt: attempts,
+            maxRetries: MAX_RETRIES,
+            missingCentralAccounts,
+            foundCount: uidPersons.length,
+            expectedCount: centralAccounts.length,
+          }
+        );
+
+        return uidPersons;
+      }
+    }
+
+    logger.logInfo('discoverOIMPersonsWithRetry: success', {
+      attempt: attempts,
+      foundCount: uidPersons.length,
+    });
+
+    return uidPersons;
+  };
+
+  return attemptDiscovery();
+}
+
 async function handleConnectionsBetweenProposalAndPersons(
   oneIdentity: ESSOneIdentity,
   uidESet: UID_ESet,
@@ -76,24 +135,10 @@ async function handleConnectionsBetweenProposalAndPersons(
   });
 
   // Get all users from One Identity
-  const uidPersons = await oneIdentity.getPersons(centralAccounts);
-
-  // Log an error if not all users are found in One Identity to be able to investigate
-  if (uidPersons.length !== centralAccounts.length) {
-    const missingCentralAccounts = centralAccounts.filter(
-      (account) => !uidPersons.includes(account)
-    );
-
-    logger.logError(
-      'Not all users found in One Identity (Investigate). Missing central accounts:',
-      {
-        missingCentralAccounts,
-        foundUsersInOneIdentity: uidPersons,
-      }
-    );
-  }
-
-  logger.logInfo('Found persons in One Identity', { uidPersons });
+  const uidPersons = await discoverPersonsWithRetry(
+    oneIdentity,
+    centralAccounts
+  );
 
   // Get all connections between UID_ESet and UID_Person
   const connections = await oneIdentity.getProposalPersonConnections(uidESet);
