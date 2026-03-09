@@ -71,7 +71,7 @@ async function discoverPersonsWithRetry(
   centralAccounts: string[]
 ): Promise<UID_Person[]> {
   const MAX_RETRIES = 3;
-  const RETRY_DELAYS_MS = [2000, 5000, 10000]; // Progressive delays: 2s, 5s, 10s
+  const RETRY_DELAYS_MS = [20000, 40000, 60000]; // Progressive delays: 20s, 40s, 60s
 
   let attempts = 0;
 
@@ -139,6 +139,8 @@ async function handleConnectionsBetweenProposalAndPersons(
     oneIdentity,
     centralAccounts
   );
+
+  logger.logInfo('Found persons in One Identity', { uidPersons });
 
   // Get all connections between UID_ESet and UID_Person
   const connections = await oneIdentity.getProposalPersonConnections(uidESet);
