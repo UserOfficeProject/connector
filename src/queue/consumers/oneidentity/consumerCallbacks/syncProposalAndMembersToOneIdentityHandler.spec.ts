@@ -45,7 +45,9 @@ const setupMocks = (data: {
   );
   if (data.hasPersonSiteAccessToProposalConfig) {
     mockOneIdentity.hasPersonSiteAccessToProposal.mockImplementation(
-      async (uidPerson: string, _proposalUid: string) => {
+      async (uidPerson: string, proposalUid: string) => {
+        void proposalUid;
+
         return data.hasPersonSiteAccessToProposalConfig?.[uidPerson] ?? false;
       }
     );
@@ -134,8 +136,9 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(logger.logError).toHaveBeenCalledWith(
         'discoverOIMPersonsWithRetry: failed after max retries',
         expect.objectContaining({
-          attempt: 3,
+          attempt: 4,
           maxRetries: 3,
+          totalAttempts: 4,
           missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
           foundCount: 1,
           expectedCount: 3,
@@ -149,9 +152,10 @@ describe('oneIdentityIntegrationHandler', () => {
         getProposalPersonConnections: [],
       });
 
-      // First two attempts return incomplete results, third attempt returns all users
+      // First three attempts return incomplete results, fourth attempt returns all users
       mockOneIdentity.getPersons
         .mockResolvedValueOnce(['proposer-oidc-sub'])
+        .mockResolvedValueOnce(['proposer-oidc-sub', 'member-oidc-sub'])
         .mockResolvedValueOnce(['proposer-oidc-sub', 'member-oidc-sub'])
         .mockResolvedValueOnce([
           'proposer-oidc-sub',
@@ -187,11 +191,22 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        3,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 3,
+          delayMs: 60000,
+          foundCount: 2,
+          expectedCount: 3,
+        })
+      );
+
       // Verify success log on final attempt
       expect(logger.logInfo).toHaveBeenCalledWith(
         'discoverOIMPersonsWithRetry: success',
         expect.objectContaining({
-          attempt: 3,
+          attempt: 4,
           foundCount: 3,
         })
       );
@@ -215,8 +230,8 @@ describe('oneIdentityIntegrationHandler', () => {
       await jest.runAllTimersAsync();
       await promise;
 
-      // Verify that getPersons was called 3 times (one per retry attempt)
-      expect(mockOneIdentity.getPersons).toHaveBeenCalledTimes(3);
+      // Verify that getPersons was called 4 times (initial attempt plus 3 retries)
+      expect(mockOneIdentity.getPersons).toHaveBeenCalledTimes(4);
 
       // Verify intermediate retry logs
       expect(logger.logWarn).toHaveBeenNthCalledWith(
@@ -243,12 +258,26 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        3,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 3,
+          maxRetries: 3,
+          delayMs: 60000,
+          missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
       // Verify final error log after max retries exhausted
       expect(logger.logError).toHaveBeenCalledWith(
         'discoverOIMPersonsWithRetry: failed after max retries',
         expect.objectContaining({
-          attempt: 3,
+          attempt: 4,
           maxRetries: 3,
+          totalAttempts: 4,
           missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
           foundCount: 1,
           expectedCount: 3,

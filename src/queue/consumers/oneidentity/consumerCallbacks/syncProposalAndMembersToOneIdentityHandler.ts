@@ -71,6 +71,7 @@ async function discoverPersonsWithRetry(
   centralAccounts: string[]
 ): Promise<UID_Person[]> {
   const MAX_RETRIES = 3;
+  const MAX_ATTEMPTS = MAX_RETRIES + 1;
   const RETRY_DELAYS_MS = [20000, 40000, 60000]; // Progressive delays: 20s, 40s, 60s
 
   let attempts = 0;
@@ -84,7 +85,7 @@ async function discoverPersonsWithRetry(
         (account) => !uidPersons.includes(account)
       );
 
-      if (attempts < MAX_RETRIES) {
+      if (attempts < MAX_ATTEMPTS) {
         const delayMs = RETRY_DELAYS_MS[attempts - 1];
         logger.logWarn('discoverOIMPersonsWithRetry: incomplete - retrying', {
           attempt: attempts,
@@ -104,6 +105,7 @@ async function discoverPersonsWithRetry(
           {
             attempt: attempts,
             maxRetries: MAX_RETRIES,
+            totalAttempts: MAX_ATTEMPTS,
             missingCentralAccounts,
             foundCount: uidPersons.length,
             expectedCount: centralAccounts.length,
