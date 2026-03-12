@@ -86,7 +86,7 @@ async function discoverPersonsWithRetry(
 
       if (attempts < MAX_RETRIES) {
         const delayMs = RETRY_DELAYS_MS[attempts - 1];
-        logger.logError('discoverOIMPersonsWithRetry: incomplete - retrying', {
+        logger.logWarn('discoverOIMPersonsWithRetry: incomplete - retrying', {
           attempt: attempts,
           maxRetries: MAX_RETRIES,
           delayMs,

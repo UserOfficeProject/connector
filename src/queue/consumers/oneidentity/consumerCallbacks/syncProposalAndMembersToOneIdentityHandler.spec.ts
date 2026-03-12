@@ -167,8 +167,7 @@ describe('oneIdentityIntegrationHandler', () => {
       await jest.runAllTimersAsync();
       await promise;
 
-      // Verify retry logs
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         1,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -178,7 +177,7 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         2,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -220,7 +219,7 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(mockOneIdentity.getPersons).toHaveBeenCalledTimes(3);
 
       // Verify intermediate retry logs
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         1,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -232,7 +231,7 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         2,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -245,8 +244,7 @@ describe('oneIdentityIntegrationHandler', () => {
       );
 
       // Verify final error log after max retries exhausted
-      expect(logger.logError).toHaveBeenNthCalledWith(
-        3,
+      expect(logger.logError).toHaveBeenCalledWith(
         'discoverOIMPersonsWithRetry: failed after max retries',
         expect.objectContaining({
           attempt: 3,
