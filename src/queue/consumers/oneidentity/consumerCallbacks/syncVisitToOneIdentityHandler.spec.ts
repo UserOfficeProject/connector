@@ -63,6 +63,23 @@ const visitMessageVisitorNotMember: VisitMessage = {
   } as ProposalMessageData,
 };
 
+const visitMessageVisitorOnlyInVisitors: VisitMessage = {
+  ...visitMessage,
+  proposal: {
+    ...visitMessage.proposal,
+    dataAccessUsers: [],
+    visitors: [
+      {
+        id: 524,
+        firstName: 'Visitor',
+        lastName: 'Only',
+        email: 'visitor@example.com',
+        oidcSub: 'visitor-oidc-sub',
+      },
+    ],
+  } as ProposalMessageData,
+};
+
 describe('syncVisitToOneIdentityHandler', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -445,6 +462,56 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       // Using original visitMessage where visitor IS a member
       await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED);
+
+      expect(
+        mockOneIdentity.removeConnectionBetweenPersonAndProposal
+      ).not.toHaveBeenCalled();
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'Visitor is a proposal member, skipping removal',
+        {
+          uidPerson: mockPerson.UID_Person,
+          uidESet: mockUidESet,
+        }
+      );
+      expect(mockOneIdentity.logout).toHaveBeenCalled();
+    });
+
+    it('should skip removing proposal connection if visitor is still in the visitors list', async () => {
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+      const mockPersonWantsOrgs = [
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+          UID_PersonOrdered: 'visitor-uid',
+          DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+          ValidFrom: '2023-01-01T00:00:00.000Z',
+          ValidUntil: '2023-01-10T00:00:00.000Z',
+          CustomProperty04: 'proposal-short-code',
+          OrderState: OrderState.GRANTED,
+        } as PersonWantsOrg,
+        {
+          UID_PersonWantsOrg: 'system-access-uid',
+          UID_PersonOrdered: 'visitor-uid',
+          DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
+          ValidFrom: '2023-01-01T00:00:00.000Z',
+          ValidUntil: '2023-01-10T00:00:00.000Z',
+          CustomProperty04: 'site-access-uid',
+          OrderState: OrderState.GRANTED,
+        } as PersonWantsOrg,
+      ];
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+      mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce(
+        mockPersonWantsOrgs
+      );
+
+      await syncVisitToOneIdentityHandler(
+        visitMessageVisitorOnlyInVisitors,
+        Event.VISIT_DELETED
+      );
 
       expect(
         mockOneIdentity.removeConnectionBetweenPersonAndProposal
