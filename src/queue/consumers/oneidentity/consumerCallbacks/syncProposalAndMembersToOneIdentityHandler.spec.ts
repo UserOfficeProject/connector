@@ -40,12 +40,14 @@ const setupMocks = (data: {
   mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce(
     data.getProposalPersonConnections ?? []
   );
-  mockOneIdentity.getPersons.mockResolvedValueOnce(
+  mockOneIdentity.getPersons.mockResolvedValue(
     data.getPersons ?? ['proposer-uid', 'member-uid', 'data-access-uid']
   );
   if (data.hasPersonSiteAccessToProposalConfig) {
     mockOneIdentity.hasPersonSiteAccessToProposal.mockImplementation(
-      async (uidPerson: string, _proposalUid: string) => {
+      async (uidPerson: string, proposalUid: string) => {
+        void proposalUid;
+
         return data.hasPersonSiteAccessToProposalConfig?.[uidPerson] ?? false;
       }
     );
@@ -63,6 +65,14 @@ const proposalMessage = {
 } as ProposalMessageData;
 
 describe('oneIdentityIntegrationHandler', () => {
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   describe('PROPOSAL_ACCEPTED', () => {
     it('should handle accepted proposal', async () => {
       setupMocks({
@@ -115,17 +125,170 @@ describe('oneIdentityIntegrationHandler', () => {
         getPersons: ['proposer-oidc-sub'],
       });
 
-      await syncProposalAndMembersToOneIdentityHandler(
+      const promise = syncProposalAndMembersToOneIdentityHandler(
         proposalMessage,
         Event.PROPOSAL_ACCEPTED
       );
 
+      await jest.runAllTimersAsync();
+      await promise;
+
       expect(logger.logError).toHaveBeenCalledWith(
-        'Not all users found in One Identity (Investigate). Missing central accounts:',
-        {
+        'discoverOIMPersonsWithRetry: failed after max retries',
+        expect.objectContaining({
+          attempt: 4,
+          maxRetries: 3,
+          totalAttempts: 4,
           missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
-          foundUsersInOneIdentity: ['proposer-oidc-sub'],
-        }
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+    });
+
+    it('should retry and eventually find all users after retries', async () => {
+      setupMocks({
+        getProposal: undefined,
+        getProposalPersonConnections: [],
+      });
+
+      // First three attempts return incomplete results, fourth attempt returns all users
+      mockOneIdentity.getPersons
+        .mockResolvedValueOnce(['proposer-oidc-sub'])
+        .mockResolvedValueOnce(['proposer-oidc-sub', 'member-oidc-sub'])
+        .mockResolvedValueOnce(['proposer-oidc-sub', 'member-oidc-sub'])
+        .mockResolvedValueOnce([
+          'proposer-oidc-sub',
+          'member-oidc-sub',
+          'data-access-oidc-sub',
+        ]);
+
+      const promise = syncProposalAndMembersToOneIdentityHandler(
+        proposalMessage,
+        Event.PROPOSAL_ACCEPTED
+      );
+
+      await jest.runAllTimersAsync();
+      await promise;
+
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        1,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 1,
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        2,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 2,
+          foundCount: 2,
+          expectedCount: 3,
+        })
+      );
+
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        3,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 3,
+          delayMs: 60000,
+          foundCount: 2,
+          expectedCount: 3,
+        })
+      );
+
+      // Verify success log on final attempt
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'discoverOIMPersonsWithRetry: success',
+        expect.objectContaining({
+          attempt: 4,
+          foundCount: 3,
+        })
+      );
+
+      // Verify all users are connected
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(3);
+    });
+
+    it('should retry three times and fail if users are not found', async () => {
+      setupMocks({
+        getProposal: undefined,
+        getProposalPersonConnections: [],
+        getPersons: ['proposer-oidc-sub'],
+      });
+
+      const promise = syncProposalAndMembersToOneIdentityHandler(
+        proposalMessage,
+        Event.PROPOSAL_ACCEPTED
+      );
+
+      await jest.runAllTimersAsync();
+      await promise;
+
+      // Verify that getPersons was called 4 times (initial attempt plus 3 retries)
+      expect(mockOneIdentity.getPersons).toHaveBeenCalledTimes(4);
+
+      // Verify intermediate retry logs
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        1,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 1,
+          maxRetries: 3,
+          missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        2,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 2,
+          maxRetries: 3,
+          missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        3,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 3,
+          maxRetries: 3,
+          delayMs: 60000,
+          missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
+      // Verify final error log after max retries exhausted
+      expect(logger.logError).toHaveBeenCalledWith(
+        'discoverOIMPersonsWithRetry: failed after max retries',
+        expect.objectContaining({
+          attempt: 4,
+          maxRetries: 3,
+          totalAttempts: 4,
+          missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
+      // Verify connections are still attempted with partial results
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(1);
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
+        'proposal-UID_ESet',
+        'proposer-oidc-sub'
       );
     });
 
