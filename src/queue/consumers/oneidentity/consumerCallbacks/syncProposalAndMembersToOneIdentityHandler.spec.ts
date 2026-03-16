@@ -450,6 +450,60 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
+    it('should keep visitor connections when the visitor is still on the proposal', async () => {
+      const proposalMessageWithVisitor = {
+        ...proposalMessage,
+        visitors: [{ oidcSub: 'visitor-oidc-sub' } as ProposalUser],
+      } as ProposalMessageData;
+
+      setupMocks({
+        getProposal: 'proposal-UID_ESet',
+        getProposalPersonConnections: [
+          {
+            UID_ESet: 'proposal-UID_ESet',
+            UID_Person: 'proposer-uid',
+          },
+          {
+            UID_ESet: 'proposal-UID_ESet',
+            UID_Person: 'visitor-uid',
+          },
+        ],
+        getPersons: [
+          'proposer-uid',
+          'member-uid',
+          'data-access-uid',
+          'visitor-uid',
+        ],
+      });
+
+      await syncProposalAndMembersToOneIdentityHandler(
+        proposalMessageWithVisitor,
+        Event.PROPOSAL_UPDATED
+      );
+
+      expect(
+        mockOneIdentity.removeConnectionBetweenPersonAndProposal
+      ).not.toHaveBeenCalledWith('proposal-UID_ESet', 'visitor-uid');
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(2);
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
+        'proposal-UID_ESet',
+        'member-uid'
+      );
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
+        'proposal-UID_ESet',
+        'data-access-uid'
+      );
+      expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
+        uidESet: 'proposal-UID_ESet',
+        uidPersons: [
+          'proposer-uid',
+          'member-uid',
+          'data-access-uid',
+          'visitor-uid',
+        ],
+      });
+    });
+
     it('should remove one old connection and keep another due to site access', async () => {
       setupMocks({
         getProposal: 'proposal-UID_ESet',

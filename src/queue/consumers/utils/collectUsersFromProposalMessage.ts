@@ -5,8 +5,9 @@ export function collectUsersFromProposalMessage({
   members,
   proposer,
   dataAccessUsers = [],
+  visitors = [],
 }: ProposalMessageData): ProposalUser[] {
-  return [...members, proposer, ...dataAccessUsers].filter(
+  return [...members, proposer, ...dataAccessUsers, ...visitors].filter(
     (user): user is ProposalUser => user !== undefined
   );
 }

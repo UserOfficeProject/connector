@@ -24,20 +24,22 @@ describe('collectUsersFromProposalMessage', () => {
     ...overrides,
   });
 
-  it('returns members, proposer, and data access users in order', () => {
+  it('returns members, proposer, data access users, and visitors in order', () => {
     const member = createUser(1, 'member');
     const proposer = createUser(2, 'proposer');
     const dataAccessUser = createUser(3, 'data');
+    const visitor = createUser(4, 'visitor');
 
     const message = createBaseMessage({
       members: [member],
       proposer,
       dataAccessUsers: [dataAccessUser],
+      visitors: [visitor],
     });
 
     const result = collectUsersFromProposalMessage(message);
 
-    expect(result).toEqual([member, proposer, dataAccessUser]);
+    expect(result).toEqual([member, proposer, dataAccessUser, visitor]);
   });
 
   it('filters out undefined entries', () => {
@@ -62,6 +64,23 @@ describe('collectUsersFromProposalMessage', () => {
       ...createBaseMessage({
         members: [member],
         proposer,
+      }),
+    } as ProposalMessageData;
+
+    const result = collectUsersFromProposalMessage(message);
+
+    expect(result).toEqual([member, proposer]);
+  });
+
+  it('handles missing visitors by treating it as empty', () => {
+    const member = createUser(1, 'member');
+    const proposer = createUser(2, 'proposer');
+
+    const message = {
+      ...createBaseMessage({
+        members: [member],
+        proposer,
+        dataAccessUsers: [],
       }),
     } as ProposalMessageData;
 
