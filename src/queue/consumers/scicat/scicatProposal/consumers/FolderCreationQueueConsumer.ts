@@ -1,18 +1,13 @@
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../../models/Event';
-import { ProposalMessageData } from '../../../../../models/ProposalMessage';
 import { QueueConsumer } from '../../../QueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
-import { validateProposalMessage } from '../../../utils/validateMessages';
+import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 import { proposalFoldersCreation } from '../consumerCallbacks/proposalFoldersCreation';
 
-const EVENT_TYPES = [
-  Event.PROPOSAL_STATUS_CHANGED_BY_WORKFLOW,
-  Event.PROPOSAL_STATUS_CHANGED_BY_USER,
-  Event.PROPOSAL_STATUS_ACTION_EXECUTED,
-];
+const EVENT_TYPES = [Event.PROPOSAL_STATUS_ACTION_EXECUTED];
 const triggeringStatuses =
   process.env.PROPOSAL_FOLDERS_CREATION_TRIGGERING_STATUSES?.split(', ');
 
@@ -39,9 +34,7 @@ export class FolderCreationQueueConsumer extends QueueConsumer {
       return;
     }
 
-    const proposalMessage = validateProposalMessage(
-      message as ProposalMessageData
-    );
+    const proposalMessage = validateProposalMessage(message);
 
     proposalFoldersCreation(proposalMessage);
   };
