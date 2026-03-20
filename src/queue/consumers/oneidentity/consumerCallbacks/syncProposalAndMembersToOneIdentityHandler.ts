@@ -3,7 +3,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
-import { ESSOneIdentity } from '../utils/ESSOneIdentity';
+import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
 import { UID_ESet } from '../utils/interfaces/Eset';
 import { UID_Person } from '../utils/interfaces/Person';
 import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
@@ -78,13 +78,13 @@ async function discoverPersonsWithRetry(
 
   const attemptDiscovery = async (): Promise<UID_Person[]> => {
     attempts++;
-    const uidPersons = await oneIdentity.getPersons(centralAccounts);
+    const personConnections = await oneIdentity.getPersons(centralAccounts);
+    const uidPersons = personConnections.flatMap(({ uidPerson }) =>
+      uidPerson ? [uidPerson] : []
+    );
+    const missingCentralAccounts = getMissingCentralAccounts(personConnections);
 
-    if (uidPersons.length !== centralAccounts.length) {
-      const missingCentralAccounts = centralAccounts.filter(
-        (account) => !uidPersons.includes(account)
-      );
-
+    if (missingCentralAccounts.length > 0) {
       if (attempts < MAX_ATTEMPTS) {
         const delayMs = RETRY_DELAYS_MS[attempts - 1];
         logger.logWarn('discoverOIMPersonsWithRetry: incomplete - retrying', {
@@ -125,6 +125,14 @@ async function discoverPersonsWithRetry(
   };
 
   return attemptDiscovery();
+}
+
+function getMissingCentralAccounts(
+  personConnections: UserPersonConnection[]
+): string[] {
+  return personConnections.flatMap(({ centralAccount, uidPerson }) =>
+    uidPerson ? [] : [centralAccount]
+  );
 }
 
 async function handleConnectionsBetweenProposalAndPersons(
