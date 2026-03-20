@@ -8,9 +8,7 @@ import {
   createUserObject,
 } from '../records';
 
-export default class PostgresExperimentUserDataSource
-  implements ExperimentUserDataSource
-{
+export default class PostgresExperimentUserDataSource implements ExperimentUserDataSource {
   private TABLE_NAME = 'experiment_user';
 
   async create({

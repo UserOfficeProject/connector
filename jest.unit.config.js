@@ -1,7 +1,14 @@
 module.exports = {
   roots: ['<rootDir>/src'],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          isolatedModules: true,
+        },
+      },
+    ],
   },
   testEnvironment: 'node',
   testRegex: '(/__tests__/.*|(\\.|/)(spec))\\.[jt]sx?$',
