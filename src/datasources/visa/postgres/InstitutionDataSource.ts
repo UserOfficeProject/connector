@@ -7,9 +7,7 @@ import {
 } from '../InstitutionDataSource';
 import { EmployerRecord, createEmployerObject } from '../records';
 
-export default class PostgresInstitutionDataSource
-  implements InstitutionDataSource
-{
+export default class PostgresInstitutionDataSource implements InstitutionDataSource {
   private TABLE_NAME = 'employer';
 
   async create(
