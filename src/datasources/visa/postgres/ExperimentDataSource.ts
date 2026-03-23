@@ -3,9 +3,7 @@ import { Experiment } from '../../../models/Visa';
 import { ExperimentDataSource } from '../ExperimentDataSource';
 import { ExperimentRecord, createExperimentObject } from '../records';
 
-export default class PostgresExperimentDataSource
-  implements ExperimentDataSource
-{
+export default class PostgresExperimentDataSource implements ExperimentDataSource {
   private TABLE_NAME = 'experiment';
 
   async getByProposalId(proposalPk: number): Promise<Experiment | null> {
