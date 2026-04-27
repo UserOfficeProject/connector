@@ -29,6 +29,12 @@ const SYNC_VISIT_EVENTS_FOR_HANDLING = [
 
 // Class for consuming messages from the ESS One Identity Integration Queue
 export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
+  // Limit in-flight messages to 1 so RabbitMQ withholds the next message until
+  // the current one is acked/nacked, preventing race conditions in One Identity.
+  protected getPrefetch(): number | undefined {
+    return 1;
+  }
+
   getQueueName(): string {
     return ONE_IDENTITY_INTEGRATION_QUEUE_NAME;
   }
