@@ -59,7 +59,25 @@ describe('QueueConsumer', () => {
 
     expect(messageBrokerMock.listenOn).toHaveBeenCalledWith(
       'testQueue',
-      expect.any(Function)
+      expect.any(Function),
+      {}
+    );
+  });
+
+  it('should pass prefetch to listenOn when getPrefetch returns a number', async () => {
+    class PrefetchQueueConsumer extends TestQueueConsumer {
+      protected getPrefetch() {
+        return 1;
+      }
+    }
+
+    const prefetchConsumer = new PrefetchQueueConsumer(messageBrokerMock);
+    await prefetchConsumer.start();
+
+    expect(messageBrokerMock.listenOn).toHaveBeenCalledWith(
+      'testQueue',
+      expect.any(Function),
+      { prefetch: 1 }
     );
   });
 
