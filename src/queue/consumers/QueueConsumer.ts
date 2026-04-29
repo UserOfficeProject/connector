@@ -1,6 +1,7 @@
 import { logger } from '@user-office-software/duo-logger';
 import {
   ConsumerCallback,
+  ListenOnOptions,
   MessageBroker,
   Queue,
 } from '@user-office-software/duo-message-broker';
@@ -28,6 +29,13 @@ export abstract class QueueConsumer {
     message: Record<string, string>
   ): Record<string, string>;
 
+  // Override in subclasses to set a RabbitMQ prefetch count (QoS) for this
+  // consumer's queue. Returning undefined means no
+  // prefetch is set (default broker behaviour — unlimited in-flight messages).
+  protected getPrefetch(): number | undefined {
+    return undefined;
+  }
+
   abstract onMessage: ConsumerCallback;
 
   async start(): Promise<void> {
@@ -48,37 +56,47 @@ export abstract class QueueConsumer {
 
     await this.messageBroker.addQueueToExchangeBinding(queueName, exchangeName);
 
-    this.messageBroker.listenOn(queueName as Queue, async (...args) => {
-      logger.logInfo('Received message on queue', { queueName });
+    const listenOnOptions: ListenOnOptions = {};
+    const prefetch = this.getPrefetch();
+    if (prefetch !== undefined) {
+      listenOnOptions.prefetch = prefetch;
+    }
 
-      // Start tracking processing time
-      const endTimer = processingDurationHistogram.startTimer({
-        queue: queueName,
-      });
+    this.messageBroker.listenOn(
+      queueName as Queue,
+      async (...args) => {
+        logger.logInfo('Received message on queue', { queueName });
 
-      try {
-        await this.onMessage(...args);
-
-        // Increment the success counter
-        processedMessagesCounter.inc({ queue: queueName, status: 'success' });
-      } catch (error) {
-        logger.logException('Error while handling QueueConsumer callback: ', {
-          error: (error as Error).message,
-          queue: this.getQueueName(),
-          consumer: this.constructor.name,
-          args,
+        // Start tracking processing time
+        const endTimer = processingDurationHistogram.startTimer({
+          queue: queueName,
         });
 
-        // Increment the failure counter
-        processedMessagesCounter.inc({ queue: queueName, status: 'failure' });
+        try {
+          await this.onMessage(...args);
 
-        // Re-throw the error to make sure the message is not acknowledged
-        throw error;
-      } finally {
-        // Stop the timer
-        endTimer();
-      }
-    });
+          // Increment the success counter
+          processedMessagesCounter.inc({ queue: queueName, status: 'success' });
+        } catch (error) {
+          logger.logException('Error while handling QueueConsumer callback: ', {
+            error: (error as Error).message,
+            queue: this.getQueueName(),
+            consumer: this.constructor.name,
+            args,
+          });
+
+          // Increment the failure counter
+          processedMessagesCounter.inc({ queue: queueName, status: 'failure' });
+
+          // Re-throw the error to make sure the message is not acknowledged
+          throw error;
+        } finally {
+          // Stop the timer
+          endTimer();
+        }
+      },
+      listenOnOptions
+    );
     logger.logInfo('Listening on queue', { queueName });
   }
 }
