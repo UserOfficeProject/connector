@@ -1,11 +1,16 @@
 import { logger } from '@user-office-software/duo-logger';
 
 import {
-  Instrument,
+  ExperimentMessageData,
   InstrumentDto,
+  ProposalMessageData,
 } from '../../../../../models/ProposalMessage';
-import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
-import { CreateProposalDto, UpdateProposalDto } from '../dto';
+import { UOInstrument, UOProposal } from '../../userOfficeApi/dto/proposal.dto';
+import { fetchUoExperiment, fetchUoProposal } from '../../userOfficeApi/uoApi';
+import {
+  getCreateProposalDto,
+  getUpdateProposalDto,
+} from '../utils.ts/proposalTransformer';
 
 const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
 const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
@@ -52,57 +57,17 @@ const getSciCatAccessToken = async () => {
   return sciCatAccessToken;
 };
 
-const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
-  const createProposalDto: CreateProposalDto = {
-    proposalId: proposalMessage.shortCode,
-    title: proposalMessage.title,
-    pi_email: proposalMessage.proposer.email,
-    pi_firstname: proposalMessage.proposer.firstName,
-    pi_lastname: proposalMessage.proposer.lastName,
-    email: proposalMessage.proposer.email,
-    firstname: proposalMessage.proposer.firstName,
-    lastname: proposalMessage.proposer.lastName,
-    abstract: proposalMessage.abstract,
-    ownerGroup: proposalMessage.shortCode,
-    instrumentIds: [],
-    accessGroups: [],
-    startTime: new Date(),
-    endTime: new Date(),
-    MeasurementPeriodList: [],
-    metadata: {},
-  };
-
-  return createProposalDto;
-};
-
-const getUpdateProposalDto = (proposalMessage: ValidProposalMessageData) => {
-  const updateProposalDto: UpdateProposalDto = {
-    title: proposalMessage.title,
-    pi_email: proposalMessage.proposer.email,
-    pi_firstname: proposalMessage.proposer.firstName,
-    pi_lastname: proposalMessage.proposer.lastName,
-    email: proposalMessage.proposer.email,
-    firstname: proposalMessage.proposer.firstName,
-    lastname: proposalMessage.proposer.lastName,
-    abstract: proposalMessage.abstract,
-    ownerGroup: proposalMessage.shortCode,
-    instrumentIds: [],
-    accessGroups: [],
-    startTime: new Date(),
-    endTime: new Date(),
-    MeasurementPeriodList: [],
-    metadata: {},
-  };
-
-  return updateProposalDto;
-};
-
 const createProposal = async (
-  proposalMessage: ValidProposalMessageData,
+  UOProposal: UOProposal,
   sciCatAccessToken: string
 ) => {
   const url = `${sciCatBaseUrl}/Proposals`;
-  const createProposalDto = getCreateProposalDto(proposalMessage);
+
+  const scicatInstrumentIds = await getInstrumentIds(UOProposal.instruments);
+  const createProposalDto = getCreateProposalDto(
+    UOProposal,
+    scicatInstrumentIds
+  );
 
   logger.logInfo('POST', { url });
   logger.logInfo('Proposal data', { proposalData: createProposalDto });
@@ -110,9 +75,6 @@ const createProposal = async (
   // RabbitMQ message only provides shortCodes (instrument names).
   // To persist proposals with proper references, we resolve those shortCodes to
   // actual Instrument IDs from SciCat and store the instrumentIds in the record.
-  createProposalDto.instrumentIds = await getInstrumentIds(
-    proposalMessage.instruments
-  );
 
   const createProposalResponse = await request<string>(url, {
     method: 'POST',
@@ -131,18 +93,21 @@ const createProposal = async (
 };
 
 const updateProposal = async (
-  proposalMessage: ValidProposalMessageData,
+  UOProposal: UOProposal,
   sciCatAccessToken: string
 ) => {
-  const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
-  const updateProposalDto = getUpdateProposalDto(proposalMessage);
+  const url = `${sciCatBaseUrl}/Proposals/${UOProposal.proposalId}`;
 
   // RabbitMQ message only provides shortCodes (instrument names).
   // To persist proposals with proper references, we resolve those shortCodes to
   // actual Instrument IDs from SciCat and store the instrumentIds in the record.
-  updateProposalDto.instrumentIds = await getInstrumentIds(
-    proposalMessage.instruments
+  const scicatInstrumentIds = await getInstrumentIds(UOProposal.instruments);
+
+  const updateProposalDto = getUpdateProposalDto(
+    UOProposal,
+    scicatInstrumentIds
   );
+
   const updateProposalResponse = await request(url, {
     method: 'PATCH',
     body: JSON.stringify(updateProposalDto),
@@ -157,7 +122,7 @@ const updateProposal = async (
   logger.logInfo('updateProposalResponse', { updateProposalResponse });
 
   logger.logInfo('Proposal was updated in scicat', {
-    proposalId: proposalMessage.shortCode,
+    proposalId: UOProposal.proposalId,
   });
 };
 
@@ -193,7 +158,7 @@ const checkProposalExists = async (
   }
 };
 
-const getInstrumentIds = async (instruments: Instrument[]) => {
+const getInstrumentIds = async (instruments: UOInstrument[]) => {
   const sciCatAccessToken = await getSciCatAccessToken();
   const instrumentNames = instruments.map((inst) => inst.shortCode);
 
@@ -216,8 +181,9 @@ const getInstrumentIds = async (instruments: Instrument[]) => {
           Authorization: `Bearer ${sciCatAccessToken}`,
         },
       });
-
-      instrumentIds.push(res[0].pid);
+      if (res[0].pid) {
+        instrumentIds.push(res[0].pid);
+      }
     } catch (error) {
       logger.logError(`Error fetching instrument ID from scicat for ${name}`, {
         error,
@@ -228,29 +194,57 @@ const getInstrumentIds = async (instruments: Instrument[]) => {
   return instrumentIds;
 };
 
-const upsertProposalInScicat = async (
-  proposalMessage: ValidProposalMessageData
-) => {
+const upsertProposalInScicat = async (proposalMessage: ProposalMessageData) => {
   const sciCatAccessToken = await getSciCatAccessToken();
 
+  const proposal = await fetchUoProposal(proposalMessage.proposalPk);
+
   const proposalExists = await checkProposalExists(
-    proposalMessage.shortCode,
+    proposal.proposalId,
     sciCatAccessToken
   );
 
   if (proposalExists) {
     logger.logInfo('Proposal already exists, updating...', {
-      proposalId: proposalMessage.shortCode,
+      proposalId: proposal.proposalId,
     });
-
-    updateProposal(proposalMessage, sciCatAccessToken);
+    updateProposal(proposal, sciCatAccessToken);
   } else {
     logger.logInfo('Proposal does not exist yet, creating...', {
-      proposalId: proposalMessage.shortCode,
+      proposalId: proposal.proposalId,
     });
 
-    createProposal(proposalMessage, sciCatAccessToken);
+    createProposal(proposal, sciCatAccessToken);
   }
 };
 
-export { upsertProposalInScicat };
+const upsertExperimentInScicat = async (
+  experimentMessage: ExperimentMessageData
+) => {
+  const sciCatAccessToken = await getSciCatAccessToken();
+
+  const experiment: any = await fetchUoExperiment(
+    experimentMessage.experimentPk
+  );
+
+  const experimentExists = await checkProposalExists(
+    experiment.proposalId,
+    sciCatAccessToken
+  );
+
+  if (experimentExists) {
+    logger.logInfo('Experiment already exists, updating...', {
+      experimentId: experiment.proposalId,
+    });
+
+    updateProposal(experiment, sciCatAccessToken);
+  } else {
+    logger.logInfo('Experiment does not exist yet, creating...', {
+      experimentId: experiment.proposalId,
+    });
+
+    createProposal(experiment, sciCatAccessToken);
+  }
+};
+
+export { upsertProposalInScicat, upsertExperimentInScicat };

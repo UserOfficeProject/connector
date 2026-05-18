@@ -4,12 +4,18 @@ import { Event } from '../../../../../models/Event';
 import { QueueConsumer } from '../../../QueueConsumer';
 import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
+import { validateExperimentMessage } from '../../../utils/validateExperimentMessage';
 import { validateProposalMessage } from '../../../utils/validateProposalMessage';
-import { upsertProposalInScicat } from '../consumerCallbacks/upsertProposalInScicat';
+import {
+  upsertExperimentInScicat,
+  upsertProposalInScicat,
+} from '../consumerCallbacks/upsertProposalInScicat';
 
 const EVENT_TYPES = [
   Event.PROPOSAL_STATUS_ACTION_EXECUTED,
   Event.PROPOSAL_UPDATED,
+  Event.EXPERIMENT_CREATED,
+  Event.EXPERIMENT_UPDATED,
 ];
 
 const triggeringStatuses =
@@ -37,8 +43,15 @@ export class ProposalCreationQueueConsumer extends QueueConsumer {
       return;
     }
 
-    const proposalMessage = validateProposalMessage(message);
+    const isExperiment =
+      type === Event.EXPERIMENT_CREATED || type === Event.EXPERIMENT_UPDATED;
 
-    upsertProposalInScicat(proposalMessage);
+    if (isExperiment) {
+      const experimentMessage = validateExperimentMessage(message);
+      upsertExperimentInScicat(experimentMessage);
+    } else {
+      const proposalMessage = validateProposalMessage(message);
+      upsertProposalInScicat(proposalMessage);
+    }
   };
 }
