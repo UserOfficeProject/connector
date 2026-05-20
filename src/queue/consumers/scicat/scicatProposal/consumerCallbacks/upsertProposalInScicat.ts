@@ -5,12 +5,23 @@ import {
   InstrumentDto,
   ProposalMessageData,
 } from '../../../../../models/ProposalMessage';
-import { UOInstrument, UOProposal } from '../../userOfficeApi/dto/proposal.dto';
-import { fetchUoExperiment, fetchUoProposal } from '../../userOfficeApi/uoApi';
+import { UOExperimentDto } from '../../../../../services/userOfficeApi/type/uoExperiment.type';
 import {
-  getCreateProposalDto,
-  getUpdateProposalDto,
-} from '../utils.ts/proposalTransformer';
+  UOInstrument,
+  UOProposalDto,
+} from '../../../../../services/userOfficeApi/type/uoProposal.type';
+import {
+  fetchUoExperiment,
+  fetchUoProposal,
+} from '../../../../../services/userOfficeApi/uoApi';
+import {
+  getCreateScicatExperimentDto,
+  getUpdateScicatExperimentDto,
+} from '../mappers/uoToScicatExperiment.mapper';
+import {
+  getCreateScicatProposalDto,
+  getUpdateScicatProposalDto,
+} from '../mappers/uoToScicatProposal.mapper';
 
 const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
 const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
@@ -58,23 +69,19 @@ const getSciCatAccessToken = async () => {
 };
 
 const createProposal = async (
-  UOProposal: UOProposal,
+  UOProposal: UOProposalDto,
   sciCatAccessToken: string
 ) => {
   const url = `${sciCatBaseUrl}/Proposals`;
 
-  const scicatInstrumentIds = await getInstrumentIds(UOProposal.instruments);
-  const createProposalDto = getCreateProposalDto(
-    UOProposal,
-    scicatInstrumentIds
-  );
-
-  logger.logInfo('POST', { url });
-  logger.logInfo('Proposal data', { proposalData: createProposalDto });
-
   // RabbitMQ message only provides shortCodes (instrument names).
   // To persist proposals with proper references, we resolve those shortCodes to
   // actual Instrument IDs from SciCat and store the instrumentIds in the record.
+  const scicatInstrumentIds = await getInstrumentIds(UOProposal.instruments);
+  const createProposalDto = getCreateScicatProposalDto(
+    UOProposal,
+    scicatInstrumentIds
+  );
 
   const createProposalResponse = await request<string>(url, {
     method: 'POST',
@@ -85,15 +92,15 @@ const createProposal = async (
     },
   });
 
-  logger.logInfo('createProposalResponse', { createProposalResponse });
-
-  logger.logInfo('Proposal was created in scicat', {
+  logger.logInfo('Proposal created in SciCat', {
+    url,
     proposalId: createProposalDto.proposalId,
+    response: createProposalResponse,
   });
 };
 
 const updateProposal = async (
-  UOProposal: UOProposal,
+  UOProposal: UOProposalDto,
   sciCatAccessToken: string
 ) => {
   const url = `${sciCatBaseUrl}/Proposals/${UOProposal.proposalId}`;
@@ -102,8 +109,7 @@ const updateProposal = async (
   // To persist proposals with proper references, we resolve those shortCodes to
   // actual Instrument IDs from SciCat and store the instrumentIds in the record.
   const scicatInstrumentIds = await getInstrumentIds(UOProposal.instruments);
-
-  const updateProposalDto = getUpdateProposalDto(
+  const updateProposalDto = getUpdateScicatProposalDto(
     UOProposal,
     scicatInstrumentIds
   );
@@ -117,12 +123,74 @@ const updateProposal = async (
     },
   });
 
-  logger.logInfo('Patch', { url });
-  logger.logInfo('Proposal data', { proposalData: updateProposalDto });
-  logger.logInfo('updateProposalResponse', { updateProposalResponse });
-
-  logger.logInfo('Proposal was updated in scicat', {
+  logger.logInfo('Proposal updated in SciCat', {
+    url,
     proposalId: UOProposal.proposalId,
+    response: updateProposalResponse,
+  });
+};
+
+const createExperiment = async (
+  UOExperiment: UOExperimentDto,
+  sciCatAccessToken: string
+) => {
+  const url = `${sciCatBaseUrl}/Proposals`;
+
+  // RabbitMQ message only provides shortCodes (instrument names).
+  // To persist proposals with proper references, we resolve those shortCodes to
+  // actual Instrument IDs from SciCat and store the instrumentIds in the record.
+  const scicatInstrumentIds = await getInstrumentIds(UOExperiment.instrument);
+  const createExperimentDto = getCreateScicatExperimentDto(
+    UOExperiment,
+    scicatInstrumentIds
+  );
+
+  const createExperimentResponse = await request<string>(url, {
+    method: 'POST',
+    body: JSON.stringify(createExperimentDto),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sciCatAccessToken}`,
+    },
+  });
+
+  // NOTE: UOExperiment.experimentId = proposalId in SciCat for experiments
+  logger.logInfo('Experiment created in SciCat', {
+    url,
+    proposalId: UOExperiment.experimentId,
+    response: createExperimentResponse,
+  });
+};
+
+const updateExperiment = async (
+  UOExperiment: UOExperimentDto,
+  sciCatAccessToken: string
+) => {
+  const url = `${sciCatBaseUrl}/Proposals/${UOExperiment.experimentId}`;
+
+  // RabbitMQ message only provides shortCodes (instrument names).
+  // To persist proposals with proper references, we resolve those shortCodes to
+  // actual Instrument IDs from SciCat and store the instrumentIds in the record.
+  const scicatInstrumentIds = await getInstrumentIds(UOExperiment.instrument);
+  const updateExperimentDto = getUpdateScicatExperimentDto(
+    UOExperiment,
+    scicatInstrumentIds
+  );
+
+  const updateExperimentResponse = await request(url, {
+    method: 'PATCH',
+    body: JSON.stringify(updateExperimentDto),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sciCatAccessToken}`,
+    },
+  });
+
+  // NOTE: UOExperiment.experimentId = proposalId in SciCat for experiments
+  logger.logInfo('Experiment updated in SciCat', {
+    url,
+    proposalId: UOExperiment.experimentId,
+    response: updateExperimentResponse,
   });
 };
 
@@ -158,9 +226,12 @@ const checkProposalExists = async (
   }
 };
 
-const getInstrumentIds = async (instruments: UOInstrument[]) => {
+const getInstrumentIds = async (instruments: UOInstrument | UOInstrument[]) => {
   const sciCatAccessToken = await getSciCatAccessToken();
-  const instrumentNames = instruments.map((inst) => inst.shortCode);
+  const instrumentArray = Array.isArray(instruments)
+    ? instruments
+    : [instruments];
+  const instrumentNames = instrumentArray.map((inst) => inst.shortCode);
 
   const instrumentIds = [];
 
@@ -194,57 +265,45 @@ const getInstrumentIds = async (instruments: UOInstrument[]) => {
   return instrumentIds;
 };
 
-const upsertProposalInScicat = async (proposalMessage: ProposalMessageData) => {
-  const sciCatAccessToken = await getSciCatAccessToken();
-
+export const upsertProposalInScicat = async (
+  proposalMessage: ProposalMessageData
+) => {
   const proposal = await fetchUoProposal(proposalMessage.proposalPk);
+  const scicatToken = await getSciCatAccessToken();
+  const exists = await checkProposalExists(proposal.proposalId, scicatToken);
 
-  const proposalExists = await checkProposalExists(
-    proposal.proposalId,
-    sciCatAccessToken
-  );
-
-  if (proposalExists) {
+  if (exists) {
     logger.logInfo('Proposal already exists, updating...', {
       proposalId: proposal.proposalId,
     });
-    updateProposal(proposal, sciCatAccessToken);
+    await updateProposal(proposal, scicatToken);
   } else {
     logger.logInfo('Proposal does not exist yet, creating...', {
       proposalId: proposal.proposalId,
     });
-
-    createProposal(proposal, sciCatAccessToken);
+    await createProposal(proposal, scicatToken);
   }
 };
 
-const upsertExperimentInScicat = async (
+export const upsertExperimentInScicat = async (
   experimentMessage: ExperimentMessageData
 ) => {
-  const sciCatAccessToken = await getSciCatAccessToken();
-
-  const experiment: any = await fetchUoExperiment(
-    experimentMessage.experimentPk
+  const experiment = await fetchUoExperiment(experimentMessage.experimentPk);
+  const scicatToken = await getSciCatAccessToken();
+  const exists = await checkProposalExists(
+    experiment.experimentId,
+    scicatToken
   );
 
-  const experimentExists = await checkProposalExists(
-    experiment.proposalId,
-    sciCatAccessToken
-  );
-
-  if (experimentExists) {
+  if (exists) {
     logger.logInfo('Experiment already exists, updating...', {
-      experimentId: experiment.proposalId,
+      proposalId: experiment.experimentId,
     });
-
-    updateProposal(experiment, sciCatAccessToken);
+    await updateExperiment(experiment, scicatToken);
   } else {
     logger.logInfo('Experiment does not exist yet, creating...', {
-      experimentId: experiment.proposalId,
+      proposalId: experiment.experimentId,
     });
-
-    createProposal(experiment, sciCatAccessToken);
+    await createExperiment(experiment, scicatToken);
   }
 };
-
-export { upsertProposalInScicat, upsertExperimentInScicat };

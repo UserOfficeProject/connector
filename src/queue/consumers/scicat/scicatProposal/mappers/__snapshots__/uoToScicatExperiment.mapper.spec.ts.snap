@@ -1,0 +1,151 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`getCreateScicatExperimentDto includes visitor entries when registrations are present 1`] = `
+{
+  "MeasurementPeriodList": [],
+  "abstract": "Experiment 158548-3
+Test Abstract",
+  "accessGroups": [
+    "158548-3",
+  ],
+  "email": "john.doe@example.com",
+  "endTime": 2026-10-03T07:00:00.000Z,
+  "firstname": "John",
+  "instrumentIds": [
+    "scicat-inst-1",
+  ],
+  "lastname": "Doe",
+  "metadata": {
+    "instrument_name": {
+      "human_name": "Instrument Name",
+      "value": "YMIR",
+    },
+    "number_of_visitors": {
+      "human_name": "Number of Visitors",
+      "value": 1,
+    },
+    "status_experiment": {
+      "human_name": "UOS Experiment Status",
+      "value": "ACTIVE",
+    },
+    "status_proposal": {
+      "human_name": "UOS Proposal Status",
+      "value": "ALLOCATED",
+    },
+    "visitor_1_email": {
+      "human_name": "Visitor 1 Email",
+      "value": "fredrik@ess.eu",
+    },
+    "visitor_1_firstname": {
+      "human_name": "Visitor 1 First Name",
+      "value": "Fredrik",
+    },
+    "visitor_1_lastname": {
+      "human_name": "Visitor 1 Last Name",
+      "value": "Bolmsten",
+    },
+    "visitor_1_orcid": {
+      "human_name": "Visitor 1 ORCID",
+      "value": "fredrikbolmsten",
+    },
+  },
+  "ownerGroup": "user",
+  "parentProposalId": "158548",
+  "pi_email": "john.doe@example.com",
+  "pi_firstname": "John",
+  "pi_lastname": "Doe",
+  "proposalId": "158548-3",
+  "startTime": 2026-10-02T07:00:00.000Z,
+  "title": "Test Proposal - 158548-3",
+  "type": "Experiment",
+}
+`;
+
+exports[`getCreateScicatExperimentDto maps experiment to create DTO correctly 1`] = `
+{
+  "MeasurementPeriodList": [],
+  "abstract": "Experiment 158548-3
+Test Abstract",
+  "accessGroups": [
+    "158548-3",
+  ],
+  "email": "john.doe@example.com",
+  "endTime": 2026-10-03T07:00:00.000Z,
+  "firstname": "John",
+  "instrumentIds": [
+    "scicat-inst-1",
+  ],
+  "lastname": "Doe",
+  "metadata": {
+    "instrument_name": {
+      "human_name": "Instrument Name",
+      "value": "YMIR",
+    },
+    "number_of_visitors": {
+      "human_name": "Number of Visitors",
+      "value": 0,
+    },
+    "status_experiment": {
+      "human_name": "UOS Experiment Status",
+      "value": "ACTIVE",
+    },
+    "status_proposal": {
+      "human_name": "UOS Proposal Status",
+      "value": "ALLOCATED",
+    },
+  },
+  "ownerGroup": "user",
+  "parentProposalId": "158548",
+  "pi_email": "john.doe@example.com",
+  "pi_firstname": "John",
+  "pi_lastname": "Doe",
+  "proposalId": "158548-3",
+  "startTime": 2026-10-02T07:00:00.000Z,
+  "title": "Test Proposal - 158548-3",
+  "type": "Experiment",
+}
+`;
+
+exports[`getUpdateScicatExperimentDto maps experiment to update DTO correctly 1`] = `
+{
+  "MeasurementPeriodList": [],
+  "abstract": "Experiment 158548-3
+Test Abstract",
+  "accessGroups": [
+    "158548-3",
+  ],
+  "email": "john.doe@example.com",
+  "endTime": 2026-10-03T07:00:00.000Z,
+  "firstname": "John",
+  "instrumentIds": [
+    "scicat-inst-1",
+  ],
+  "lastname": "Doe",
+  "metadata": {
+    "instrument_name": {
+      "human_name": "Instrument Name",
+      "value": "YMIR",
+    },
+    "number_of_visitors": {
+      "human_name": "Number of Visitors",
+      "value": 0,
+    },
+    "status_experiment": {
+      "human_name": "UOS Experiment Status",
+      "value": "ACTIVE",
+    },
+    "status_proposal": {
+      "human_name": "UOS Proposal Status",
+      "value": "ALLOCATED",
+    },
+  },
+  "ownerGroup": "user",
+  "parentProposalId": "158548",
+  "pi_email": "john.doe@example.com",
+  "pi_firstname": "John",
+  "pi_lastname": "Doe",
+  "startTime": 2026-10-02T07:00:00.000Z,
+  "title": "Test Proposal - 158548-3",
+  "type": "Experiment",
+}
+`;

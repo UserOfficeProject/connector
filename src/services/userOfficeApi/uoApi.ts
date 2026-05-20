@@ -1,6 +1,7 @@
-import { UOProposal } from './dto/proposal.dto';
 import { GET_EXPERIMENT_QUERY } from './queries/getExperiment.query';
 import { GET_PROPOSAL_QUERY } from './queries/getProposal.query';
+import { UOExperimentDto } from './type/uoExperiment.type';
+import { UOProposalDto } from './type/uoProposal.type';
 
 const uosGraphqlUrl = process.env.USER_OFFICE_GRAPHQL_URL;
 const uosToken = process.env.USER_OFFICE_JWT;
@@ -41,7 +42,7 @@ const graphqlRequest = async <TResponse>(
 };
 
 export const fetchUoProposal = async (primaryKey: number) => {
-  const { data } = await graphqlRequest<{ data: { proposal: UOProposal } }>(
+  const { data } = await graphqlRequest<{ data: { proposal: UOProposalDto } }>(
     GET_PROPOSAL_QUERY,
     { primaryKey }
   );
@@ -50,10 +51,9 @@ export const fetchUoProposal = async (primaryKey: number) => {
 };
 
 export const fetchUoExperiment = async (experimentPk: number) => {
-  const { data } = await graphqlRequest<{ data: { experiment: unknown } }>(
-    GET_EXPERIMENT_QUERY,
-    { experimentPk }
-  );
+  const { data } = await graphqlRequest<{
+    data: { experiment: UOExperimentDto };
+  }>(GET_EXPERIMENT_QUERY, { experimentPk });
 
   return data.experiment;
 };

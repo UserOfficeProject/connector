@@ -20,7 +20,7 @@ export interface UOInstrument {
   id: number;
   name: string;
   shortCode: string;
-  instrumentContact: UOInstrumentContact;
+  instrumentContact?: UOInstrumentContact;
   managementTimeAllocation?: number;
 }
 
@@ -41,7 +41,7 @@ export interface UOStatus {
   description?: string;
 }
 
-export interface UOProposal {
+export interface UOProposalDto {
   proposalId: string;
   title: string;
   abstract: string;

@@ -1,18 +1,13 @@
-import { UOProposal } from '../../userOfficeApi/dto/proposal.dto';
-import { CreateProposalDto, UpdateProposalDto } from '../dto';
+import { UOProposalDto } from '../../../../../services/userOfficeApi/type/uoProposal.type';
+import {
+  CreateScicatProposalDto,
+  MdEntry,
+  MdEntryValue,
+  UpdateScicatProposalDto,
+} from '../type/scicatProposal.type';
+import { metadataEntry } from '../utils/common';
 
-interface MdEntryValue {
-  human_name: string;
-  value: string | number | boolean | null | undefined;
-}
-
-const metadataEntry = (
-  key: string,
-  human_name: string,
-  value: string | number | boolean | null | undefined
-): [string, MdEntryValue] => [key, { human_name, value }];
-
-const buildMetadata = (proposal: UOProposal): Record<string, MdEntryValue> => {
+const buildMetadata = (proposal: UOProposalDto): MdEntry => {
   const {
     proposer,
     users = [],
@@ -23,7 +18,7 @@ const buildMetadata = (proposal: UOProposal): Record<string, MdEntryValue> => {
   } = proposal;
 
   const rows: [string, MdEntryValue][] = [
-    metadataEntry('status', 'UOS Status', status.name),
+    metadataEntry('status', 'UOS Proposal Status', status.name),
     metadataEntry('pi_firstname', 'PI First Name', proposer.firstname),
     metadataEntry('pi_lastname', 'PI Last Name', proposer.lastname),
     metadataEntry('pi_email', 'PI Email', proposer.email),
@@ -102,12 +97,12 @@ const buildMetadata = (proposal: UOProposal): Record<string, MdEntryValue> => {
       metadataEntry(
         `instrument_${i}_contact_firstname`,
         `Instrument ${i} Contact First Name`,
-        ic.firstname
+        ic?.firstname || null
       ),
       metadataEntry(
         `instrument_${i}_contact_lastname`,
         `Instrument ${i} Contact Last Name`,
-        ic.lastname
+        ic?.lastname || null
       )
     );
   });
@@ -115,13 +110,14 @@ const buildMetadata = (proposal: UOProposal): Record<string, MdEntryValue> => {
   return Object.fromEntries(rows);
 };
 
-export const getCreateProposalDto = (
-  proposal: UOProposal,
+export const getCreateScicatProposalDto = (
+  proposal: UOProposalDto,
   instrumentIds: string[]
-): CreateProposalDto => {
+): CreateScicatProposalDto => {
   const { proposer } = proposal;
 
   return {
+    type: 'Proposal',
     proposalId: proposal.proposalId,
     title: proposal.title,
     abstract: proposal.abstract,
@@ -141,13 +137,14 @@ export const getCreateProposalDto = (
   };
 };
 
-export const getUpdateProposalDto = (
-  proposal: UOProposal,
+export const getUpdateScicatProposalDto = (
+  proposal: UOProposalDto,
   instrumentIds: string[]
-): UpdateProposalDto => {
+): UpdateScicatProposalDto => {
   const { proposer } = proposal;
 
   return {
+    type: 'Proposal',
     title: proposal.title,
     abstract: proposal.abstract,
     firstname: proposer.firstname,
