@@ -149,9 +149,7 @@ const buildSampleCharacteristics = (
   sample: UOExperimentSafetySample,
   experiment: UOExperimentDto
 ): Record<string, MdEntryValue> => {
-  const fields = sample.questionary.steps
-    .flatMap((step) => step.fields)
-    .filter((f) => f.question.id !== 'sample_esi_basis' && f.value !== null);
+  const fields = sample.questionary.steps.flatMap((step) => step.fields);
 
   const rows: [string, MdEntryValue][] = [
     metadataEntry('uos_sample_id', 'UOS Sample ID', sample.sampleId),
