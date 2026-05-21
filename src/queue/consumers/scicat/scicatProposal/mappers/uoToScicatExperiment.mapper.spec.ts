@@ -1,3 +1,9 @@
+jest.mock('../utils/scicatApi', () => ({
+  scicatApi: {
+    serviceUsername: 'testuser',
+  },
+}));
+
 import {
   getCreateScicatExperimentDto,
   getUpdateScicatExperimentDto,
