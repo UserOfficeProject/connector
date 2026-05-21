@@ -91,7 +91,7 @@ export const getCreateScicatExperimentDto = (
     pi_lastname: proposer.lastname,
     pi_email: proposer.email,
     instrumentIds,
-    ownerGroup: scicatApi.username || '',
+    ownerGroup: scicatApi.serviceUsername || '',
     accessGroups: [experimentId],
     startTime: new Date(experiment.startsAt),
     endTime: new Date(experiment.endsAt),
@@ -119,7 +119,7 @@ export const getUpdateScicatExperimentDto = (
     pi_lastname: proposer.lastname,
     pi_email: proposer.email,
     instrumentIds,
-    ownerGroup: scicatApi.username,
+    ownerGroup: scicatApi.serviceUsername,
     accessGroups: [experimentId],
     startTime: new Date(experiment.startsAt),
     endTime: new Date(experiment.endsAt),
@@ -178,7 +178,7 @@ export const getCreateScicatSampleDto = (
 ): CreateScicatSampleDto => {
   const sampleCharacteristics = buildSampleCharacteristics(sample, experiment);
   const dto = {
-    ownerGroup: scicatApi.username || '',
+    ownerGroup: scicatApi.serviceUsername || '',
     type: 'Sample Information',
     accessGroups: [experiment.experimentId],
     proposalId: experiment.experimentId,
@@ -200,7 +200,7 @@ export const getUpdateScicatSampleDto = (
 ): UpdateScicatSampleDto => {
   const sampleCharacteristics = buildSampleCharacteristics(sample, experiment);
   const dto = {
-    ownerGroup: scicatApi.username || '',
+    ownerGroup: scicatApi.serviceUsername || '',
     accessGroups: [experiment.experimentId],
     proposalId: experiment.experimentId,
     description: sample.sample.title, //TODO: this should be replaced with sampleName before merge

@@ -21,9 +21,35 @@ import {
 
 class ScicatApi {
   readonly baseUrl = process.env.SCICAT_BASE_URL;
-  readonly loginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
-  readonly username = process.env.SCICAT_USERNAME;
-  readonly password = process.env.SCICAT_PASSWORD;
+  readonly scicatToken = process.env.SCICAT_JWT;
+  readonly serviceUsername: string;
+
+  constructor() {
+    if (!this.baseUrl) {
+      throw new Error('SCICAT_BASE_URL is not defined');
+    }
+
+    if (!this.scicatToken) {
+      throw new Error('SCICAT_JWT is not defined');
+    }
+
+    this.serviceUsername = this.getServiceUsername(this.scicatToken);
+  }
+
+  private getServiceUsername(token: string): string {
+    try {
+      const payload = JSON.parse(
+        Buffer.from(token.split('.')[1], 'base64url').toString()
+      );
+      if (!payload.username) {
+        throw new Error('Username not found in token payload');
+      }
+
+      return payload.username;
+    } catch {
+      throw new Error('Failed to decode JWT token');
+    }
+  }
 
   async request<TResponse>(
     url: string,
@@ -42,29 +68,10 @@ class ScicatApi {
     return JSON.parse(text) as TResponse;
   }
 
-  async getAccessToken(): Promise<string> {
-    const { access_token: sciCatAccessToken } = await this.request<{
-      access_token: string;
-    }>(`${this.baseUrl}${this.loginEndpoint}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        username: this.username,
-        password: this.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    if (!sciCatAccessToken) {
-      throw new Error('No access token found');
-    }
-
-    return sciCatAccessToken;
-  }
-
   async getInstrumentIds(
     instruments: UOInstrument | UOInstrument[]
   ): Promise<string[]> {
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     const instrumentArray = Array.isArray(instruments)
       ? instruments
       : [instruments];
@@ -107,7 +114,7 @@ class ScicatApi {
 
   async checkProposalExists(proposalId: string): Promise<boolean> {
     const url = `${this.baseUrl}/Proposals/${proposalId}`;
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     const response = await this.request<string>(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -134,7 +141,7 @@ class ScicatApi {
   async findSampleByLookup(
     sampleLookup: string
   ): Promise<UpdateScicatSampleDto | null> {
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     const filter = JSON.stringify({
       where: {
         'sampleCharacteristics.uos_sample_lookup.value': sampleLookup,
@@ -163,7 +170,7 @@ class ScicatApi {
 
   async createProposal(UOProposal: UOProposalDto) {
     const url = `${this.baseUrl}/Proposals`;
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     // RabbitMQ message only provides shortCodes (instrument names).
     // To persist proposals with proper references, we resolve those shortCodes to
     // actual Instrument IDs from SciCat and store the instrumentIds in the record.
@@ -193,7 +200,7 @@ class ScicatApi {
 
   async updateProposal(UOProposal: UOProposalDto) {
     const url = `${this.baseUrl}/Proposals/${UOProposal.proposalId}`;
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     // RabbitMQ message only provides shortCodes (instrument names).
     // To persist proposals with proper references, we resolve those shortCodes to
     // actual Instrument IDs from SciCat and store the instrumentIds in the record.
@@ -223,7 +230,7 @@ class ScicatApi {
 
   async createExperiment(UOExperiment: UOExperimentDto) {
     const url = `${this.baseUrl}/Proposals`;
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     // RabbitMQ message only provides shortCodes (instrument names).
     // To persist proposals with proper references, we resolve those shortCodes to
     // actual Instrument IDs from SciCat and store the instrumentIds in the record.
@@ -254,7 +261,7 @@ class ScicatApi {
 
   async updateExperiment(UOExperiment: UOExperimentDto) {
     const url = `${this.baseUrl}/Proposals/${UOExperiment.experimentId}`;
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     // RabbitMQ message only provides shortCodes (instrument names).
     // To persist proposals with proper references, we resolve those shortCodes to
     // actual Instrument IDs from SciCat and store the instrumentIds in the record.
@@ -284,7 +291,7 @@ class ScicatApi {
   }
 
   async createSample(dto: CreateScicatSampleDto): Promise<void> {
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
     const url = `${this.baseUrl}/Samples`;
 
     const createSampleResponse = await this.request(url, {
@@ -306,7 +313,7 @@ class ScicatApi {
     sampleId: string,
     dto: UpdateScicatSampleDto
   ): Promise<void> {
-    const sciCatAccessToken = await this.getAccessToken();
+    const sciCatAccessToken = this.scicatToken;
 
     const url = `${this.baseUrl}/Samples/${sampleId}`;
 
