@@ -34,19 +34,19 @@ Test Abstract",
     },
     "visitor_1_email": {
       "human_name": "Visitor 1 Email",
-      "value": "fredrik@ess.eu",
+      "value": "test@example.com",
     },
     "visitor_1_firstname": {
       "human_name": "Visitor 1 First Name",
-      "value": "Fredrik",
+      "value": "testFirst",
     },
     "visitor_1_lastname": {
       "human_name": "Visitor 1 Last Name",
-      "value": "Bolmsten",
+      "value": "testLast",
     },
     "visitor_1_orcid": {
       "human_name": "Visitor 1 ORCID",
-      "value": "fredrikbolmsten",
+      "value": "testOidcSub",
     },
   },
   "ownerGroup": "user",

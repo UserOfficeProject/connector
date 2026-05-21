@@ -21,24 +21,24 @@ exports[`getCreateScicatProposalDto includes co-PI, DAU and instrument metadata 
       "human_name": "Call",
       "value": "CALL-2025",
     },
-    "co_pi_1_affiliation": {
-      "human_name": "CoPI 1 Affiliation",
+    "co_i_1_affiliation": {
+      "human_name": "CoI 1 Affiliation",
       "value": "ESS",
     },
-    "co_pi_1_email": {
-      "human_name": "CoPI 1 Email",
+    "co_i_1_email": {
+      "human_name": "CoI 1 Email",
       "value": "jane@example.com",
     },
-    "co_pi_1_firstname": {
-      "human_name": "CoPI 1 First Name",
+    "co_i_1_firstname": {
+      "human_name": "CoI 1 First Name",
       "value": "Jane",
     },
-    "co_pi_1_lastname": {
-      "human_name": "CoPI 1 Last Name",
+    "co_i_1_lastname": {
+      "human_name": "CoI 1 Last Name",
       "value": "Smith",
     },
-    "co_pi_1_orcid": {
-      "human_name": "CoPI 1 ORCID",
+    "co_i_1_orcid": {
+      "human_name": "CoI 1 ORCID",
       "value": "0000-0002-3456-7890",
     },
     "dau_1_email": {
@@ -93,8 +93,8 @@ exports[`getCreateScicatProposalDto includes co-PI, DAU and instrument metadata 
       "human_name": "Instrument 1 Name",
       "value": "YMIR",
     },
-    "number_of_co_pis": {
-      "human_name": "Number of CoPIs",
+    "number_of_co_is": {
+      "human_name": "Number of CoIs",
       "value": 1,
     },
     "number_of_dau": {
@@ -166,8 +166,8 @@ exports[`getCreateScicatProposalDto maps proposal to create DTO correctly 1`] = 
       "human_name": "Call End Date",
       "value": "2025-12-31T00:00:00.000Z",
     },
-    "number_of_co_pis": {
-      "human_name": "Number of CoPIs",
+    "number_of_co_is": {
+      "human_name": "Number of CoIs",
       "value": 0,
     },
     "number_of_dau": {
@@ -239,8 +239,8 @@ exports[`getUpdateScicatProposalDto maps proposal to update DTO correctly 1`] = 
       "human_name": "Call End Date",
       "value": "2025-12-31T00:00:00.000Z",
     },
-    "number_of_co_pis": {
-      "human_name": "Number of CoPIs",
+    "number_of_co_is": {
+      "human_name": "Number of CoIs",
       "value": 0,
     },
     "number_of_dau": {
