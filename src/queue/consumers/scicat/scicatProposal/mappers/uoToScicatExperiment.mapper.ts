@@ -150,14 +150,11 @@ const buildSampleCharacteristics = (
   experiment: UOExperimentDto
 ): Record<string, MdEntryValue> => {
   const fields = sample.questionary.steps.flatMap((step) => step.fields);
+  const sampleLookup = `${experiment.experimentId}-${sample.sampleId}`;
 
   const rows: [string, MdEntryValue][] = [
     metadataEntry('uos_sample_id', 'UOS Sample ID', sample.sampleId),
-    metadataEntry(
-      'uos_sample_lookup',
-      'UOS Sample Lookup',
-      `${experiment.experimentId}_${sample.sampleId}`
-    ),
+    metadataEntry('uos_sample_lookup', 'UOS Sample Lookup', sampleLookup),
     metadataEntry(
       'questionary_length',
       'Number of questions in Questionary',
