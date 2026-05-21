@@ -34,6 +34,11 @@ class ScicatApi {
     }
 
     this.serviceUsername = this.getServiceUsername(this.scicatToken);
+
+    logger.logInfo('ScicatApi initialized', {
+      baseUrl: this.baseUrl,
+      serviceUsername: this.serviceUsername,
+    });
   }
 
   private getServiceUsername(token: string): string {
