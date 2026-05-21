@@ -23,7 +23,7 @@ const buildMetadata = (proposal: UOProposalDto): MdEntry => {
     metadataEntry('pi_lastname', 'PI Last Name', proposer.lastname),
     metadataEntry('pi_email', 'PI Email', proposer.email),
     metadataEntry('pi_orcid', 'PI ORCID', proposer.oidcSub),
-    metadataEntry('number_of_co_pis', 'Number of CoPIs', users.length),
+    metadataEntry('number_of_co_is', 'Number of CoIs', users.length),
     metadataEntry(
       'number_of_dau',
       'Number of Data Access Users',
@@ -45,20 +45,16 @@ const buildMetadata = (proposal: UOProposalDto): MdEntry => {
     const i = index + 1;
     rows.push(
       metadataEntry(
-        `co_pi_${i}_firstname`,
-        `CoPI ${i} First Name`,
+        `co_i_${i}_firstname`,
+        `CoI ${i} First Name`,
         user.firstname
       ),
+      metadataEntry(`co_i_${i}_lastname`, `CoI ${i} Last Name`, user.lastname),
+      metadataEntry(`co_i_${i}_email`, `CoI ${i} Email`, user.email),
+      metadataEntry(`co_i_${i}_orcid`, `CoI ${i} ORCID`, user.oidcSub),
       metadataEntry(
-        `co_pi_${i}_lastname`,
-        `CoPI ${i} Last Name`,
-        user.lastname
-      ),
-      metadataEntry(`co_pi_${i}_email`, `CoPI ${i} Email`, user.email),
-      metadataEntry(`co_pi_${i}_orcid`, `CoPI ${i} ORCID`, user.oidcSub),
-      metadataEntry(
-        `co_pi_${i}_affiliation`,
-        `CoPI ${i} Affiliation`,
+        `co_i_${i}_affiliation`,
+        `CoI ${i} Affiliation`,
         user.institution
       )
     );
