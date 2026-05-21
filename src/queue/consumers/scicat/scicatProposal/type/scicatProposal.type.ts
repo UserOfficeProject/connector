@@ -47,3 +47,22 @@ export type UpdateScicatProposalDto = {
   MeasurementPeriodList?: any[];
   metadata?: Record<string, unknown>;
 };
+
+export type CreateScicatSampleDto = {
+  proposalId: string;
+  description: string;
+  ownerGroup: string;
+  accessGroups?: string[];
+  isPublished?: boolean;
+  sampleCharacteristics?: Record<string, any>;
+};
+
+export type UpdateScicatSampleDto = {
+  sampleId?: string;
+  description?: string;
+  proposalId?: string;
+  ownerGroup?: string;
+  accessGroups?: string[];
+  isPublished?: boolean;
+  sampleCharacteristics?: Record<string, any>;
+};
