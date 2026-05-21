@@ -250,8 +250,6 @@ class ScicatApi {
       proposalId: UOExperiment.experimentId,
       response: createExperimentResponse,
     });
-
-    // await createSamples(UOExperiment, sciCatAccessToken);
   }
 
   async updateExperiment(UOExperiment: UOExperimentDto) {
