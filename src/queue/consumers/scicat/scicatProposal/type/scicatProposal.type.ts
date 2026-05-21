@@ -50,7 +50,7 @@ export type UpdateScicatProposalDto = {
 
 export type CreateScicatSampleDto = {
   proposalId: string;
-  description: string;
+  sampleName: string;
   ownerGroup: string;
   accessGroups?: string[];
   isPublished?: boolean;
@@ -59,7 +59,7 @@ export type CreateScicatSampleDto = {
 
 export type UpdateScicatSampleDto = {
   sampleId?: string;
-  description?: string;
+  sampleName?: string;
   proposalId?: string;
   ownerGroup?: string;
   accessGroups?: string[];

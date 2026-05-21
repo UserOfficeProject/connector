@@ -135,7 +135,7 @@ export const getUpdateScicatExperimentDto = (
 const buildSampleHash = (dto: CreateScicatSampleDto): string => {
   const hashableData = {
     accessGroups: dto.accessGroups,
-    description: dto.description,
+    sampleName: dto.sampleName,
     isPublished: dto.isPublished,
     ownerGroup: dto.ownerGroup,
     proposalId: dto.proposalId,
@@ -182,7 +182,7 @@ export const getCreateScicatSampleDto = (
     type: 'Sample Information',
     accessGroups: [experiment.experimentId],
     proposalId: experiment.experimentId,
-    description: sample.sample.title, //TODO: this should be replaced with sampleName before merge
+    sampleName: sample.sample.title,
     isPublished: false,
     sampleCharacteristics,
   };
@@ -203,7 +203,7 @@ export const getUpdateScicatSampleDto = (
     ownerGroup: scicatApi.serviceUsername || '',
     accessGroups: [experiment.experimentId],
     proposalId: experiment.experimentId,
-    description: sample.sample.title, //TODO: this should be replaced with sampleName before merge
+    sampleName: sample.sample.title,
     isPublished: false,
     sampleCharacteristics,
   };
