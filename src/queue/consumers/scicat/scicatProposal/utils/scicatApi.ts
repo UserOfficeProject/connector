@@ -147,7 +147,7 @@ class ScicatApi {
 
   async findSampleByLookup(
     sampleLookup: string
-  ): Promise<CreateScicatSampleDto | null> {
+  ): Promise<UpdateScicatSampleDto | null> {
     const sciCatAccessToken = this.scicatToken;
     const filter = JSON.stringify({
       where: {
@@ -157,7 +157,7 @@ class ScicatApi {
 
     const url = `${this.baseUrl}/Samples/findOne?filter=${encodeURIComponent(filter)}`;
 
-    const response = await this.request<CreateScicatSampleDto>(url, {
+    const response = await this.request<UpdateScicatSampleDto>(url, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${sciCatAccessToken}`,
