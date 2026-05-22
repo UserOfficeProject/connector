@@ -166,6 +166,21 @@ export class ESSOneIdentity {
     return res.Data;
   }
 
+  public async updatePersonWantsOrg(
+    uidPersonWantsOrg: string,
+    startDate: string,
+    endDate: string
+  ): Promise<void> {
+    await this.oneIdentityApi.updateEntity<PersonWantsOrg>(
+      'PersonWantsOrg',
+      uidPersonWantsOrg,
+      {
+        ValidFrom: startDate,
+        ValidUntil: endDate,
+      }
+    );
+  }
+
   public async cancelPersonWantsOrg(uidPersonWantsOrg: string): Promise<void> {
     const res =
       await this.oneIdentityApi.callScript<SCProposalSiteAccessCancelResponse>(

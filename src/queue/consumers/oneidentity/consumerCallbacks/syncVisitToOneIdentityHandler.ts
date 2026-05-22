@@ -18,7 +18,7 @@ const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = parseInt(
 );
 
 export async function syncVisitToOneIdentityHandler(
-  { startAt, endAt, visitorId: oidcSub, proposal }: VisitMessage,
+  { id: visitId, startAt, endAt, visitorId: oidcSub, proposal }: VisitMessage,
   type: Event
 ): Promise<void> {
   const oneIdentity = new ESSOneIdentity();
@@ -44,16 +44,29 @@ export async function syncVisitToOneIdentityHandler(
     if (type === Event.VISIT_CREATED) {
       await createAccessInOneIdentity(
         oneIdentity,
+        visitId,
         startAt,
         endAt,
-        oidcSub,
-        proposal
+        oidcSub
       );
 
       // Every visitor should have access to the proposal folders
       await createProposalConnection(oneIdentity, uidESet, uidPerson);
+    } else if (type === Event.VISIT_UPDATED) {
+      // For simplicity, we will just update the access with the new dates. The update takes place only if the dates are changed.
+      await updateAccessInOneIdentity(
+        oneIdentity,
+        visitId,
+        startAt,
+        endAt,
+        uidPerson,
+        oidcSub
+      );
+
+      // If the Proposal connection has not been established during Visit Creation, this will be a backup
+      await createProposalConnection(oneIdentity, uidESet, uidPerson);
     } else if (type === Event.VISIT_DELETED) {
-      await removeAccessFromOneIdentity(oneIdentity, startAt, endAt, uidPerson);
+      await removeAccessFromOneIdentity(oneIdentity, visitId, uidPerson);
 
       // Remove the connection between the proposal and the visitor
       await removeProposalConnection(
@@ -90,10 +103,10 @@ async function getScienceUser(
 
 async function createAccessInOneIdentity(
   oneIdentity: ESSOneIdentity,
+  visitId: string,
   startAt: string,
   endAt: string,
-  centralAccount: string,
-  proposal: ProposalMessageData
+  centralAccount: string
 ) {
   // Create site access
   const [pwoSite] = await oneIdentity.createPersonWantsOrg(
@@ -101,7 +114,7 @@ async function createAccessInOneIdentity(
     centralAccount,
     toIsoString(startAt),
     toIsoString(endAt),
-    proposal.shortCode // CustomProperty04 - We store the proposal short code for the site access to be able to find it later
+    visitId.toString() // CustomProperty04 - We store the visit ID for the site access to be able to find it later
   );
 
   logger.logInfo('Site access created in One Identity', {
@@ -120,7 +133,7 @@ async function createAccessInOneIdentity(
     centralAccount,
     toIsoString(validFrom),
     toIsoString(validUntil),
-    pwoSite.UID_PersonWantsOrg // CustomProperty04 - We store the site access UID for the system access to be able to find it later
+    visitId.toString() // CustomProperty04 - We store the visit ID for the system access to be able to find it later
   );
 
   logger.logInfo('System access created in One Identity', {
@@ -128,10 +141,99 @@ async function createAccessInOneIdentity(
   });
 }
 
-async function removeAccessFromOneIdentity(
+async function updateAccessInOneIdentity(
   oneIdentity: ESSOneIdentity,
+  visitId: string,
   startAt: string,
   endAt: string,
+  uidPerson: UID_Person,
+  centralAccount: string
+) {
+  // Find person wants orgs for the visitor
+  const personWantsOrgs = await oneIdentity.getPersonWantsOrg(uidPerson);
+
+  // Find site access for the visitor
+  const siteAccess = personWantsOrgs.find(
+    (pwo) =>
+      pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
+      pwo.CustomProperty04 === visitId.toString() && // CustomProperty04 is the visit ID for the site access
+      pwo.OrderState !== OrderState.ABORTED
+  );
+
+  // If there is no existing siteAccess record, new one will be created for both siteAccess and systemAccess.
+  if (!siteAccess) {
+    logger.logInfo('Site access not found in One Identity, creating access', {
+      visitId,
+      uidPerson,
+    });
+
+    await createAccessInOneIdentity(
+      oneIdentity,
+      visitId,
+      startAt,
+      endAt,
+      centralAccount
+    );
+
+    return;
+  }
+
+  const validFrom = toIsoString(startAt);
+  const validUntil = toIsoString(endAt);
+
+  if (
+    isSameDateTime(siteAccess.ValidFrom, validFrom) &&
+    isSameDateTime(siteAccess.ValidUntil, validUntil)
+  ) {
+    logger.logInfo(
+      'Visit dates unchanged, skipping access update in One Identity',
+      {
+        UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
+        visitId,
+      }
+    );
+
+    return;
+  }
+
+  await oneIdentity.updatePersonWantsOrg(
+    siteAccess.UID_PersonWantsOrg,
+    validFrom,
+    validUntil
+  );
+
+  logger.logInfo('Site access updated in One Identity', {
+    UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
+  });
+
+  // Find system access for the site access (CustomProperty04 is the visit ID)
+  const systemAccess = personWantsOrgs.find(
+    (pwo) =>
+      pwo.CustomProperty04 === visitId.toString() &&
+      pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
+      pwo.OrderState !== OrderState.UNSUBSCRIBED
+  );
+
+  if (!systemAccess) {
+    throw new Error(
+      'System access not found in One Identity, cannot update access'
+    );
+  }
+
+  await oneIdentity.updatePersonWantsOrg(
+    systemAccess.UID_PersonWantsOrg,
+    validFrom,
+    validUntil
+  );
+
+  logger.logInfo('System access updated in One Identity', {
+    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
+  });
+}
+
+async function removeAccessFromOneIdentity(
+  oneIdentity: ESSOneIdentity,
+  visitId: string,
   uidPerson: UID_Person
 ) {
   // Find person wants orgs for the visitor
@@ -141,8 +243,7 @@ async function removeAccessFromOneIdentity(
   const siteAccess = personWantsOrgs.find(
     (pwo) =>
       pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
-      toIsoString(pwo.ValidFrom) === toIsoString(startAt) &&
-      toIsoString(pwo.ValidUntil) === toIsoString(endAt) &&
+      pwo.CustomProperty04 === visitId.toString() && // CustomProperty04 is the visit ID for the site access
       pwo.OrderState !== OrderState.ABORTED
   );
 
@@ -158,10 +259,10 @@ async function removeAccessFromOneIdentity(
     UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
   });
 
-  // Find system access for the site access (CustomProperty04 is the site access UID)
+  // Find system access for the site access (CustomProperty04 is the visit ID)
   const systemAccess = personWantsOrgs.find(
     (pwo) =>
-      pwo.CustomProperty04 === siteAccess.UID_PersonWantsOrg &&
+      pwo.CustomProperty04 === visitId.toString() &&
       pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
       pwo.OrderState !== OrderState.UNSUBSCRIBED
   );
@@ -243,4 +344,15 @@ function toIsoString(date: string | number) {
   }
 
   return parsedDate.toISOString();
+}
+
+function isSameDateTime(left: string, right: string) {
+  const leftTime = new Date(left).getTime();
+  const rightTime = new Date(right).getTime();
+
+  if (isNaN(leftTime) || isNaN(rightTime)) {
+    return left === right;
+  }
+
+  return leftTime === rightTime;
 }

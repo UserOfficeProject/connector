@@ -25,6 +25,7 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   removeConnectionBetweenPersonAndProposal: jest.fn(),
   getPersonWantsOrg: jest.fn(),
   createPersonWantsOrg: jest.fn(),
+  updatePersonWantsOrg: jest.fn(),
   cancelPersonWantsOrg: jest.fn(),
   hasPersonSiteAccessToProposal: jest.fn(),
 };

@@ -87,6 +87,18 @@ export class OneIdentityApi {
     return data;
   }
 
+  public async updateEntity<T>(
+    table: string,
+    uid: string,
+    values: Partial<T>
+  ): Promise<void> {
+    const { data } = await this.axiosInstance.put(`/entity/${table}/${uid}`, {
+      values,
+    });
+
+    return data;
+  }
+
   public async getEntities<T>(
     table: string,
     where: string,
