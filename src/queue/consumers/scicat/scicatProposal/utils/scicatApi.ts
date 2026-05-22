@@ -15,7 +15,9 @@ import {
   getUpdateScicatProposalDto,
 } from '../mappers/uoToScicatProposal.mapper';
 import {
+  CreateScicatProposalDto,
   CreateScicatSampleDto,
+  UpdateScicatProposalDto,
   UpdateScicatSampleDto,
 } from '../type/scicatProposal.type';
 
@@ -145,7 +147,7 @@ class ScicatApi {
 
   async findSampleByLookup(
     sampleLookup: string
-  ): Promise<UpdateScicatSampleDto | null> {
+  ): Promise<CreateScicatSampleDto | null> {
     const sciCatAccessToken = this.scicatToken;
     const filter = JSON.stringify({
       where: {
@@ -155,7 +157,7 @@ class ScicatApi {
 
     const url = `${this.baseUrl}/Samples/findOne?filter=${encodeURIComponent(filter)}`;
 
-    const response = await this.request<UpdateScicatSampleDto>(url, {
+    const response = await this.request<CreateScicatSampleDto>(url, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${sciCatAccessToken}`,
@@ -187,14 +189,17 @@ class ScicatApi {
       scicatInstrumentIds
     );
 
-    const createProposalResponse = await this.request<string>(url, {
-      method: 'POST',
-      body: JSON.stringify(createProposalDto),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sciCatAccessToken}`,
-      },
-    });
+    const createProposalResponse = await this.request<CreateScicatProposalDto>(
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify(createProposalDto),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      }
+    );
 
     logger.logInfo('Proposal created in SciCat', {
       url,
@@ -217,14 +222,17 @@ class ScicatApi {
       scicatInstrumentIds
     );
 
-    const updateProposalResponse = await this.request<string>(url, {
-      method: 'PATCH',
-      body: JSON.stringify(updateProposalDto),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sciCatAccessToken}`,
-      },
-    });
+    const updateProposalResponse = await this.request<UpdateScicatProposalDto>(
+      url,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(updateProposalDto),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      }
+    );
 
     logger.logInfo('Proposal updated in SciCat', {
       url,
@@ -247,14 +255,15 @@ class ScicatApi {
       scicatInstrumentIds
     );
 
-    const createExperimentResponse = await this.request<string>(url, {
-      method: 'POST',
-      body: JSON.stringify(createExperimentDto),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sciCatAccessToken}`,
-      },
-    });
+    const createExperimentResponse =
+      await this.request<CreateScicatProposalDto>(url, {
+        method: 'POST',
+        body: JSON.stringify(createExperimentDto),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      });
 
     // NOTE: UOExperiment.experimentId = proposalId in SciCat for experiments
     logger.logInfo('Experiment created in SciCat', {
@@ -278,14 +287,15 @@ class ScicatApi {
       scicatInstrumentIds
     );
 
-    const updateExperimentResponse = await this.request(url, {
-      method: 'PATCH',
-      body: JSON.stringify(updateExperimentDto),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sciCatAccessToken}`,
-      },
-    });
+    const updateExperimentResponse =
+      await this.request<UpdateScicatProposalDto>(url, {
+        method: 'PATCH',
+        body: JSON.stringify(updateExperimentDto),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      });
 
     // NOTE: UOExperiment.experimentId = proposalId in SciCat for experiments
     logger.logInfo('Experiment updated in SciCat', {
@@ -299,14 +309,17 @@ class ScicatApi {
     const sciCatAccessToken = this.scicatToken;
     const url = `${this.baseUrl}/Samples`;
 
-    const createSampleResponse = await this.request(url, {
-      method: 'POST',
-      body: JSON.stringify(dto),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sciCatAccessToken}`,
-      },
-    });
+    const createSampleResponse = await this.request<CreateScicatSampleDto>(
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify(dto),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sciCatAccessToken}`,
+        },
+      }
+    );
 
     logger.logInfo('Sample created in SciCat', {
       url,
@@ -322,7 +335,7 @@ class ScicatApi {
 
     const url = `${this.baseUrl}/Samples/${sampleId}`;
 
-    await this.request(url, {
+    await this.request<UpdateScicatSampleDto>(url, {
       method: 'PATCH',
       body: JSON.stringify(dto),
       headers: {
