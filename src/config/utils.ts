@@ -45,7 +45,9 @@ export const axiosFetch = async (
 
     const { data, status, statusText, headers: axiosHeaders } = axiosResponse;
 
-    const responseHeaders = new AxiosHeaders(axiosHeaders as AxiosHeaders);
+    const responseHeaders = new AxiosHeaders(
+      axiosHeaders as axios.AxiosResponseHeaders
+    );
 
     const response = new Response(JSON.stringify(data), {
       status,

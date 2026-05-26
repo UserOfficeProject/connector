@@ -3,7 +3,7 @@ import { logger } from '@user-office-software/duo-logger';
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { collectUsersFromProposalMessage } from '../../utils/collectUsersFromProposalMessage';
-import { ESSOneIdentity } from '../utils/ESSOneIdentity';
+import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
 import { UID_ESet } from '../utils/interfaces/Eset';
 import { UID_Person } from '../utils/interfaces/Person';
 import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
@@ -71,22 +71,23 @@ async function discoverPersonsWithRetry(
   centralAccounts: string[]
 ): Promise<UID_Person[]> {
   const MAX_RETRIES = 3;
+  const MAX_ATTEMPTS = MAX_RETRIES + 1;
   const RETRY_DELAYS_MS = [20000, 40000, 60000]; // Progressive delays: 20s, 40s, 60s
 
   let attempts = 0;
 
   const attemptDiscovery = async (): Promise<UID_Person[]> => {
     attempts++;
-    const uidPersons = await oneIdentity.getPersons(centralAccounts);
+    const personConnections = await oneIdentity.getPersons(centralAccounts);
+    const uidPersons = personConnections.flatMap(({ uidPerson }) =>
+      uidPerson ? [uidPerson] : []
+    );
+    const missingCentralAccounts = getMissingCentralAccounts(personConnections);
 
-    if (uidPersons.length !== centralAccounts.length) {
-      const missingCentralAccounts = centralAccounts.filter(
-        (account) => !uidPersons.includes(account)
-      );
-
-      if (attempts < MAX_RETRIES) {
+    if (missingCentralAccounts.length > 0) {
+      if (attempts < MAX_ATTEMPTS) {
         const delayMs = RETRY_DELAYS_MS[attempts - 1];
-        logger.logError('discoverOIMPersonsWithRetry: incomplete - retrying', {
+        logger.logWarn('discoverOIMPersonsWithRetry: incomplete - retrying', {
           attempt: attempts,
           maxRetries: MAX_RETRIES,
           delayMs,
@@ -104,6 +105,7 @@ async function discoverPersonsWithRetry(
           {
             attempt: attempts,
             maxRetries: MAX_RETRIES,
+            totalAttempts: MAX_ATTEMPTS,
             missingCentralAccounts,
             foundCount: uidPersons.length,
             expectedCount: centralAccounts.length,
@@ -123,6 +125,14 @@ async function discoverPersonsWithRetry(
   };
 
   return attemptDiscovery();
+}
+
+function getMissingCentralAccounts(
+  personConnections: UserPersonConnection[]
+): string[] {
+  return personConnections.flatMap(({ centralAccount, uidPerson }) =>
+    uidPerson ? [] : [centralAccount]
+  );
 }
 
 async function handleConnectionsBetweenProposalAndPersons(

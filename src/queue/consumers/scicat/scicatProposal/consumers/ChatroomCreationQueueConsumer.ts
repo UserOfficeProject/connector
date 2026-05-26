@@ -2,7 +2,7 @@ import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../../models/Event';
 import { QueueConsumer } from '../../../QueueConsumer';
-import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
+import { hasTriggeringProposalStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
 import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 import { createChatroom } from '../consumerCallbacks/createChatroom';
@@ -30,7 +30,7 @@ export class ChatroomCreationQueueConsumer extends QueueConsumer {
       return;
     }
 
-    const hasStatus = hasTriggeringStatus(message, triggeringStatuses);
+    const hasStatus = hasTriggeringProposalStatus(message, triggeringStatuses);
 
     if (!hasStatus) {
       return;

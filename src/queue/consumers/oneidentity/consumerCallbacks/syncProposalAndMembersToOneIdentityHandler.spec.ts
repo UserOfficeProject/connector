@@ -9,8 +9,9 @@ import { syncProposalAndMembersToOneIdentityHandler } from './syncProposalAndMem
 import { Event } from '../../../../models/Event';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 import { ProposalUser } from '../../scicat/scicatProposal/dto';
-import { ESSOneIdentity } from '../utils/ESSOneIdentity';
+import { ESSOneIdentity, UserPersonConnection } from '../utils/ESSOneIdentity';
 import { UID_ESet } from '../utils/interfaces/Eset';
+import { IdentityType, Person } from '../utils/interfaces/Person';
 import { PersonHasESET } from '../utils/interfaces/PersonHasESET';
 
 const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
@@ -30,10 +31,25 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   hasPersonSiteAccessToProposal: jest.fn(),
 };
 
+const buildPerson = (centralAccount: string, uidPerson: string): Person => ({
+  CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+  CentralAccount: centralAccount,
+  InternalName: centralAccount,
+  UID_Person: uidPerson,
+});
+
+const buildUserPersonConnection = (
+  centralAccount: string,
+  uidPerson?: string
+): UserPersonConnection => ({
+  centralAccount,
+  uidPerson,
+});
+
 const setupMocks = (data: {
   getProposal: UID_ESet | undefined;
   getProposalPersonConnections?: PersonHasESET[];
-  getPersons?: string[];
+  getPersons?: UserPersonConnection[];
   hasPersonSiteAccessToProposalConfig?: { [key: string]: boolean };
 }) => {
   mockOneIdentity.createProposal.mockResolvedValueOnce('proposal-UID_ESet');
@@ -42,11 +58,32 @@ const setupMocks = (data: {
     data.getProposalPersonConnections ?? []
   );
   mockOneIdentity.getPersons.mockResolvedValue(
-    data.getPersons ?? ['proposer-uid', 'member-uid', 'data-access-uid']
+    data.getPersons ?? [
+      buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+      buildUserPersonConnection('member-oidc-sub', 'member-uid'),
+      buildUserPersonConnection('data-access-oidc-sub', 'data-access-uid'),
+    ]
+  );
+  mockOneIdentity.getPerson.mockImplementation(
+    async (centralAccount: string) => {
+      const defaultPersons: Record<string, Person> = {
+        'proposer-oidc-sub': buildPerson('proposer-oidc-sub', 'proposer-uid'),
+        'member-oidc-sub': buildPerson('member-oidc-sub', 'member-uid'),
+        'data-access-oidc-sub': buildPerson(
+          'data-access-oidc-sub',
+          'data-access-uid'
+        ),
+        'visitor-oidc-sub': buildPerson('visitor-oidc-sub', 'visitor-uid'),
+      };
+
+      return defaultPersons[centralAccount];
+    }
   );
   if (data.hasPersonSiteAccessToProposalConfig) {
     mockOneIdentity.hasPersonSiteAccessToProposal.mockImplementation(
-      async (uidPerson: string, _proposalUid: string) => {
+      async (uidPerson: string, proposalUid: string) => {
+        void proposalUid;
+
         return data.hasPersonSiteAccessToProposalConfig?.[uidPerson] ?? false;
       }
     );
@@ -66,6 +103,13 @@ const proposalMessage = {
 describe('oneIdentityIntegrationHandler', () => {
   beforeAll(() => {
     jest.useFakeTimers();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Object.values(mockOneIdentity) as jest.Mock[]).forEach((mockFn) => {
+      mockFn.mockReset();
+    });
   });
 
   afterAll(() => {
@@ -121,7 +165,11 @@ describe('oneIdentityIntegrationHandler', () => {
       setupMocks({
         getProposal: undefined,
         getProposalPersonConnections: [],
-        getPersons: ['proposer-oidc-sub'],
+        getPersons: [
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub'),
+          buildUserPersonConnection('data-access-oidc-sub'),
+        ],
       });
 
       const promise = syncProposalAndMembersToOneIdentityHandler(
@@ -135,13 +183,16 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(logger.logError).toHaveBeenCalledWith(
         'discoverOIMPersonsWithRetry: failed after max retries',
         expect.objectContaining({
-          attempt: 3,
+          attempt: 4,
           maxRetries: 3,
+          totalAttempts: 4,
           missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
           foundCount: 1,
           expectedCount: 3,
         })
       );
+
+      expect(mockOneIdentity.getPerson).not.toHaveBeenCalled();
     });
 
     it('should retry and eventually find all users after retries', async () => {
@@ -150,14 +201,27 @@ describe('oneIdentityIntegrationHandler', () => {
         getProposalPersonConnections: [],
       });
 
-      // First two attempts return incomplete results, third attempt returns all users
+      // First three attempts return incomplete results, fourth attempt returns all users
       mockOneIdentity.getPersons
-        .mockResolvedValueOnce(['proposer-oidc-sub'])
-        .mockResolvedValueOnce(['proposer-oidc-sub', 'member-oidc-sub'])
         .mockResolvedValueOnce([
-          'proposer-oidc-sub',
-          'member-oidc-sub',
-          'data-access-oidc-sub',
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub'),
+          buildUserPersonConnection('data-access-oidc-sub'),
+        ])
+        .mockResolvedValueOnce([
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub', 'member-uid'),
+          buildUserPersonConnection('data-access-oidc-sub'),
+        ])
+        .mockResolvedValueOnce([
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub', 'member-uid'),
+          buildUserPersonConnection('data-access-oidc-sub'),
+        ])
+        .mockResolvedValueOnce([
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub', 'member-uid'),
+          buildUserPersonConnection('data-access-oidc-sub', 'data-access-uid'),
         ]);
 
       const promise = syncProposalAndMembersToOneIdentityHandler(
@@ -168,8 +232,7 @@ describe('oneIdentityIntegrationHandler', () => {
       await jest.runAllTimersAsync();
       await promise;
 
-      // Verify retry logs
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         1,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -179,7 +242,7 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         2,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -189,11 +252,22 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
+        3,
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
+        expect.objectContaining({
+          attempt: 3,
+          delayMs: 60000,
+          foundCount: 2,
+          expectedCount: 3,
+        })
+      );
+
       // Verify success log on final attempt
       expect(logger.logInfo).toHaveBeenCalledWith(
         'discoverOIMPersonsWithRetry: success',
         expect.objectContaining({
-          attempt: 3,
+          attempt: 4,
           foundCount: 3,
         })
       );
@@ -206,7 +280,11 @@ describe('oneIdentityIntegrationHandler', () => {
       setupMocks({
         getProposal: undefined,
         getProposalPersonConnections: [],
-        getPersons: ['proposer-oidc-sub'],
+        getPersons: [
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub'),
+          buildUserPersonConnection('data-access-oidc-sub'),
+        ],
       });
 
       const promise = syncProposalAndMembersToOneIdentityHandler(
@@ -217,11 +295,11 @@ describe('oneIdentityIntegrationHandler', () => {
       await jest.runAllTimersAsync();
       await promise;
 
-      // Verify that getPersons was called 3 times (one per retry attempt)
-      expect(mockOneIdentity.getPersons).toHaveBeenCalledTimes(3);
+      // Verify that getPersons was called 4 times (initial attempt plus 3 retries)
+      expect(mockOneIdentity.getPersons).toHaveBeenCalledTimes(4);
 
       // Verify intermediate retry logs
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         1,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -233,7 +311,7 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         2,
         'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
@@ -245,13 +323,26 @@ describe('oneIdentityIntegrationHandler', () => {
         })
       );
 
-      // Verify final error log after max retries exhausted
-      expect(logger.logError).toHaveBeenNthCalledWith(
+      expect(logger.logWarn).toHaveBeenNthCalledWith(
         3,
-        'discoverOIMPersonsWithRetry: failed after max retries',
+        'discoverOIMPersonsWithRetry: incomplete - retrying',
         expect.objectContaining({
           attempt: 3,
           maxRetries: 3,
+          delayMs: 60000,
+          missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
+          foundCount: 1,
+          expectedCount: 3,
+        })
+      );
+
+      // Verify final error log after max retries exhausted
+      expect(logger.logError).toHaveBeenCalledWith(
+        'discoverOIMPersonsWithRetry: failed after max retries',
+        expect.objectContaining({
+          attempt: 4,
+          maxRetries: 3,
+          totalAttempts: 4,
           missingCentralAccounts: ['member-oidc-sub', 'data-access-oidc-sub'],
           foundCount: 1,
           expectedCount: 3,
@@ -262,7 +353,7 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(1);
       expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
         'proposal-UID_ESet',
-        'proposer-oidc-sub'
+        'proposer-uid'
       );
     });
 
@@ -424,6 +515,60 @@ describe('oneIdentityIntegrationHandler', () => {
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
+    it('should keep visitor connections when the visitor is still on the proposal', async () => {
+      const proposalMessageWithVisitor = {
+        ...proposalMessage,
+        visitors: [{ oidcSub: 'visitor-oidc-sub' } as ProposalUser],
+      } as ProposalMessageData;
+
+      setupMocks({
+        getProposal: 'proposal-UID_ESet',
+        getProposalPersonConnections: [
+          {
+            UID_ESet: 'proposal-UID_ESet',
+            UID_Person: 'proposer-uid',
+          },
+          {
+            UID_ESet: 'proposal-UID_ESet',
+            UID_Person: 'visitor-uid',
+          },
+        ],
+        getPersons: [
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub', 'member-uid'),
+          buildUserPersonConnection('data-access-oidc-sub', 'data-access-uid'),
+          buildUserPersonConnection('visitor-oidc-sub', 'visitor-uid'),
+        ],
+      });
+
+      await syncProposalAndMembersToOneIdentityHandler(
+        proposalMessageWithVisitor,
+        Event.PROPOSAL_UPDATED
+      );
+
+      expect(
+        mockOneIdentity.removeConnectionBetweenPersonAndProposal
+      ).not.toHaveBeenCalledWith('proposal-UID_ESet', 'visitor-uid');
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledTimes(2);
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
+        'proposal-UID_ESet',
+        'member-uid'
+      );
+      expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
+        'proposal-UID_ESet',
+        'data-access-uid'
+      );
+      expect(logger.logInfo).toHaveBeenCalledWith('Connections updated', {
+        uidESet: 'proposal-UID_ESet',
+        uidPersons: [
+          'proposer-uid',
+          'member-uid',
+          'data-access-uid',
+          'visitor-uid',
+        ],
+      });
+    });
+
     it('should remove one old connection and keep another due to site access', async () => {
       setupMocks({
         getProposal: 'proposal-UID_ESet',
@@ -441,7 +586,11 @@ describe('oneIdentityIntegrationHandler', () => {
             UID_Person: 'visitor-member-to-keep-uid', // Keep (not in proposal, but has site access)
           },
         ],
-        getPersons: ['proposer-uid', 'member-uid', 'data-access-uid'], // Current members in the proposal message
+        getPersons: [
+          buildUserPersonConnection('proposer-oidc-sub', 'proposer-uid'),
+          buildUserPersonConnection('member-oidc-sub', 'member-uid'),
+          buildUserPersonConnection('data-access-oidc-sub', 'data-access-uid'),
+        ], // Current members in the proposal message
         hasPersonSiteAccessToProposalConfig: {
           'old-member-to-remove-uid': false,
           'visitor-member-to-keep-uid': true,
