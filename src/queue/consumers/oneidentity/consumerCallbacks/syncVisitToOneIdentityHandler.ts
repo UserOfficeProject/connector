@@ -181,6 +181,20 @@ async function updateAccessInOneIdentity(
   const validFrom = toIsoString(startAt);
   const validUntil = toIsoString(endAt);
 
+  // Find system access for the site access (CustomProperty04 is the visit ID)
+  const systemAccess = personWantsOrgs.find(
+    (pwo) =>
+      pwo.CustomProperty04 === visitId.toString() &&
+      pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
+      pwo.OrderState !== OrderState.UNSUBSCRIBED
+  );
+
+  if (!systemAccess) {
+    throw new Error(
+      'System access not found in One Identity, cannot update access'
+    );
+  }
+
   if (
     isSameDateTime(siteAccess.ValidFrom, validFrom) &&
     isSameDateTime(siteAccess.ValidUntil, validUntil)
@@ -205,20 +219,6 @@ async function updateAccessInOneIdentity(
   logger.logInfo('Site access updated in One Identity', {
     UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
   });
-
-  // Find system access for the site access (CustomProperty04 is the visit ID)
-  const systemAccess = personWantsOrgs.find(
-    (pwo) =>
-      pwo.CustomProperty04 === visitId.toString() &&
-      pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
-      pwo.OrderState !== OrderState.UNSUBSCRIBED
-  );
-
-  if (!systemAccess) {
-    throw new Error(
-      'System access not found in One Identity, cannot update access'
-    );
-  }
 
   const systemAccessValidUntil = toIsoString(
     new Date(endAt).setDate(
