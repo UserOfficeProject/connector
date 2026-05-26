@@ -1,5 +1,5 @@
 # Connector
-The connector connects other services through the message queue.
+The connector connects other services through the message queue
 
 # Requirements
 This service requires node >=22.0.0

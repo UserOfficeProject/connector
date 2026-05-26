@@ -92,7 +92,7 @@ export const getCreateScicatExperimentDto = (
     pi_email: proposer.email,
     instrumentIds,
     ownerGroup: scicatApi.serviceUsername || '',
-    accessGroups: [experimentId],
+    accessGroups: [proposal.proposalId],
     startTime: new Date(experiment.startsAt),
     endTime: new Date(experiment.endsAt),
     MeasurementPeriodList: [],
@@ -120,7 +120,7 @@ export const getUpdateScicatExperimentDto = (
     pi_email: proposer.email,
     instrumentIds,
     ownerGroup: scicatApi.serviceUsername,
-    accessGroups: [experimentId],
+    accessGroups: [proposal.proposalId],
     startTime: new Date(experiment.startsAt),
     endTime: new Date(experiment.endsAt),
     MeasurementPeriodList: [],
@@ -180,7 +180,7 @@ export const getCreateScicatSampleDto = (
   const dto = {
     ownerGroup: scicatApi.serviceUsername || '',
     type: 'Sample Information',
-    accessGroups: [experiment.experimentId],
+    accessGroups: [experiment.proposal.proposalId],
     proposalId: experiment.experimentId,
     sampleName: sample.sample.title,
     isPublished: false,
@@ -201,7 +201,7 @@ export const getUpdateScicatSampleDto = (
   const sampleCharacteristics = buildSampleCharacteristics(sample, experiment);
   const dto = {
     ownerGroup: scicatApi.serviceUsername || '',
-    accessGroups: [experiment.experimentId],
+    accessGroups: [experiment.proposal.proposalId],
     proposalId: experiment.experimentId,
     sampleName: sample.sample.title,
     isPublished: false,

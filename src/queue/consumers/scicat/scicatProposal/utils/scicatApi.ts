@@ -27,6 +27,13 @@ class ScicatApi {
   readonly serviceUsername: string;
 
   constructor() {
+    if (
+      !process.env.ENABLE_SCICAT_PROPOSAL_UPSERT &&
+      !process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT
+    ) {
+      return;
+    }
+
     if (!this.baseUrl) {
       throw new Error('SCICAT_BASE_URL is not defined');
     }
