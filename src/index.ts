@@ -71,7 +71,7 @@ async function bootstrap() {
     logger.logException('Unhandled NODE exception', error);
   });
 
-  logger.logInfo(`Running connector services at localhost:${PORT}`, {});
+  logger.logInfo(`Running connector service at localhost:${PORT}`, {});
 
   if (
     enableScicatProposalUpsert ||
