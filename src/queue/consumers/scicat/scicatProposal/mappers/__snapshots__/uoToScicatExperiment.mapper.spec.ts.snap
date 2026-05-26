@@ -6,7 +6,7 @@ exports[`getCreateScicatExperimentDto includes visitor entries when registration
   "abstract": "Experiment 158548-3
 Test Abstract",
   "accessGroups": [
-    "158548-3",
+    "158548",
   ],
   "email": "john.doe@example.com",
   "endTime": 2026-10-03T07:00:00.000Z,
@@ -67,7 +67,7 @@ exports[`getCreateScicatExperimentDto maps experiment to create DTO correctly 1`
   "abstract": "Experiment 158548-3
 Test Abstract",
   "accessGroups": [
-    "158548-3",
+    "158548",
   ],
   "email": "john.doe@example.com",
   "endTime": 2026-10-03T07:00:00.000Z,
@@ -112,7 +112,7 @@ exports[`getUpdateScicatExperimentDto maps experiment to update DTO correctly 1`
   "abstract": "Experiment 158548-3
 Test Abstract",
   "accessGroups": [
-    "158548-3",
+    "158548",
   ],
   "email": "john.doe@example.com",
   "endTime": 2026-10-03T07:00:00.000Z,
