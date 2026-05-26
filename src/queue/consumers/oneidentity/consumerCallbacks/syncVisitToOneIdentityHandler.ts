@@ -220,10 +220,16 @@ async function updateAccessInOneIdentity(
     );
   }
 
+  const systemAccessValidUntil = toIsoString(
+    new Date(endAt).setDate(
+      new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
+    )
+  );
+
   await oneIdentity.updatePersonWantsOrg(
     systemAccess.UID_PersonWantsOrg,
     validFrom,
-    validUntil
+    systemAccessValidUntil
   );
 
   logger.logInfo('System access updated in One Identity', {

@@ -690,12 +690,19 @@ describe('syncVisitToOneIdentityHandler', () => {
         }
       );
 
-      // Verify system access update
+      // Verify system access update (ValidUntil extended by ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
+      const expectedSystemAccessValidUntil = new Date(
+        '2023-02-15T00:00:00.000Z'
+      );
+      expectedSystemAccessValidUntil.setDate(
+        expectedSystemAccessValidUntil.getDate() +
+          parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
+      );
       expect(mockOneIdentity.updatePersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         'system-access-uid',
         '2023-02-01T00:00:00.000Z',
-        '2023-02-15T00:00:00.000Z'
+        expectedSystemAccessValidUntil.toISOString()
       );
       expect(logger.logInfo).toHaveBeenCalledWith(
         'System access updated in One Identity',
