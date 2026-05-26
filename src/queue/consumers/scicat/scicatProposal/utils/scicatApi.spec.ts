@@ -1,5 +1,7 @@
 describe('ScicatApi', () => {
   it('should initialize with correct serviceUsername', () => {
+    process.env.ENABLE_SCICAT_PROPOSAL_UPSERT = 'true';
+    process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT = 'true';
     process.env.SCICAT_BASE_URL = 'http://localhost:3000';
     process.env.SCICAT_JWT =
       'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIn0.signature';
