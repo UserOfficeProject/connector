@@ -114,7 +114,7 @@ async function createAccessInOneIdentity(
     centralAccount,
     toIsoString(startAt),
     toIsoString(endAt),
-    visitId.toString() // CustomProperty04 - We store the visit ID for the site access to be able to find it later
+    visitId // CustomProperty04 - We store the visit ID for the site access to be able to find it later
   );
 
   logger.logInfo('Site access created in One Identity', {
@@ -133,7 +133,7 @@ async function createAccessInOneIdentity(
     centralAccount,
     toIsoString(validFrom),
     toIsoString(validUntil),
-    visitId.toString() // CustomProperty04 - We store the visit ID for the system access to be able to find it later
+    visitId // CustomProperty04 - We store the visit ID for the system access to be able to find it later
   );
 
   logger.logInfo('System access created in One Identity', {
@@ -156,7 +156,7 @@ async function updateAccessInOneIdentity(
   const siteAccess = personWantsOrgs.find(
     (pwo) =>
       pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
-      pwo.CustomProperty04 === visitId.toString() && // CustomProperty04 is the visit ID for the site access
+      pwo.CustomProperty04 === visitId && // CustomProperty04 is the visit ID for the site access
       pwo.OrderState !== OrderState.ABORTED
   );
 
@@ -184,7 +184,7 @@ async function updateAccessInOneIdentity(
   // Find system access for the site access (CustomProperty04 is the visit ID)
   const systemAccess = personWantsOrgs.find(
     (pwo) =>
-      pwo.CustomProperty04 === visitId.toString() &&
+      pwo.CustomProperty04 === visitId &&
       pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
       pwo.OrderState !== OrderState.UNSUBSCRIBED
   );
@@ -249,7 +249,7 @@ async function removeAccessFromOneIdentity(
   const siteAccess = personWantsOrgs.find(
     (pwo) =>
       pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
-      pwo.CustomProperty04 === visitId.toString() && // CustomProperty04 is the visit ID for the site access
+      pwo.CustomProperty04 === visitId && // CustomProperty04 is the visit ID for the site access
       pwo.OrderState !== OrderState.ABORTED
   );
 
@@ -268,7 +268,7 @@ async function removeAccessFromOneIdentity(
   // Find system access for the site access (CustomProperty04 is the visit ID)
   const systemAccess = personWantsOrgs.find(
     (pwo) =>
-      pwo.CustomProperty04 === visitId.toString() &&
+      pwo.CustomProperty04 === visitId &&
       pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
       pwo.OrderState !== OrderState.UNSUBSCRIBED
   );
