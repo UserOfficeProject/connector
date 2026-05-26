@@ -37,8 +37,7 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   connectPersonToProposal: jest.fn(),
   getProposalPersonConnections: jest.fn(),
   removeConnectionBetweenPersonAndProposal: jest.fn(),
-  createPersonWantsOrg: jest.fn(),
-  updatePersonWantsOrg: jest.fn(),
+  upsertPersonWantsOrg: jest.fn(),
   cancelPersonWantsOrg: jest.fn(),
   hasPersonSiteAccessToProposal: jest.fn(),
 };
@@ -107,7 +106,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         'Visitor is not a Science User, skipping',
         {}
       );
-      expect(mockOneIdentity.createPersonWantsOrg).not.toHaveBeenCalled();
+      expect(mockOneIdentity.upsertPersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
   });
@@ -138,7 +137,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]); // No existing connection
 
       // Mock sequential calls to createPersonWantsOrg with different responses
-      mockOneIdentity.createPersonWantsOrg
+      mockOneIdentity.upsertPersonWantsOrg
         .mockResolvedValueOnce([mockSiteAccess])
         .mockResolvedValueOnce([mockSystemAccess]);
 
@@ -156,8 +155,8 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify site access creation
-      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenCalledTimes(2);
-      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenCalledTimes(2);
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
         PersonWantsOrgRole.SITE_ACCESS,
         visitMessage.visitorId,
@@ -176,7 +175,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify system access creation
-      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
         visitMessage.visitorId,
@@ -233,7 +232,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([
         { UID_Person: mockPerson.UID_Person, UID_ESet: mockUidESet },
       ]); // Connection exists
-      mockOneIdentity.createPersonWantsOrg
+      mockOneIdentity.upsertPersonWantsOrg
         .mockResolvedValueOnce([mockSiteAccess])
         .mockResolvedValueOnce([mockSystemAccess]);
 
@@ -272,7 +271,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.getProposal).toHaveBeenCalledWith(
         visitMessage.proposal
       );
-      expect(mockOneIdentity.createPersonWantsOrg).not.toHaveBeenCalled();
+      expect(mockOneIdentity.upsertPersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
@@ -285,7 +284,7 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
       mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
-      mockOneIdentity.createPersonWantsOrg.mockRejectedValueOnce(
+      mockOneIdentity.upsertPersonWantsOrg.mockRejectedValueOnce(
         new Error('Failed to create site access')
       );
 
@@ -324,7 +323,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith(
         'visitor-oidc-sub'
       );
-      expect(mockOneIdentity.createPersonWantsOrg).not.toHaveBeenCalled();
+      expect(mockOneIdentity.upsertPersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
   });
@@ -744,11 +743,14 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify site access update
-      expect(mockOneIdentity.updatePersonWantsOrg).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
-        'site-access-uid',
+        PersonWantsOrgRole.SITE_ACCESS,
+        'visitor-oidc-sub',
         '2023-02-01T00:00:00.000Z',
-        '2023-02-15T00:00:00.000Z'
+        '2023-02-15T00:00:00.000Z',
+        '1',
+        'site-access-uid'
       );
       expect(logger.logInfo).toHaveBeenCalledWith(
         'Site access updated in One Identity',
@@ -765,11 +767,14 @@ describe('syncVisitToOneIdentityHandler', () => {
         expectedSystemAccessValidUntil.getDate() +
           parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
       );
-      expect(mockOneIdentity.updatePersonWantsOrg).toHaveBeenNthCalledWith(
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
-        'system-access-uid',
+        PersonWantsOrgRole.SYSTEM_ACCESS,
+        'visitor-oidc-sub',
         '2023-02-01T00:00:00.000Z',
-        expectedSystemAccessValidUntil.toISOString()
+        expectedSystemAccessValidUntil.toISOString(),
+        '1',
+        'system-access-uid'
       );
       expect(logger.logInfo).toHaveBeenCalledWith(
         'System access updated in One Identity',
@@ -828,7 +833,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify no update occurred
-      expect(mockOneIdentity.updatePersonWantsOrg).not.toHaveBeenCalled();
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenCalledTimes(0);
       expect(logger.logInfo).toHaveBeenCalledWith(
         'Visit dates unchanged, skipping access update in One Identity',
         {
@@ -861,7 +866,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
       mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
       mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce([]); // No existing access
-      mockOneIdentity.createPersonWantsOrg
+      mockOneIdentity.upsertPersonWantsOrg
         .mockResolvedValueOnce([mockSiteAccess])
         .mockResolvedValueOnce([mockSystemAccess]);
       mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]); // No existing connection
@@ -885,8 +890,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
 
       // Verify creation occurred instead of update
-      expect(mockOneIdentity.createPersonWantsOrg).toHaveBeenCalledTimes(2);
-      expect(mockOneIdentity.updatePersonWantsOrg).not.toHaveBeenCalled();
+      expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenCalledTimes(2);
 
       expect(mockOneIdentity.connectPersonToProposal).toHaveBeenCalledWith(
         mockUidESet,
@@ -957,7 +961,6 @@ describe('syncVisitToOneIdentityHandler', () => {
         {}
       );
       expect(mockOneIdentity.getPersonWantsOrg).not.toHaveBeenCalled();
-      expect(mockOneIdentity.updatePersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
@@ -983,7 +986,6 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.getProposal).toHaveBeenCalledWith(
         visitMessage.proposal
       );
-      expect(mockOneIdentity.updatePersonWantsOrg).not.toHaveBeenCalled();
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 

@@ -109,7 +109,7 @@ async function createAccessInOneIdentity(
   centralAccount: string
 ) {
   // Create site access
-  const [pwoSite] = await oneIdentity.createPersonWantsOrg(
+  const [pwoSite] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
     toIsoString(startAt),
@@ -128,7 +128,7 @@ async function createAccessInOneIdentity(
   );
 
   // Create system access
-  const [pwoSystem] = await oneIdentity.createPersonWantsOrg(
+  const [pwoSystem] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
     toIsoString(validFrom),
@@ -210,10 +210,13 @@ async function updateAccessInOneIdentity(
     return;
   }
 
-  await oneIdentity.updatePersonWantsOrg(
-    siteAccess.UID_PersonWantsOrg,
+  await oneIdentity.upsertPersonWantsOrg(
+    PersonWantsOrgRole.SITE_ACCESS,
+    centralAccount,
     validFrom,
-    validUntil
+    validUntil,
+    visitId,
+    siteAccess.UID_PersonWantsOrg
   );
 
   logger.logInfo('Site access updated in One Identity', {
@@ -226,10 +229,13 @@ async function updateAccessInOneIdentity(
     )
   );
 
-  await oneIdentity.updatePersonWantsOrg(
-    systemAccess.UID_PersonWantsOrg,
+  await oneIdentity.upsertPersonWantsOrg(
+    PersonWantsOrgRole.SYSTEM_ACCESS,
+    centralAccount,
     validFrom,
-    systemAccessValidUntil
+    systemAccessValidUntil,
+    visitId,
+    systemAccess.UID_PersonWantsOrg
   );
 
   logger.logInfo('System access updated in One Identity', {
