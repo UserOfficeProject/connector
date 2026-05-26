@@ -722,6 +722,10 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
       mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]); // No existing connection
 
+      // Mock Date.now for system access update (same as creation logic)
+      const mockNowDate = new Date();
+      Date.now = jest.fn(() => mockNowDate.getTime());
+
       // Updated visit message with new dates
       const updatedVisitMessage: VisitMessage = {
         ...visitMessage,
@@ -771,7 +775,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
         'visitor-oidc-sub',
-        '2023-02-01T00:00:00.000Z',
+        mockNowDate.toISOString(),
         expectedSystemAccessValidUntil.toISOString(),
         '1',
         'system-access-uid'

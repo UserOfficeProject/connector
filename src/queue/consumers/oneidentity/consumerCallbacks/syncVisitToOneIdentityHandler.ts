@@ -223,6 +223,7 @@ async function updateAccessInOneIdentity(
     UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
   });
 
+  const systemAccessValidFrom = toIsoString(Date.now());
   const systemAccessValidUntil = toIsoString(
     new Date(endAt).setDate(
       new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
@@ -232,7 +233,7 @@ async function updateAccessInOneIdentity(
   await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
-    validFrom,
+    systemAccessValidFrom,
     systemAccessValidUntil,
     visitId,
     systemAccess.UID_PersonWantsOrg
