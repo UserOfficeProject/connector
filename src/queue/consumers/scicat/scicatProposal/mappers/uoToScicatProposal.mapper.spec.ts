@@ -10,7 +10,7 @@ const createBaseUoProposal = (
   proposalId: '158548',
   title: 'Test Proposal',
   abstract: 'Test Abstract',
-  status: { id: 1, name: 'ALLOCATED' },
+  status: { id: 'ALLOCATED', name: 'ALLOCATED' },
   proposer: {
     id: 1,
     firstname: 'John',
