@@ -1,0 +1,287 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`getCreateScicatProposalDto includes co-PI, DAU and instrument metadata when present 1`] = `
+{
+  "MeasurementPeriodList": [],
+  "abstract": "Test Abstract",
+  "accessGroups": [],
+  "email": "john.doe@example.com",
+  "endTime": 2025-12-31T00:00:00.000Z,
+  "firstname": "John",
+  "instrumentIds": [
+    "scicat-inst-1",
+  ],
+  "lastname": "Doe",
+  "metadata": {
+    "call_id": {
+      "human_name": "Call Id",
+      "value": 1,
+    },
+    "call_name": {
+      "human_name": "Call",
+      "value": "CALL-2025",
+    },
+    "co_i_1_affiliation": {
+      "human_name": "CoI 1 Affiliation",
+      "value": "ESS",
+    },
+    "co_i_1_email": {
+      "human_name": "CoI 1 Email",
+      "value": "jane@example.com",
+    },
+    "co_i_1_firstname": {
+      "human_name": "CoI 1 First Name",
+      "value": "Jane",
+    },
+    "co_i_1_lastname": {
+      "human_name": "CoI 1 Last Name",
+      "value": "Smith",
+    },
+    "co_i_1_orcid": {
+      "human_name": "CoI 1 ORCID",
+      "value": "0000-0002-3456-7890",
+    },
+    "dau_1_email": {
+      "human_name": "Data Access User 1 Email",
+      "value": "bob@example.com",
+    },
+    "dau_1_firstname": {
+      "human_name": "Data Access User 1 First Name",
+      "value": "Bob",
+    },
+    "dau_1_lastname": {
+      "human_name": "Data Access User 1 Last Name",
+      "value": "Jones",
+    },
+    "dau_1_orcid": {
+      "human_name": "Data Access User 1 ORCID",
+      "value": "0000-0003-4567-8901",
+    },
+    "dau_2_email": {
+      "human_name": "Data Access User 2 Email",
+      "value": "alice@example.com",
+    },
+    "dau_2_firstname": {
+      "human_name": "Data Access User 2 First Name",
+      "value": "Alice",
+    },
+    "dau_2_lastname": {
+      "human_name": "Data Access User 2 Last Name",
+      "value": "Johnson",
+    },
+    "dau_2_orcid": {
+      "human_name": "Data Access User 2 ORCID",
+      "value": "0000-0004-5678-9012",
+    },
+    "end_call": {
+      "human_name": "Call End Date",
+      "value": "2025-12-31T00:00:00.000Z",
+    },
+    "instrument_1_contact_firstname": {
+      "human_name": "Instrument 1 Contact First Name",
+      "value": "Fredrik",
+    },
+    "instrument_1_contact_lastname": {
+      "human_name": "Instrument 1 Contact Last Name",
+      "value": "Bolmsten",
+    },
+    "instrument_1_id": {
+      "human_name": "Instrument 1 Id",
+      "value": 1,
+    },
+    "instrument_1_name": {
+      "human_name": "Instrument 1 Name",
+      "value": "YMIR",
+    },
+    "number_of_co_is": {
+      "human_name": "Number of CoIs",
+      "value": 1,
+    },
+    "number_of_dau": {
+      "human_name": "Number of Data Access Users",
+      "value": 2,
+    },
+    "number_of_instruments": {
+      "human_name": "Number of Instruments",
+      "value": 1,
+    },
+    "pi_email": {
+      "human_name": "PI Email",
+      "value": "john.doe@example.com",
+    },
+    "pi_firstname": {
+      "human_name": "PI First Name",
+      "value": "John",
+    },
+    "pi_lastname": {
+      "human_name": "PI Last Name",
+      "value": "Doe",
+    },
+    "pi_orcid": {
+      "human_name": "PI ORCID",
+      "value": "0000-0001-2345-6789",
+    },
+    "start_call": {
+      "human_name": "Call Start Date",
+      "value": "2025-01-01T00:00:00.000Z",
+    },
+    "status": {
+      "human_name": "UOS Proposal Status",
+      "value": "ALLOCATED",
+    },
+  },
+  "ownerGroup": "158548",
+  "pi_email": "john.doe@example.com",
+  "pi_firstname": "John",
+  "pi_lastname": "Doe",
+  "proposalId": "158548",
+  "startTime": 2025-01-01T00:00:00.000Z,
+  "title": "Test Proposal",
+  "type": "Proposal",
+}
+`;
+
+exports[`getCreateScicatProposalDto maps proposal to create DTO correctly 1`] = `
+{
+  "MeasurementPeriodList": [],
+  "abstract": "Test Abstract",
+  "accessGroups": [],
+  "email": "john.doe@example.com",
+  "endTime": 2025-12-31T00:00:00.000Z,
+  "firstname": "John",
+  "instrumentIds": [
+    "scicat-inst-1",
+  ],
+  "lastname": "Doe",
+  "metadata": {
+    "call_id": {
+      "human_name": "Call Id",
+      "value": 1,
+    },
+    "call_name": {
+      "human_name": "Call",
+      "value": "CALL-2025",
+    },
+    "end_call": {
+      "human_name": "Call End Date",
+      "value": "2025-12-31T00:00:00.000Z",
+    },
+    "number_of_co_is": {
+      "human_name": "Number of CoIs",
+      "value": 0,
+    },
+    "number_of_dau": {
+      "human_name": "Number of Data Access Users",
+      "value": 0,
+    },
+    "number_of_instruments": {
+      "human_name": "Number of Instruments",
+      "value": 0,
+    },
+    "pi_email": {
+      "human_name": "PI Email",
+      "value": "john.doe@example.com",
+    },
+    "pi_firstname": {
+      "human_name": "PI First Name",
+      "value": "John",
+    },
+    "pi_lastname": {
+      "human_name": "PI Last Name",
+      "value": "Doe",
+    },
+    "pi_orcid": {
+      "human_name": "PI ORCID",
+      "value": "0000-0001-2345-6789",
+    },
+    "start_call": {
+      "human_name": "Call Start Date",
+      "value": "2025-01-01T00:00:00.000Z",
+    },
+    "status": {
+      "human_name": "UOS Proposal Status",
+      "value": "ALLOCATED",
+    },
+  },
+  "ownerGroup": "158548",
+  "pi_email": "john.doe@example.com",
+  "pi_firstname": "John",
+  "pi_lastname": "Doe",
+  "proposalId": "158548",
+  "startTime": 2025-01-01T00:00:00.000Z,
+  "title": "Test Proposal",
+  "type": "Proposal",
+}
+`;
+
+exports[`getUpdateScicatProposalDto maps proposal to update DTO correctly 1`] = `
+{
+  "MeasurementPeriodList": [],
+  "abstract": "Test Abstract",
+  "accessGroups": [],
+  "email": "john.doe@example.com",
+  "endTime": 2025-12-31T00:00:00.000Z,
+  "firstname": "John",
+  "instrumentIds": [
+    "scicat-inst-1",
+  ],
+  "lastname": "Doe",
+  "metadata": {
+    "call_id": {
+      "human_name": "Call Id",
+      "value": 1,
+    },
+    "call_name": {
+      "human_name": "Call",
+      "value": "CALL-2025",
+    },
+    "end_call": {
+      "human_name": "Call End Date",
+      "value": "2025-12-31T00:00:00.000Z",
+    },
+    "number_of_co_is": {
+      "human_name": "Number of CoIs",
+      "value": 0,
+    },
+    "number_of_dau": {
+      "human_name": "Number of Data Access Users",
+      "value": 0,
+    },
+    "number_of_instruments": {
+      "human_name": "Number of Instruments",
+      "value": 0,
+    },
+    "pi_email": {
+      "human_name": "PI Email",
+      "value": "john.doe@example.com",
+    },
+    "pi_firstname": {
+      "human_name": "PI First Name",
+      "value": "John",
+    },
+    "pi_lastname": {
+      "human_name": "PI Last Name",
+      "value": "Doe",
+    },
+    "pi_orcid": {
+      "human_name": "PI ORCID",
+      "value": "0000-0001-2345-6789",
+    },
+    "start_call": {
+      "human_name": "Call Start Date",
+      "value": "2025-01-01T00:00:00.000Z",
+    },
+    "status": {
+      "human_name": "UOS Proposal Status",
+      "value": "ALLOCATED",
+    },
+  },
+  "ownerGroup": "158548",
+  "pi_email": "john.doe@example.com",
+  "pi_firstname": "John",
+  "pi_lastname": "Doe",
+  "startTime": 2025-01-01T00:00:00.000Z,
+  "title": "Test Proposal",
+  "type": "Proposal",
+}
+`;
