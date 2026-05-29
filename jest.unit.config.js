@@ -6,6 +6,8 @@ module.exports = {
       {
         tsconfig: {
           isolatedModules: true,
+          module: 'CommonJS',
+          moduleResolution: 'node',
         },
       },
     ],
