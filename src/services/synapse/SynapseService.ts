@@ -55,8 +55,16 @@ const ADMIN_API_PREFIX_V2 = '/_synapse/admin/v2';
 const ADMIN_API_PREFIX_V1 = '/_synapse/admin/v1';
 const CLIENT_API_PREFIX_V1 = '/_matrix/client/api/v1';
 
+interface IMatrixSdk {
+  createClient: (opts: { baseUrl: string; fetchFn?: unknown }) => unknown;
+  Method: Record<string, string>;
+  Visibility: Record<string, string>;
+  EventType: Record<string, string>;
+  MsgType: Record<string, string>;
+}
+
 export class SynapseService {
-  private sdkCache: any;
+  private sdkCache: IMatrixSdk | undefined;
   private clientCache: IMatrixClient | undefined;
 
   constructor() {
@@ -69,12 +77,12 @@ export class SynapseService {
       throw new Error('SYNAPSE_SERVICE_PASSWORD is not set');
   }
 
-  private async getMatrix() {
+  private async getMatrix(): Promise<IMatrixSdk> {
     if (!this.sdkCache) {
-      this.sdkCache = await import('matrix-js-sdk');
+      this.sdkCache = (await import('matrix-js-sdk')) as unknown as IMatrixSdk;
     }
 
-    return this.sdkCache;
+    return this.sdkCache as IMatrixSdk;
   }
 
   private async getClient(): Promise<IMatrixClient> {
@@ -86,7 +94,7 @@ export class SynapseService {
       }) as IMatrixClient;
     }
 
-    return this.clientCache!;
+    return this.clientCache;
   }
 
   async login(consumerName = 'ChatroomCreationQueueConsumer') {
@@ -186,13 +194,7 @@ export class SynapseService {
     }
 
     await client
-      .sendEvent(
-        roomId,
-        EventType.RoomMessage,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        messageContent as any,
-        ''
-      )
+      .sendEvent(roomId, EventType.RoomMessage, messageContent, '')
       .catch((reason) => {
         logger.logError('Failed sending message to chatroom', {
           roomId: roomId,
