@@ -83,7 +83,6 @@ fragment proposal on Proposal {
 
 fragment status on Status {
   id
-  shortCode
   name
   description
   isDefault
