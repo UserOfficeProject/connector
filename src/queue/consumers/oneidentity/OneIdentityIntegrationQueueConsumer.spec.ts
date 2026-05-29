@@ -31,6 +31,13 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
     consumer = new OneIdentityIntegrationQueueConsumer({} as MessageBroker);
   });
 
+  it('should return prefetch count of 1 to ensure serial message processing', () => {
+    // Access the protected method via the prototype
+    expect(OneIdentityIntegrationQueueConsumer.prototype['getPrefetch']()).toBe(
+      1
+    );
+  });
+
   describe('onMessage', () => {
     it('should not handle message if type is not PROPOSAL_ACCEPTED or PROPOSAL_UPDATED', async () => {
       const message = {} as ProposalMessageData;
