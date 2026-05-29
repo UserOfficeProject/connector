@@ -310,7 +310,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      const result = await essOneIdentity.createPersonWantsOrg(
+      const result = await essOneIdentity.upsertPersonWantsOrg(
         role,
         centralAccount,
         startDate,
@@ -332,7 +332,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      const result = await essOneIdentity.createPersonWantsOrg(
+      const result = await essOneIdentity.upsertPersonWantsOrg(
         role,
         centralAccount,
         startDate,
@@ -364,7 +364,7 @@ describe('ESSOneIdentity', () => {
       });
 
       await expect(
-        essOneIdentity.createPersonWantsOrg(
+        essOneIdentity.upsertPersonWantsOrg(
           role,
           centralAccount,
           startDate,

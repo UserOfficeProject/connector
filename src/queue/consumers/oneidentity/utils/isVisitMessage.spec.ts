@@ -44,8 +44,21 @@ describe('isVisitMessage', () => {
     expect(isVisitMessage(message)).toBe(false);
   });
 
+  it('should return false if id is undefined', () => {
+    const message = {
+      visitorId: 'visitor123',
+      startAt: '2023-01-01T00:00:00Z',
+      endAt: '2023-01-02T00:00:00Z',
+      proposal: {
+        shortCode: 'proposal-short-code',
+      },
+    };
+    expect(isVisitMessage(message)).toBe(false);
+  });
+
   it('should return true if the message is valid', () => {
     const message = {
+      id: 'visit123',
       visitorId: 'visitor123',
       startAt: '2023-01-01T00:00:00Z',
       endAt: '2023-01-02T00:00:00Z',

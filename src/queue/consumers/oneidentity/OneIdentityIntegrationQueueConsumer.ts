@@ -25,6 +25,7 @@ const SYNC_PROPOSAL_AND_MEMBERS_EVENTS_FOR_HANDLING = [
 const SYNC_VISIT_EVENTS_FOR_HANDLING = [
   Event.VISIT_CREATED,
   Event.VISIT_DELETED,
+  Event.VISIT_UPDATED,
 ];
 
 // Class for consuming messages from the ESS One Identity Integration Queue
