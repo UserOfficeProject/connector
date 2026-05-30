@@ -35,8 +35,7 @@ export interface UOCall {
 }
 
 export interface UOStatus {
-  id: number;
-  shortCode: string;
+  id: string;
   name: string;
   description?: string;
 }
