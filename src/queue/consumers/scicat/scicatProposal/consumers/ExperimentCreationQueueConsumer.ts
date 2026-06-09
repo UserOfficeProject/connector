@@ -10,6 +10,7 @@ import { upsertExperimentInScicat } from '../consumerCallbacks/upsertProposalInS
 const EXPERIMENT_EVENT_TYPES = [
   Event.EXPERIMENT_CREATED,
   Event.EXPERIMENT_UPDATED,
+  Event.EXPERIMENT_ESF_SUBMITTED,
 ];
 
 const experimentTriggeringStatuses =
