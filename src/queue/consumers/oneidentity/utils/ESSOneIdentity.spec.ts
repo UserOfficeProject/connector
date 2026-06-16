@@ -182,7 +182,7 @@ describe('ESSOneIdentity', () => {
   });
 
   describe('getPersons', () => {
-    it('should get person records for multiple users, undefined if not found', async () => {
+    it('should return person connections for multiple users, including missing ones', async () => {
       mockOneIdentityApi.getEntities.mockImplementation((table, filter) => {
         if (
           table === 'Person' &&
@@ -204,7 +204,16 @@ describe('ESSOneIdentity', () => {
         'known-oidc-sub',
       ]);
 
-      expect(result).toEqual(['known-person-uid']);
+      expect(result).toEqual([
+        {
+          centralAccount: 'unknown-oidc-sub',
+          uidPerson: undefined,
+        },
+        {
+          centralAccount: 'known-oidc-sub',
+          uidPerson: 'known-person-uid',
+        },
+      ]);
     });
   });
 
@@ -301,7 +310,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      const result = await essOneIdentity.createPersonWantsOrg(
+      const result = await essOneIdentity.upsertPersonWantsOrg(
         role,
         centralAccount,
         startDate,
@@ -323,7 +332,7 @@ describe('ESSOneIdentity', () => {
         Message: 'Success',
       });
 
-      const result = await essOneIdentity.createPersonWantsOrg(
+      const result = await essOneIdentity.upsertPersonWantsOrg(
         role,
         centralAccount,
         startDate,
@@ -355,7 +364,7 @@ describe('ESSOneIdentity', () => {
       });
 
       await expect(
-        essOneIdentity.createPersonWantsOrg(
+        essOneIdentity.upsertPersonWantsOrg(
           role,
           centralAccount,
           startDate,

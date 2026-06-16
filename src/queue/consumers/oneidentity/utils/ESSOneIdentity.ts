@@ -17,7 +17,7 @@ import { OneIdentityApi } from './OneIdentityApi';
 import { ProposalMessageData } from '../../../../models/ProposalMessage';
 
 export interface UserPersonConnection {
-  oidcSub: string;
+  centralAccount: string;
   uidPerson: UID_Person | undefined;
 }
 
@@ -92,15 +92,15 @@ export class ESSOneIdentity {
     return entities[0]?.values;
   }
 
-  public async getPersons(centralAccounts: string[]): Promise<string[]> {
-    return (
-      await Promise.all(
-        centralAccounts.map(
-          async (centralAccount) =>
-            (await this.getPerson(centralAccount))?.UID_Person
-        )
-      )
-    ).filter((uidPerson): uidPerson is string => uidPerson !== undefined);
+  public async getPersons(
+    centralAccounts: string[]
+  ): Promise<UserPersonConnection[]> {
+    return Promise.all(
+      centralAccounts.map(async (centralAccount) => ({
+        centralAccount,
+        uidPerson: (await this.getPerson(centralAccount))?.UID_Person,
+      }))
+    );
   }
 
   public async connectPersonToProposal(
@@ -139,12 +139,13 @@ export class ESSOneIdentity {
     return entities.map(({ values }) => values);
   }
 
-  public async createPersonWantsOrg(
+  public async upsertPersonWantsOrg(
     role: PersonWantsOrgRole,
     centralAccount: string,
     startDate: string,
     endDate: string,
-    customData: string = ''
+    customData: string = '',
+    uidPersonWantsOrg: string = ''
   ): Promise<PersonWantsOrg[]> {
     const res =
       await this.oneIdentityApi.callScript<SCProposalSiteAccessResponse>(
@@ -156,7 +157,7 @@ export class ESSOneIdentity {
           startDate,
           endDate,
           customData, // PersonWantsOrg.CustomProperty04
-          '', // UID_PersonWantsOrg (empty for new)
+          uidPersonWantsOrg, // UID_PersonWantsOrg (empty for new, provided for update)
         ]
       );
 

@@ -7,9 +7,7 @@ import {
 } from '../InstrumentDataSource';
 import { InstrumentRecord, createInstrumentObject } from '../records';
 
-export default class PostgresInstrumentDataSource
-  implements InstrumentDataSource
-{
+export default class PostgresInstrumentDataSource implements InstrumentDataSource {
   private TABLE_NAME = 'instrument';
 
   async get(id: number): Promise<Instrument | null> {

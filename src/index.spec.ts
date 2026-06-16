@@ -6,6 +6,11 @@ jest.mock('express', () => {
 
   return jest.fn(() => express);
 });
+jest.mock('./queue/consumers/scicat/scicatProposal/utils/scicatApi', () => ({
+  scicatApi: {
+    serviceUsername: 'testuser',
+  },
+}));
 
 jest.mock('@user-office-software/duo-logger');
 jest.mock('./middlewares/metrics/metrics', () => jest.fn());
