@@ -65,7 +65,8 @@ export abstract class QueueConsumer {
     this.messageBroker.listenOn(
       queueName as Queue,
       async (...args) => {
-        logger.logInfo('Received message on queue', { queueName });
+        const [eventType] = args;
+        logger.logInfo('Received message on queue', { queueName, eventType });
 
         // Start tracking processing time
         const endTimer = processingDurationHistogram.startTimer({
