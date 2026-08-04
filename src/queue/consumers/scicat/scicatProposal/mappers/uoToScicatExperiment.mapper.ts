@@ -64,6 +64,11 @@ const buildMetadata = (experiment: UOExperimentDto): MdEntry => {
         `visitor_${i}_orcid`,
         `Visitor ${i} ORCID`,
         registration.user.oidcSub
+      ),
+      metadataEntry(
+        `visitor_${i}_affiliation`,
+        `Visitor ${i} Affiliation`,
+        registration.user.institution
       )
     );
   });

@@ -22,7 +22,7 @@ export class ExperimentCreationQueueConsumer extends QueueConsumer {
   }
 
   getExchangeName(): string {
-    return process.env.USER_OFFICE_CORE_EXCHANGE_NAME as string;
+    return process.env.EXPERIMENT_CREATION_EXCHANGE_NAME as string;
   }
 
   onMessage: ConsumerCallback = async (type, message) => {
