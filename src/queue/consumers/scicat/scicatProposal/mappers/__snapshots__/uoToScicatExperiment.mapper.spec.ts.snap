@@ -32,6 +32,10 @@ Test Abstract",
       "human_name": "UOS Proposal Status",
       "value": "ALLOCATED",
     },
+    "visitor_1_affiliation": {
+      "human_name": "Visitor 1 Affiliation",
+      "value": "ESS",
+    },
     "visitor_1_email": {
       "human_name": "Visitor 1 Email",
       "value": "test@example.com",
