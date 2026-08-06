@@ -77,6 +77,24 @@ describe('getCreateScicatExperimentDto', () => {
     expect(dto).toMatchSnapshot();
   });
 
+  it('maps the proposer institution to pi_affiliation', () => {
+    const dto = getCreateScicatExperimentDto(
+      createBaseUoExperiment(),
+      instrumentIds
+    );
+
+    expect(dto.pi_affiliation).toBe('ESS');
+  });
+
+  it('leaves pi_affiliation undefined when the proposer has no institution', () => {
+    const experiment = createBaseUoExperiment();
+    delete experiment.proposal.proposer.institution;
+
+    const dto = getCreateScicatExperimentDto(experiment, instrumentIds);
+
+    expect(dto.pi_affiliation).toBeUndefined();
+  });
+
   it('skips visitor entries when user is null', () => {
     const dto = getCreateScicatExperimentDto(
       createBaseUoExperiment({
@@ -99,6 +117,15 @@ describe('getUpdateScicatExperimentDto', () => {
     );
 
     expect(dto).toMatchSnapshot();
+  });
+
+  it('maps the proposer institution to pi_affiliation', () => {
+    const dto = getUpdateScicatExperimentDto(
+      createBaseUoExperiment(),
+      instrumentIds
+    );
+
+    expect(dto.pi_affiliation).toBe('ESS');
   });
 
   it('should not include proposalId', () => {

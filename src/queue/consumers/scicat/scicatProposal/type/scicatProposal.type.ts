@@ -15,6 +15,7 @@ export type CreateScicatProposalDto = {
   pi_email: string;
   pi_firstname: string;
   pi_lastname: string;
+  pi_affiliation?: string;
   email: string;
   type: 'Proposal' | 'Experiment';
   firstname: string;
@@ -35,6 +36,7 @@ export type UpdateScicatProposalDto = {
   pi_email?: string;
   pi_firstname?: string;
   pi_lastname?: string;
+  pi_affiliation?: string;
   email: string;
   firstname?: string;
   lastname?: string;
