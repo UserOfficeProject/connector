@@ -19,7 +19,8 @@ import { scicatApi } from '../utils/scicatApi';
 // ── Experiment ────────────────────────────────────────────────────────────────
 // ──────────────────────────────────────────────────────────────────────────────
 const buildMetadata = (experiment: UOExperimentDto): MdEntry => {
-  const { proposal, instrument, visit } = experiment;
+  const { proposal, instrument, visit, localContact } = experiment;
+  const { proposer } = proposal;
   const registrations = visit?.registrations ?? [];
 
   const rows: [string, MdEntryValue][] = [
@@ -33,7 +34,27 @@ const buildMetadata = (experiment: UOExperimentDto): MdEntry => {
       'UOS Experiment Status',
       experiment.status
     ),
+    metadataEntry('pi_firstname', 'PI First Name', proposer.firstname),
+    metadataEntry('pi_lastname', 'PI Last Name', proposer.lastname),
+    metadataEntry('pi_email', 'PI Email', proposer.email),
+    metadataEntry('pi_orcid', 'PI ORCID', proposer.oidcSub),
+    metadataEntry('pi_affiliation', 'PI Affiliation', proposer.institution),
     metadataEntry('instrument_name', 'Instrument Name', instrument.name),
+    metadataEntry(
+      'local_contact_firstname',
+      'Local contact name',
+      localContact?.firstname || null
+    ),
+    metadataEntry(
+      'local_contact_lastname',
+      'Local contact surname',
+      localContact?.lastname || null
+    ),
+    metadataEntry(
+      'local_contact_email',
+      'Local contact email',
+      localContact?.email || null
+    ),
     metadataEntry(
       'number_of_visitors',
       'Number of Visitors',
@@ -64,6 +85,11 @@ const buildMetadata = (experiment: UOExperimentDto): MdEntry => {
         `visitor_${i}_orcid`,
         `Visitor ${i} ORCID`,
         registration.user.oidcSub
+      ),
+      metadataEntry(
+        `visitor_${i}_affiliation`,
+        `Visitor ${i} Affiliation`,
+        registration.user.institution
       )
     );
   });

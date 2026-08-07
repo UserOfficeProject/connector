@@ -105,6 +105,10 @@ exports[`getCreateScicatProposalDto includes co-PI, DAU and instrument metadata 
       "human_name": "Number of Instruments",
       "value": 1,
     },
+    "pi_affiliation": {
+      "human_name": "PI Affiliation",
+      "value": "ESS",
+    },
     "pi_email": {
       "human_name": "PI Email",
       "value": "john.doe@example.com",
@@ -178,6 +182,10 @@ exports[`getCreateScicatProposalDto maps proposal to create DTO correctly 1`] = 
       "human_name": "Number of Instruments",
       "value": 0,
     },
+    "pi_affiliation": {
+      "human_name": "PI Affiliation",
+      "value": "ESS",
+    },
     "pi_email": {
       "human_name": "PI Email",
       "value": "john.doe@example.com",
@@ -250,6 +258,10 @@ exports[`getUpdateScicatProposalDto maps proposal to update DTO correctly 1`] = 
     "number_of_instruments": {
       "human_name": "Number of Instruments",
       "value": 0,
+    },
+    "pi_affiliation": {
+      "human_name": "PI Affiliation",
+      "value": "ESS",
     },
     "pi_email": {
       "human_name": "PI Email",
