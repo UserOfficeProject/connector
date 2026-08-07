@@ -30,6 +30,9 @@ fragment experiment on Experiment {
   proposalPk
   status
   localContactId
+  localContact {
+    ...basicUserDetails
+  }
   instrumentId
   createdAt
   updatedAt

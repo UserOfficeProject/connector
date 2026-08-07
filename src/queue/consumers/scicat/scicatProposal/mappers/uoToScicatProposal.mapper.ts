@@ -23,6 +23,7 @@ const buildMetadata = (proposal: UOProposalDto): MdEntry => {
     metadataEntry('pi_lastname', 'PI Last Name', proposer.lastname),
     metadataEntry('pi_email', 'PI Email', proposer.email),
     metadataEntry('pi_orcid', 'PI ORCID', proposer.oidcSub),
+    metadataEntry('pi_affiliation', 'PI Affiliation', proposer.institution),
     metadataEntry('number_of_co_is', 'Number of CoIs', users.length),
     metadataEntry(
       'number_of_dau',
@@ -123,7 +124,6 @@ export const getCreateScicatProposalDto = (
     pi_firstname: proposer.firstname,
     pi_lastname: proposer.lastname,
     pi_email: proposer.email,
-    pi_affiliation: proposer.institution,
     instrumentIds,
     ownerGroup: proposal.proposalId,
     accessGroups: [],
@@ -150,7 +150,6 @@ export const getUpdateScicatProposalDto = (
     pi_firstname: proposer.firstname,
     pi_lastname: proposer.lastname,
     pi_email: proposer.email,
-    pi_affiliation: proposer.institution,
     instrumentIds,
     ownerGroup: proposal.proposalId,
     accessGroups: [],

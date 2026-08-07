@@ -20,9 +20,41 @@ Test Abstract",
       "human_name": "Instrument Name",
       "value": "YMIR",
     },
+    "local_contact_email": {
+      "human_name": "Local contact email",
+      "value": "junjie.quan@ess.eu",
+    },
+    "local_contact_firstname": {
+      "human_name": "Local contact name",
+      "value": "Junjie",
+    },
+    "local_contact_lastname": {
+      "human_name": "Local contact surname",
+      "value": "Quan",
+    },
     "number_of_visitors": {
       "human_name": "Number of Visitors",
       "value": 1,
+    },
+    "pi_affiliation": {
+      "human_name": "PI Affiliation",
+      "value": "ESS",
+    },
+    "pi_email": {
+      "human_name": "PI Email",
+      "value": "john.doe@example.com",
+    },
+    "pi_firstname": {
+      "human_name": "PI First Name",
+      "value": "John",
+    },
+    "pi_lastname": {
+      "human_name": "PI Last Name",
+      "value": "Doe",
+    },
+    "pi_orcid": {
+      "human_name": "PI ORCID",
+      "value": "0000-0001-2345-6789",
     },
     "status_experiment": {
       "human_name": "UOS Experiment Status",
@@ -55,7 +87,6 @@ Test Abstract",
   },
   "ownerGroup": "testuser",
   "parentProposalId": "158548",
-  "pi_affiliation": "ESS",
   "pi_email": "john.doe@example.com",
   "pi_firstname": "John",
   "pi_lastname": "Doe",
@@ -86,9 +117,41 @@ Test Abstract",
       "human_name": "Instrument Name",
       "value": "YMIR",
     },
+    "local_contact_email": {
+      "human_name": "Local contact email",
+      "value": "junjie.quan@ess.eu",
+    },
+    "local_contact_firstname": {
+      "human_name": "Local contact name",
+      "value": "Junjie",
+    },
+    "local_contact_lastname": {
+      "human_name": "Local contact surname",
+      "value": "Quan",
+    },
     "number_of_visitors": {
       "human_name": "Number of Visitors",
       "value": 0,
+    },
+    "pi_affiliation": {
+      "human_name": "PI Affiliation",
+      "value": "ESS",
+    },
+    "pi_email": {
+      "human_name": "PI Email",
+      "value": "john.doe@example.com",
+    },
+    "pi_firstname": {
+      "human_name": "PI First Name",
+      "value": "John",
+    },
+    "pi_lastname": {
+      "human_name": "PI Last Name",
+      "value": "Doe",
+    },
+    "pi_orcid": {
+      "human_name": "PI ORCID",
+      "value": "0000-0001-2345-6789",
     },
     "status_experiment": {
       "human_name": "UOS Experiment Status",
@@ -101,7 +164,6 @@ Test Abstract",
   },
   "ownerGroup": "testuser",
   "parentProposalId": "158548",
-  "pi_affiliation": "ESS",
   "pi_email": "john.doe@example.com",
   "pi_firstname": "John",
   "pi_lastname": "Doe",
@@ -132,9 +194,41 @@ Test Abstract",
       "human_name": "Instrument Name",
       "value": "YMIR",
     },
+    "local_contact_email": {
+      "human_name": "Local contact email",
+      "value": "junjie.quan@ess.eu",
+    },
+    "local_contact_firstname": {
+      "human_name": "Local contact name",
+      "value": "Junjie",
+    },
+    "local_contact_lastname": {
+      "human_name": "Local contact surname",
+      "value": "Quan",
+    },
     "number_of_visitors": {
       "human_name": "Number of Visitors",
       "value": 0,
+    },
+    "pi_affiliation": {
+      "human_name": "PI Affiliation",
+      "value": "ESS",
+    },
+    "pi_email": {
+      "human_name": "PI Email",
+      "value": "john.doe@example.com",
+    },
+    "pi_firstname": {
+      "human_name": "PI First Name",
+      "value": "John",
+    },
+    "pi_lastname": {
+      "human_name": "PI Last Name",
+      "value": "Doe",
+    },
+    "pi_orcid": {
+      "human_name": "PI ORCID",
+      "value": "0000-0001-2345-6789",
     },
     "status_experiment": {
       "human_name": "UOS Experiment Status",
@@ -147,7 +241,6 @@ Test Abstract",
   },
   "ownerGroup": "testuser",
   "parentProposalId": "158548",
-  "pi_affiliation": "ESS",
   "pi_email": "john.doe@example.com",
   "pi_firstname": "John",
   "pi_lastname": "Doe",
