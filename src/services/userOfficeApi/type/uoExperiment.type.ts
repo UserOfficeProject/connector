@@ -32,6 +32,7 @@ export interface UOExperimentDto {
     UOProposalDto,
     'proposalId' | 'title' | 'abstract' | 'status' | 'proposer'
   >;
+  localContact?: UOUser | null;
   visit?: {
     registrations: {
       status: string;

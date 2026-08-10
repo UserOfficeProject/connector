@@ -37,6 +37,14 @@ const createBaseUoExperiment = (
     },
   },
   visit: null,
+  localContact: {
+    id: 8,
+    firstname: 'Junjie',
+    lastname: 'Quan',
+    email: 'junjie.quan@ess.eu',
+    oidcSub: 'junjiequan',
+    institution: 'Other',
+  },
   ...overrides,
 });
 
@@ -77,6 +85,58 @@ describe('getCreateScicatExperimentDto', () => {
     expect(dto).toMatchSnapshot();
   });
 
+  it('maps the proposer institution to the pi_affiliation metadata entry', () => {
+    const dto = getCreateScicatExperimentDto(
+      createBaseUoExperiment(),
+      instrumentIds
+    );
+
+    expect(dto.metadata?.['pi_affiliation']).toEqual({
+      human_name: 'PI Affiliation',
+      value: 'ESS',
+    });
+  });
+
+  it('leaves the pi_affiliation value undefined when the proposer has no institution', () => {
+    const experiment = createBaseUoExperiment();
+    delete experiment.proposal.proposer.institution;
+
+    const dto = getCreateScicatExperimentDto(experiment, instrumentIds);
+
+    expect(dto.metadata?.['pi_affiliation']).toEqual({
+      human_name: 'PI Affiliation',
+      value: undefined,
+    });
+  });
+
+  it('maps the local contact to metadata entries', () => {
+    const dto = getCreateScicatExperimentDto(
+      createBaseUoExperiment(),
+      instrumentIds
+    );
+
+    expect(dto.metadata?.['local_contact_firstname']).toEqual({
+      human_name: 'Local contact name',
+      value: 'Junjie',
+    });
+    expect(dto.metadata?.['local_contact_email']).toEqual({
+      human_name: 'Local contact email',
+      value: 'junjie.quan@ess.eu',
+    });
+  });
+
+  it('falls back to null local contact entries when no local contact is assigned', () => {
+    const dto = getCreateScicatExperimentDto(
+      createBaseUoExperiment({ localContact: null }),
+      instrumentIds
+    );
+
+    expect(dto.metadata?.['local_contact_firstname']).toEqual({
+      human_name: 'Local contact name',
+      value: null,
+    });
+  });
+
   it('skips visitor entries when user is null', () => {
     const dto = getCreateScicatExperimentDto(
       createBaseUoExperiment({
@@ -99,6 +159,18 @@ describe('getUpdateScicatExperimentDto', () => {
     );
 
     expect(dto).toMatchSnapshot();
+  });
+
+  it('maps the proposer institution to the pi_affiliation metadata entry', () => {
+    const dto = getUpdateScicatExperimentDto(
+      createBaseUoExperiment(),
+      instrumentIds
+    );
+
+    expect(dto.metadata?.['pi_affiliation']).toEqual({
+      human_name: 'PI Affiliation',
+      value: 'ESS',
+    });
   });
 
   it('should not include proposalId', () => {
