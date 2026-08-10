@@ -11,6 +11,9 @@ on:
 env:
   NODE_VERSION: 22.x
 
+permissions:
+  contents: read
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   test:
@@ -32,6 +35,9 @@ jobs:
   build:
     runs-on: ${{ matrix.runner }}
     needs: test
+    permissions:
+      contents: read
+      packages: write
 
     # Build each platform on a native runner instead of emulating arm64 with
     # QEMU, which crashes intermittently during npm ci (see
@@ -94,6 +100,9 @@ jobs:
     needs: build
     # Nothing was pushed for dependabot PRs, so there is nothing to merge.
     if: ${{ !startsWith(github.head_ref, 'dependabot') }}
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Download digests
