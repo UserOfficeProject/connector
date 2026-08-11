@@ -37,6 +37,33 @@ describe('QueueConsumer', () => {
     );
   });
 
+  it('should log startup errors triggered by construction', async () => {
+    const exitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never);
+
+    class MissingQueueNameConsumer extends TestQueueConsumer {
+      getQueueName() {
+        return '';
+      }
+    }
+
+    new MissingQueueNameConsumer(messageBrokerMock);
+    await Promise.resolve();
+
+    expect(logger.logException).toHaveBeenCalledWith(
+      'Error while starting QueueConsumer',
+      {
+        error:
+          'Queue name variable not set for consumer MissingQueueNameConsumer',
+        consumer: 'MissingQueueNameConsumer',
+      }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    exitSpy.mockRestore();
+  });
+
   it('should throw error if exchange name is not set', async () => {
     queueConsumer.getExchangeName = jest.fn();
 
