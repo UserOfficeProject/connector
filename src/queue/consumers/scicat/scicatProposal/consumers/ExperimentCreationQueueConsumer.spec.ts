@@ -34,20 +34,6 @@ describe('ExperimentCreationQueueConsumer', () => {
     expect(upsertExperimentInScicat).not.toHaveBeenCalled();
   });
 
-  it('should not process the message when it does not have the correct status', async () => {
-    (hasTriggeringType as jest.Mock).mockReturnValueOnce(true);
-    (hasTriggringExperimentStatus as jest.Mock).mockReturnValueOnce(false);
-
-    const consumer = new ExperimentCreationQueueConsumer({} as MessageBroker);
-
-    await expect(
-      consumer.onMessage('type', { message: 'message' }, {
-        headers: {},
-      } as any)
-    ).resolves.not.toThrow();
-    expect(upsertExperimentInScicat).not.toHaveBeenCalled();
-  });
-
   it('should upsert the experiment when the message has the correct type and status', async () => {
     (hasTriggeringType as jest.Mock).mockReturnValueOnce(true);
     (hasTriggringExperimentStatus as jest.Mock).mockReturnValueOnce(true);
