@@ -43,6 +43,6 @@ export class ExperimentCreationQueueConsumer extends QueueConsumer {
 
     const experimentMessage = validateExperimentMessage(message);
 
-    upsertExperimentInScicat(experimentMessage);
+    await upsertExperimentInScicat(experimentMessage);
   };
 }

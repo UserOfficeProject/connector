@@ -41,6 +41,6 @@ export class ProposalCreationQueueConsumer extends QueueConsumer {
     }
 
     const proposalMessage = validateProposalMessage(message);
-    upsertProposalInScicat(proposalMessage);
+    await upsertProposalInScicat(proposalMessage);
   };
 }
