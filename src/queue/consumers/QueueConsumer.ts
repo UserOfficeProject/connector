@@ -17,7 +17,16 @@ export abstract class QueueConsumer {
   constructor(messageBroker: MessageBroker) {
     this.messageBroker = messageBroker;
     logger.logInfo(`QueueConsumer ${this.constructor.name} created`, {});
-    this.start();
+    void this.start().catch((error) => {
+      logger.logException('Error while starting QueueConsumer', {
+        error: (error as Error).message,
+        consumer: this.constructor.name,
+      });
+
+      // Fail fast so the orchestrator restarts the process instead of leaving
+      // a silently broken consumer that no longer processes its queue.
+      process.exit(1);
+    });
   }
 
   abstract getQueueName(): string;
@@ -65,7 +74,8 @@ export abstract class QueueConsumer {
     this.messageBroker.listenOn(
       queueName as Queue,
       async (...args) => {
-        logger.logInfo('Received message on queue', { queueName });
+        const [eventType] = args;
+        logger.logInfo('Received message on queue', { queueName, eventType });
 
         // Start tracking processing time
         const endTimer = processingDurationHistogram.startTimer({
