@@ -582,7 +582,9 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       await expect(
         syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
-      ).rejects.toThrow('Person not found in One Identity');
+      ).rejects.toThrow(
+        'Person with central account "visitor-oidc-sub" not found in One Identity'
+      );
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith(
@@ -998,7 +1000,9 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       await expect(
         syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_UPDATED)
-      ).rejects.toThrow('Person not found in One Identity');
+      ).rejects.toThrow(
+        'Person with central account "visitor-oidc-sub" not found in One Identity'
+      );
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith(
