@@ -1,9 +1,14 @@
-import { ProposalUser } from './../queue/consumers/scicat/scicatProposal/dto';
+import { ProposalUser } from '../queue/consumers/scicat/scicatProposal/dto';
 
 export type Instrument = {
   id: number;
   shortCode: string;
   allocatedTime: number;
+};
+
+export type Sample = {
+  id: number;
+  title: string;
 };
 
 export interface InstrumentDto {
@@ -34,16 +39,27 @@ export enum ProposalStatusDefaultShortCodes {
 }
 
 export type ProposalMessageData = {
-  proposalPk: number;
-  shortCode: string;
-  title: string;
   abstract: string;
   callId: number;
-  newStatus?: ProposalStatusDefaultShortCodes;
-  submitted: boolean;
-  members: ProposalUser[];
-  dataAccessUsers?: ProposalUser[];
-  visitors?: ProposalUser[];
-  proposer?: ProposalUser;
   instruments?: Instrument[];
+  members: ProposalUser[];
+  dataAccessUsers: ProposalUser[];
+  visitors: ProposalUser[];
+  newStatus?: string;
+  proposalPk: number;
+  proposer?: ProposalUser;
+  shortCode: string;
+  title: string;
+  submitted: boolean;
+  samples?: Sample[];
+};
+
+export type ExperimentMessageData = {
+  experimentId: string;
+  experimentPk: number;
+  startsAt: Date;
+  endsAt: Date;
+  status: string;
+  proposal?: ProposalMessageData;
+  samples?: Sample[];
 };
