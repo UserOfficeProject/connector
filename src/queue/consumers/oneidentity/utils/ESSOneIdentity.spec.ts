@@ -290,6 +290,51 @@ describe('ESSOneIdentity', () => {
     });
   });
 
+  describe('syncPEJAllowance', () => {
+    const centralAccount = 'visitor-oidc-sub';
+    const externalAllowanceId = '1e94c2d1-743b-48b5-99ae-f8c2d5f34e2b';
+
+    it('should upsert a PEJ allowance with the visit dates', async () => {
+      mockOneIdentityApi.callScript.mockResolvedValueOnce('allowance-uid');
+
+      const result = await essOneIdentity.syncPEJAllowance(
+        centralAccount,
+        externalAllowanceId,
+        'upsert',
+        '2026-08-24T08:00:00.000Z',
+        '2026-08-24T16:00:00.000Z'
+      );
+
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCPEJAllowance',
+        [
+          centralAccount,
+          externalAllowanceId,
+          'upsert',
+          '2026-08-24T08:00:00.000Z',
+          '2026-08-24T16:00:00.000Z',
+        ]
+      );
+      expect(result).toBe('allowance-uid');
+    });
+
+    it('should send empty date parameters when deleting a PEJ allowance', async () => {
+      mockOneIdentityApi.callScript.mockResolvedValueOnce('allowance-uid');
+
+      const result = await essOneIdentity.syncPEJAllowance(
+        centralAccount,
+        externalAllowanceId,
+        'delete'
+      );
+
+      expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
+        'SCPEJAllowance',
+        [centralAccount, externalAllowanceId, 'delete', '', '']
+      );
+      expect(result).toBe('allowance-uid');
+    });
+  });
+
   describe('createPersonWantsOrg', () => {
     const role = PersonWantsOrgRole.SITE_ACCESS;
     const centralAccount = 'user123';

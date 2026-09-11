@@ -56,6 +56,38 @@ describe('isVisitMessage', () => {
     expect(isVisitMessage(message)).toBe(false);
   });
 
+  it('should return false if registrationAnswers is malformed', () => {
+    const message = {
+      id: 'visit123',
+      visitorId: 'visitor123',
+      startAt: '2023-01-01T00:00:00Z',
+      endAt: '2023-01-02T00:00:00Z',
+      proposal: {
+        shortCode: 'proposal-short-code',
+      },
+      registrationAnswers: 'not-an-array',
+    };
+
+    expect(isVisitMessage(message)).toBe(false);
+  });
+
+  it('should return true if the message includes valid registration answers', () => {
+    const message = {
+      id: 'visit123',
+      visitorId: 'visitor123',
+      startAt: '2023-01-01T00:00:00Z',
+      endAt: '2023-01-02T00:00:00Z',
+      proposal: {
+        shortCode: 'proposal-short-code',
+      },
+      registrationAnswers: [
+        { questionNaturalKey: 'request_daily_allowance', value: true },
+      ],
+    };
+
+    expect(isVisitMessage(message)).toBe(true);
+  });
+
   it('should return true if the message is valid', () => {
     const message = {
       id: 'visit123',
