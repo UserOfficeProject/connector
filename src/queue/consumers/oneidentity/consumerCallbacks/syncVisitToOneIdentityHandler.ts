@@ -11,14 +11,28 @@ import {
   OrderState,
   PersonWantsOrgRole,
 } from '../utils/interfaces/PersonWantsOrg';
-import { VisitMessage } from '../utils/interfaces/VisitMessage';
+import {
+  VisitMessage,
+  VisitRegistrationAnswer,
+} from '../utils/interfaces/VisitMessage';
+
+const REQUEST_DAILY_ALLOWANCE_QUESTION_NATURAL_KEY = 'request_daily_allowance';
+const DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY =
+  'daily_allowance_is_approved';
 
 const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = parseInt(
   process.env.ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS || '30'
 );
 
 export async function syncVisitToOneIdentityHandler(
-  { id: visitId, startAt, endAt, visitorId: oidcSub, proposal }: VisitMessage,
+  {
+    id: visitId,
+    startAt,
+    endAt,
+    visitorId: oidcSub,
+    proposal,
+    registrationAnswers = [],
+  }: VisitMessage,
   type: Event
 ): Promise<void> {
   const oneIdentity = new ESSOneIdentity();
@@ -52,6 +66,16 @@ export async function syncVisitToOneIdentityHandler(
 
       // Every visitor should have access to the proposal folders
       await createProposalConnection(oneIdentity, uidESet, uidPerson);
+
+      await syncDailyAllowance(
+        oneIdentity,
+        visitId,
+        oidcSub,
+        startAt,
+        endAt,
+        registrationAnswers,
+        type
+      );
     } else if (type === Event.VISIT_UPDATED) {
       // For simplicity, we will just update the access with the new dates. The update takes place only if the dates are changed.
       await updateAccessInOneIdentity(
@@ -65,7 +89,29 @@ export async function syncVisitToOneIdentityHandler(
 
       // If the Proposal connection has not been established during Visit Creation, this will be a backup
       await createProposalConnection(oneIdentity, uidESet, uidPerson);
+
+      await syncDailyAllowance(
+        oneIdentity,
+        visitId,
+        oidcSub,
+        startAt,
+        endAt,
+        registrationAnswers,
+        type
+      );
     } else if (type === Event.VISIT_DELETED) {
+      // Delete the allowance first. Its idempotent delete keeps message retries
+      // safe if one of the remaining visit cleanup operations fails.
+      await syncDailyAllowance(
+        oneIdentity,
+        visitId,
+        oidcSub,
+        startAt,
+        endAt,
+        registrationAnswers,
+        type
+      );
+
       await removeAccessFromOneIdentity(oneIdentity, visitId, uidPerson);
 
       // Remove the connection between the proposal and the visitor
@@ -81,6 +127,57 @@ export async function syncVisitToOneIdentityHandler(
     await oneIdentity.logout();
     logger.logInfo('One Identity successfully logged out', {});
   }
+}
+
+async function syncDailyAllowance(
+  oneIdentity: ESSOneIdentity,
+  visitId: string,
+  centralAccount: string,
+  startAt: string,
+  endAt: string,
+  registrationAnswers: VisitRegistrationAnswer[],
+  type: Event
+): Promise<void> {
+  if (!hasApprovedDailyAllowance(registrationAnswers)) return;
+
+  const operation =
+    type === Event.VISIT_DELETED
+      ? 'delete'
+      : type === Event.VISIT_CREATED || type === Event.VISIT_UPDATED
+        ? 'upsert'
+        : undefined;
+
+  if (!operation) return;
+
+  await oneIdentity.syncPEJAllowance(
+    centralAccount,
+    visitId,
+    operation,
+    operation === 'delete' ? '' : startAt,
+    operation === 'delete' ? '' : endAt
+  );
+
+  logger.logInfo('PEJ allowance synchronized in One Identity', {
+    visitId,
+    centralAccount,
+    operation,
+  });
+}
+
+function hasApprovedDailyAllowance(
+  registrationAnswers: VisitRegistrationAnswer[]
+): boolean {
+  const hasAffirmativeAnswer = (questionNaturalKey: string) =>
+    registrationAnswers.some(
+      (answer) =>
+        answer.questionNaturalKey === questionNaturalKey &&
+        answer.value === true
+    );
+
+  return (
+    hasAffirmativeAnswer(REQUEST_DAILY_ALLOWANCE_QUESTION_NATURAL_KEY) &&
+    hasAffirmativeAnswer(DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY)
+  );
 }
 
 // Find person UID from oidcSub
