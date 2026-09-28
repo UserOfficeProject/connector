@@ -14,6 +14,9 @@ Test Abstract",
   "instrumentIds": [
     "scicat-inst-1",
   ],
+  "keywords": [
+    "WF_01_00",
+  ],
   "lastname": "Doe",
   "metadata": {
     "instrument_name": {
@@ -110,6 +113,9 @@ Test Abstract",
   "firstname": "John",
   "instrumentIds": [
     "scicat-inst-1",
+  ],
+  "keywords": [
+    "WF_01_00",
   ],
   "lastname": "Doe",
   "metadata": {

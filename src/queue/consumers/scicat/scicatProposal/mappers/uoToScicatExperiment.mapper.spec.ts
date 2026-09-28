@@ -137,6 +137,54 @@ describe('getCreateScicatExperimentDto', () => {
     });
   });
 
+  describe('keywords from SCICAT_NEW_EXPERIMENT_KEYWORDS', () => {
+    afterEach(() => {
+      delete process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS;
+    });
+
+    it('sets the configured keyword on the new experiment', () => {
+      process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS = 'WF_01_00';
+
+      const dto = getCreateScicatExperimentDto(
+        createBaseUoExperiment(),
+        instrumentIds
+      );
+
+      expect(dto.keywords).toEqual(['WF_01_00']);
+    });
+
+    it('accepts a comma separated list and trims spaces', () => {
+      process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS = 'WF_01_00, WF_02_00 ,';
+
+      const dto = getCreateScicatExperimentDto(
+        createBaseUoExperiment(),
+        instrumentIds
+      );
+
+      expect(dto.keywords).toEqual(['WF_01_00', 'WF_02_00']);
+    });
+
+    it('falls back to WF_01_00 when the setting is not set', () => {
+      const dto = getCreateScicatExperimentDto(
+        createBaseUoExperiment(),
+        instrumentIds
+      );
+
+      expect(dto.keywords).toEqual(['WF_01_00']);
+    });
+
+    it('falls back to WF_01_00 when the setting is empty', () => {
+      process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS = ' ';
+
+      const dto = getCreateScicatExperimentDto(
+        createBaseUoExperiment(),
+        instrumentIds
+      );
+
+      expect(dto.keywords).toEqual(['WF_01_00']);
+    });
+  });
+
   it('skips visitor entries when user is null', () => {
     const dto = getCreateScicatExperimentDto(
       createBaseUoExperiment({
@@ -171,6 +219,18 @@ describe('getUpdateScicatExperimentDto', () => {
       human_name: 'PI Affiliation',
       value: 'ESS',
     });
+  });
+
+  it('does not send keywords, so the workflow keywords are kept', () => {
+    process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS = 'WF_01_00';
+
+    const dto = getUpdateScicatExperimentDto(
+      createBaseUoExperiment(),
+      instrumentIds
+    );
+
+    expect((dto as any).keywords).toBeUndefined();
+    delete process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS;
   });
 
   it('should not include proposalId', () => {
