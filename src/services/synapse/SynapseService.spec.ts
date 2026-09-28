@@ -1,7 +1,10 @@
 jest.mock('@user-office-software/duo-logger');
 jest.mock('matrix-js-sdk', () => ({
-  ...jest.requireActual('matrix-js-sdk'),
   createClient: jest.fn(),
+  Method: { Get: 'GET', Post: 'POST', Put: 'PUT' },
+  Visibility: { Private: 'private' },
+  EventType: { RoomMessage: 'm.room.message' },
+  MsgType: { Text: 'm.text' },
 }));
 jest.mock('./produceSynapseUserId', () => ({
   produceSynapseUserId: jest.fn(),
@@ -9,7 +12,6 @@ jest.mock('./produceSynapseUserId', () => ({
 
 import { logger } from '@user-office-software/duo-logger';
 import { AxiosError } from 'axios';
-import { createClient } from 'matrix-js-sdk';
 
 import { produceSynapseUserId } from './produceSynapseUserId';
 import { SynapseService } from './SynapseService';
@@ -64,7 +66,9 @@ describe('SynapseService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    (createClient as jest.Mock).mockReturnValue(mockCreateClient);
+    (
+      jest.requireMock('matrix-js-sdk').createClient as jest.Mock
+    ).mockReturnValue(mockCreateClient);
     mockLoggerLogError = jest.spyOn(logger, 'logError');
     mockLoggerLogInfo = jest.spyOn(logger, 'logInfo');
     process.env.SYNAPSE_SERVICE_USER = 'serviceUser';
@@ -139,7 +143,7 @@ describe('SynapseService', () => {
 
       const removeUserFromRoomSpy = jest
         .spyOn(synapseService, 'removeUserFromRoom')
-        .mockResolvedValueOnce();
+        .mockResolvedValueOnce(undefined);
 
       (produceSynapseUserId as jest.Mock)
         .mockResolvedValueOnce(member.oidcSub)
