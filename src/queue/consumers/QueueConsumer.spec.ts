@@ -37,6 +37,33 @@ describe('QueueConsumer', () => {
     );
   });
 
+  it('should log startup errors triggered by construction', async () => {
+    const exitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never);
+
+    class MissingQueueNameConsumer extends TestQueueConsumer {
+      getQueueName() {
+        return '';
+      }
+    }
+
+    new MissingQueueNameConsumer(messageBrokerMock);
+    await Promise.resolve();
+
+    expect(logger.logException).toHaveBeenCalledWith(
+      'Error while starting QueueConsumer',
+      {
+        error:
+          'Queue name variable not set for consumer MissingQueueNameConsumer',
+        consumer: 'MissingQueueNameConsumer',
+      }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    exitSpy.mockRestore();
+  });
+
   it('should throw error if exchange name is not set', async () => {
     queueConsumer.getExchangeName = jest.fn();
 
@@ -82,33 +109,44 @@ describe('QueueConsumer', () => {
   });
 
   it('should call onMessage when a message is received', async () => {
+    const eventType = 'PROPOSAL_CREATED';
+    const message = { proposalPk: 1234 };
+
     await queueConsumer.start();
 
     await messageBrokerMock.listenOn.mock.calls[0][1](
-      'testMessage',
-      {},
+      eventType,
+      message,
       {} as any
     );
 
     expect(logger.logInfo).toHaveBeenCalledWith('Received message on queue', {
       queueName: 'testQueue',
+      eventType,
     });
     expect(logger.logException).not.toHaveBeenCalled();
-    expect(queueConsumer.onMessage).toHaveBeenCalledWith('testMessage', {}, {});
+    expect(queueConsumer.onMessage).toHaveBeenCalledWith(
+      eventType,
+      message,
+      {}
+    );
   });
 
   it('should log error if onMessage throws and rethrow the error', async () => {
+    const eventType = 'PROPOSAL_CREATED';
+    const message = { proposalPk: 1234 };
     const error = new Error('Test error');
     queueConsumer.onMessage = jest.fn().mockRejectedValue(error);
 
     await queueConsumer.start();
 
     await expect(
-      messageBrokerMock.listenOn.mock.calls[0][1]('testMessage', {}, {} as any)
+      messageBrokerMock.listenOn.mock.calls[0][1](eventType, message, {} as any)
     ).rejects.toThrow(error);
 
     expect(logger.logInfo).toHaveBeenCalledWith('Received message on queue', {
       queueName: 'testQueue',
+      eventType,
     });
     expect(logger.logException).toHaveBeenCalledWith(
       'Error while handling QueueConsumer callback: ',
@@ -116,7 +154,7 @@ describe('QueueConsumer', () => {
         error: error.message,
         queue: 'testQueue',
         consumer: 'TestQueueConsumer',
-        args: ['testMessage', {}, {}],
+        args: [eventType, message, {}],
       }
     );
   });
