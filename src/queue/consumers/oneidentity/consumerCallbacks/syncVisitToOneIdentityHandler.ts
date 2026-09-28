@@ -93,7 +93,9 @@ async function getScienceUser(
   const person = await oneIdentity.getPerson(centralAccount);
 
   if (!person) {
-    throw new Error('Person not found in One Identity');
+    throw new Error(
+      `Person with central account "${centralAccount}" not found in One Identity`
+    );
   }
 
   if (person.CCC_EmployeeSubType === IdentityType.ESSSCIENCEUSER)

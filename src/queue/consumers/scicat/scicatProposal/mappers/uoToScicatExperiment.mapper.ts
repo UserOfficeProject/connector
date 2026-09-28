@@ -15,6 +15,19 @@ import {
 import { metadataEntry } from '../utils/common';
 import { scicatApi } from '../utils/scicatApi';
 
+// Keywords set on every new experiment, from SCICAT_NEW_EXPERIMENT_KEYWORDS (comma separated),
+// WF_01_00 when none are given. Create only: SciCat replaces the whole keyword list on update.
+const DEFAULT_NEW_EXPERIMENT_KEYWORDS = ['WF_01_00'];
+
+const newExperimentKeywords = (): string[] => {
+  const keywords = (process.env.SCICAT_NEW_EXPERIMENT_KEYWORDS ?? '')
+    .split(',')
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+
+  return keywords.length > 0 ? keywords : DEFAULT_NEW_EXPERIMENT_KEYWORDS;
+};
+
 // ──────────────────────────────────────────────────────────────────────────────
 // ── Experiment ────────────────────────────────────────────────────────────────
 // ──────────────────────────────────────────────────────────────────────────────
@@ -123,6 +136,7 @@ export const getCreateScicatExperimentDto = (
     endTime: new Date(experiment.endsAt),
     MeasurementPeriodList: [],
     metadata: buildMetadata(experiment),
+    keywords: newExperimentKeywords(),
   };
 };
 
