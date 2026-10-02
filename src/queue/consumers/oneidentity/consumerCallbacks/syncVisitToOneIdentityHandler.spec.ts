@@ -114,9 +114,14 @@ describe('syncVisitToOneIdentityHandler', () => {
   describe('VISIT_CREATED', () => {
     it('should create site access and system access in One Identity for science users and connect to proposal', async () => {
       // Mock the current time to a fixed value for testing
-      const mockNowDate = new Date('2022-12-15T00:00:00.000Z');
+      const mockNowDate = new Date('2022-12-15T12:30:00.000Z');
       const originalDateNow = Date.now;
       Date.now = jest.fn(() => mockNowDate.getTime());
+      const visitMessageWithTimes = {
+        ...visitMessage,
+        startAt: '2023-01-01T10:30:00.000Z',
+        endAt: '2023-01-10T14:45:00.000Z',
+      };
 
       // Mock person that is a science user
       const mockPerson = {
@@ -141,14 +146,17 @@ describe('syncVisitToOneIdentityHandler', () => {
         .mockResolvedValueOnce([mockSiteAccess])
         .mockResolvedValueOnce([mockSystemAccess]);
 
-      await syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_CREATED);
+      await syncVisitToOneIdentityHandler(
+        visitMessageWithTimes,
+        Event.VISIT_CREATED
+      );
 
       expect(mockOneIdentity.login).toHaveBeenCalled();
       expect(mockOneIdentity.getPerson).toHaveBeenCalledWith(
         'visitor-oidc-sub'
       );
       expect(mockOneIdentity.getProposal).toHaveBeenCalledWith(
-        visitMessage.proposal
+        visitMessageWithTimes.proposal
       );
       expect(mockOneIdentity.getProposalPersonConnections).toHaveBeenCalledWith(
         mockUidESet
@@ -159,29 +167,30 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         1,
         PersonWantsOrgRole.SITE_ACCESS,
-        visitMessage.visitorId,
-        visitMessage.startAt,
-        visitMessage.endAt,
-        visitMessage.id
+        visitMessageWithTimes.visitorId,
+        '2023-01-01T00:00:00.000Z',
+        '2023-01-10T23:59:59.999Z',
+        visitMessageWithTimes.id
       );
 
       // Calculate expected system access dates
       // validFrom should be the current mock date
-      const expectedValidFrom = mockNowDate.toISOString();
-      const expectedEndDate = new Date(visitMessage.endAt);
-      expectedEndDate.setDate(
-        expectedEndDate.getDate() +
+      const expectedValidFrom = '2022-12-15T00:00:00.000Z';
+      const expectedEndDate = new Date(visitMessageWithTimes.endAt);
+      expectedEndDate.setUTCDate(
+        expectedEndDate.getUTCDate() +
           parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
       );
+      expectedEndDate.setUTCHours(23, 59, 59, 999);
 
       // Verify system access creation
       expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
-        visitMessage.visitorId,
+        visitMessageWithTimes.visitorId,
         expectedValidFrom,
         expectedEndDate.toISOString(),
-        visitMessage.id
+        visitMessageWithTimes.id
       );
 
       expect(logger.logInfo).toHaveBeenCalledWith(
@@ -754,7 +763,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         PersonWantsOrgRole.SITE_ACCESS,
         'visitor-oidc-sub',
         '2023-02-01T00:00:00.000Z',
-        '2023-02-15T00:00:00.000Z',
+        '2023-02-15T23:59:59.999Z',
         '1',
         'site-access-uid'
       );
@@ -769,15 +778,18 @@ describe('syncVisitToOneIdentityHandler', () => {
       const expectedSystemAccessValidUntil = new Date(
         '2023-02-15T00:00:00.000Z'
       );
-      expectedSystemAccessValidUntil.setDate(
-        expectedSystemAccessValidUntil.getDate() +
+      expectedSystemAccessValidUntil.setUTCDate(
+        expectedSystemAccessValidUntil.getUTCDate() +
           parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
       );
+      expectedSystemAccessValidUntil.setUTCHours(23, 59, 59, 999);
+      const expectedSystemAccessValidFrom = new Date(mockNowDate);
+      expectedSystemAccessValidFrom.setUTCHours(0, 0, 0, 0);
       expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
         2,
         PersonWantsOrgRole.SYSTEM_ACCESS,
         'visitor-oidc-sub',
-        mockNowDate.toISOString(),
+        expectedSystemAccessValidFrom.toISOString(),
         expectedSystemAccessValidUntil.toISOString(),
         '1',
         'system-access-uid'
@@ -807,7 +819,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         UID_PersonOrdered: 'visitor-uid',
         DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
         ValidFrom: visitMessage.startAt,
-        ValidUntil: visitMessage.endAt,
+        ValidUntil: '2023-01-10T23:59:59.999Z',
         CustomProperty04: '1',
         OrderState: OrderState.GRANTED,
       } as PersonWantsOrg;
