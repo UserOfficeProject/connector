@@ -39,6 +39,7 @@ const mockOneIdentity: jest.Mocked<Omit<ESSOneIdentity, 'oneIdentityApi'>> = {
   removeConnectionBetweenPersonAndProposal: jest.fn(),
   upsertPersonWantsOrg: jest.fn(),
   cancelPersonWantsOrg: jest.fn(),
+  syncPEJAllowance: jest.fn(),
   hasPersonSiteAccessToProposal: jest.fn(),
 };
 
@@ -54,6 +55,16 @@ const visitMessage: VisitMessage = {
     members: [{ oidcSub: 'member-oidc-sub' }],
     dataAccessUsers: [{ oidcSub: 'visitor-oidc-sub' }], // Visitor is also a data access user
   } as ProposalMessageData,
+  registrationAnswers: [],
+};
+
+const visitMessageWithApprovedDailyAllowance: VisitMessage = {
+  ...visitMessage,
+  id: '1e94c2d1-743b-48b5-99ae-f8c2d5f34e2b',
+  registrationAnswers: [
+    { questionNaturalKey: 'request_daily_allowance', value: true },
+    { questionNaturalKey: 'daily_allowance_is_approved', value: true },
+  ],
 };
 
 const visitMessageVisitorNotMember: VisitMessage = {
@@ -213,6 +224,76 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       // Restore original Date.now
       Date.now = originalDateNow;
+    });
+
+    it('should upsert a PEJ allowance when it is requested and approved', async () => {
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+      const mockSiteAccess = {
+        UID_PersonWantsOrg: 'site-access-uid',
+      } as PersonWantsOrg;
+      const mockSystemAccess = {
+        UID_PersonWantsOrg: 'system-access-uid',
+      } as PersonWantsOrg;
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+      mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]);
+      mockOneIdentity.upsertPersonWantsOrg
+        .mockResolvedValueOnce([mockSiteAccess])
+        .mockResolvedValueOnce([mockSystemAccess]);
+
+      await syncVisitToOneIdentityHandler(
+        visitMessageWithApprovedDailyAllowance,
+        Event.VISIT_CREATED
+      );
+
+      expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledWith(
+        visitMessageWithApprovedDailyAllowance.visitorId,
+        visitMessageWithApprovedDailyAllowance.id,
+        'upsert',
+        visitMessageWithApprovedDailyAllowance.startAt,
+        visitMessageWithApprovedDailyAllowance.endAt
+      );
+    });
+
+    it('should not upsert a PEJ allowance unless it is both requested and approved', async () => {
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+      const mockSiteAccess = {
+        UID_PersonWantsOrg: 'site-access-uid',
+      } as PersonWantsOrg;
+      const mockSystemAccess = {
+        UID_PersonWantsOrg: 'system-access-uid',
+      } as PersonWantsOrg;
+      const visitMessageWithUnapprovedDailyAllowance: VisitMessage = {
+        ...visitMessageWithApprovedDailyAllowance,
+        registrationAnswers: [
+          { questionNaturalKey: 'request_daily_allowance', value: true },
+          {
+            questionNaturalKey: 'daily_allowance_is_approved',
+            value: false,
+          },
+        ],
+      };
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+      mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]);
+      mockOneIdentity.upsertPersonWantsOrg
+        .mockResolvedValueOnce([mockSiteAccess])
+        .mockResolvedValueOnce([mockSystemAccess]);
+
+      await syncVisitToOneIdentityHandler(
+        visitMessageWithUnapprovedDailyAllowance,
+        Event.VISIT_CREATED
+      );
+
+      expect(mockOneIdentity.syncPEJAllowance).not.toHaveBeenCalled();
     });
 
     it('should skip creating proposal connection if it already exists', async () => {
@@ -426,6 +507,46 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(logger.logInfo).toHaveBeenCalledWith(
         'One Identity successfully logged out',
         {}
+      );
+    });
+
+    it('should delete an approved PEJ allowance with empty date parameters', async () => {
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+      const mockPersonWantsOrgs = [
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+          DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+          CustomProperty04: visitMessageWithApprovedDailyAllowance.id,
+          OrderState: OrderState.GRANTED,
+        } as PersonWantsOrg,
+        {
+          UID_PersonWantsOrg: 'system-access-uid',
+          DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
+          CustomProperty04: visitMessageWithApprovedDailyAllowance.id,
+          OrderState: OrderState.GRANTED,
+        } as PersonWantsOrg,
+      ];
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+      mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce(
+        mockPersonWantsOrgs
+      );
+
+      await syncVisitToOneIdentityHandler(
+        visitMessageWithApprovedDailyAllowance,
+        Event.VISIT_DELETED
+      );
+
+      expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledWith(
+        visitMessageWithApprovedDailyAllowance.visitorId,
+        visitMessageWithApprovedDailyAllowance.id,
+        'delete',
+        '',
+        ''
       );
     });
 
@@ -794,6 +915,45 @@ describe('syncVisitToOneIdentityHandler', () => {
         'visitor-uid'
       );
       expect(mockOneIdentity.logout).toHaveBeenCalled();
+    });
+
+    it('should upsert an approved PEJ allowance on visit update', async () => {
+      const mockPerson = {
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person;
+      const mockSiteAccess = {
+        UID_PersonWantsOrg: 'site-access-uid',
+      } as PersonWantsOrg;
+      const mockSystemAccess = {
+        UID_PersonWantsOrg: 'system-access-uid',
+      } as PersonWantsOrg;
+      const updatedVisitMessage: VisitMessage = {
+        ...visitMessageWithApprovedDailyAllowance,
+        startAt: '2023-02-01T00:00:00.000Z',
+        endAt: '2023-02-15T00:00:00.000Z',
+      };
+
+      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+      mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce([]);
+      mockOneIdentity.upsertPersonWantsOrg
+        .mockResolvedValueOnce([mockSiteAccess])
+        .mockResolvedValueOnce([mockSystemAccess]);
+      mockOneIdentity.getProposalPersonConnections.mockResolvedValueOnce([]);
+
+      await syncVisitToOneIdentityHandler(
+        updatedVisitMessage,
+        Event.VISIT_UPDATED
+      );
+
+      expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledWith(
+        updatedVisitMessage.visitorId,
+        updatedVisitMessage.id,
+        'upsert',
+        updatedVisitMessage.startAt,
+        updatedVisitMessage.endAt
+      );
     });
 
     it('should skip update when visit dates have not changed', async () => {
