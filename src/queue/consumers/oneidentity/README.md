@@ -101,6 +101,7 @@ The handler manages site and system access in One Identity based on visit creati
 ### Error Handling
 - Proper error messages when person or access records are not found
 - Always performs logout in finally block to ensure clean session management
+- HTTP error logs include the request method, base URL and path, plus the response status, headers and full body (without request credentials)
 
 ---
 
