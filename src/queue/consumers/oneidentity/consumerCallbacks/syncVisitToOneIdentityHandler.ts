@@ -153,8 +153,8 @@ async function syncDailyAllowance(
     centralAccount,
     visitId,
     operation,
-    operation === 'delete' ? '' : startAt,
-    operation === 'delete' ? '' : endAt
+    operation === 'delete' ? '' : toStartOfDayIsoString(startAt),
+    operation === 'delete' ? '' : toStartOfNextDayIsoString(endAt)
   );
 
   logger.logInfo('PEJ allowance synchronized in One Identity', {

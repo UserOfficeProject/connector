@@ -89,9 +89,13 @@ The handler manages site and system access in One Identity based on visit creati
 - Extends beyond visit by `ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS` (default: 30 days)
 
 ### Access Creation
-- Site access matches exact visit dates
+- Site access starts at UTC midnight on the visit start date and ends at UTC midnight after the visit end date, covering both visit days in full
 - System access starts from the visit start date and extends beyond the visit end date by a configurable number of days (default: 30)
 - Site and system access share the visit ID in `CustomProperty04`
+
+### Daily Allowance Dates
+- Approved PEJ allowance upserts use the same full-day UTC boundaries as site access, on both visit creation and update
+- Allowance deletion continues to send empty date parameters
 
 ### Access Cancellation
 - Site and system access are matched independently by role and visit ID
