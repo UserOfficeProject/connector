@@ -114,8 +114,8 @@ async function createAccessInOneIdentity(
   const [pwoSite] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
-    toIsoString(startAt),
-    toIsoString(endAt),
+    toStartOfDayIsoString(startAt),
+    toStartOfNextDayIsoString(endAt),
     visitId // CustomProperty04 - We store the visit ID for the site access to be able to find it later
   );
 
@@ -125,16 +125,16 @@ async function createAccessInOneIdentity(
 
   // validFrom in One Identity should be in the future so that the access is not immediately available
   const validFrom = Date.now();
-  const validUntil = new Date(endAt).setDate(
-    new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
+  const validUntil = new Date(endAt).setUTCDate(
+    new Date(endAt).getUTCDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
   );
 
   // Create system access
   const [pwoSystem] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
-    toIsoString(validFrom),
-    toIsoString(validUntil),
+    toStartOfDayIsoString(validFrom),
+    toStartOfNextDayIsoString(validUntil),
     visitId // CustomProperty04 - We store the visit ID for the system access to be able to find it later
   );
 
@@ -180,8 +180,8 @@ async function updateAccessInOneIdentity(
     return;
   }
 
-  const validFrom = toIsoString(startAt);
-  const validUntil = toIsoString(endAt);
+  const validFrom = toStartOfDayIsoString(startAt);
+  const validUntil = toStartOfNextDayIsoString(endAt);
 
   // Find system access for the site access (CustomProperty04 is the visit ID)
   const systemAccess = personWantsOrgs.find(
@@ -225,10 +225,10 @@ async function updateAccessInOneIdentity(
     UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
   });
 
-  const systemAccessValidFrom = toIsoString(Date.now());
-  const systemAccessValidUntil = toIsoString(
-    new Date(endAt).setDate(
-      new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
+  const systemAccessValidFrom = toStartOfDayIsoString(Date.now());
+  const systemAccessValidUntil = toStartOfNextDayIsoString(
+    new Date(endAt).setUTCDate(
+      new Date(endAt).getUTCDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
     )
   );
 
@@ -357,6 +357,21 @@ function toIsoString(date: string | number) {
   if (isNaN(parsedDate.getTime())) {
     throw new Error(`Invalid date provided to toIsoString: ${date}`);
   }
+
+  return parsedDate.toISOString();
+}
+
+function toStartOfDayIsoString(date: string | number) {
+  const parsedDate = new Date(toIsoString(date));
+  parsedDate.setUTCHours(0, 0, 0, 0);
+
+  return parsedDate.toISOString();
+}
+
+function toStartOfNextDayIsoString(date: string | number) {
+  const parsedDate = new Date(toIsoString(date));
+  parsedDate.setUTCHours(0, 0, 0, 0);
+  parsedDate.setUTCDate(parsedDate.getUTCDate() + 1);
 
   return parsedDate.toISOString();
 }
