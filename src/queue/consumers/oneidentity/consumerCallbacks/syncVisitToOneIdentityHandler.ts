@@ -348,48 +348,37 @@ async function removeAccessFromOneIdentity(
   visitId: string,
   uidPerson: UID_Person
 ) {
-  // Find person wants orgs for the visitor
   const personWantsOrgs = await oneIdentity.getPersonWantsOrg(uidPerson);
+  const accessTypes = [
+    { role: PersonWantsOrgRole.SITE_ACCESS, name: 'Site' },
+    { role: PersonWantsOrgRole.SYSTEM_ACCESS, name: 'System' },
+  ];
 
-  // Find site access for the visitor
-  const siteAccess = personWantsOrgs.find(
-    (pwo) =>
-      pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
-      pwo.CustomProperty04 === visitId && // CustomProperty04 is the visit ID for the site access
-      pwo.OrderState !== OrderState.ABORTED
-  );
-
-  if (!siteAccess) {
-    throw new Error(
-      'Site access not found in One Identity, cannot remove access'
+  // Clean up each access type independently so retries can finish partial deletions.
+  for (const { role, name } of accessTypes) {
+    const accesses = personWantsOrgs.filter(
+      (pwo) =>
+        pwo.DisplayOrg === role &&
+        pwo.CustomProperty04 === visitId &&
+        pwo.OrderState !== OrderState.ABORTED &&
+        pwo.OrderState !== OrderState.UNSUBSCRIBED
     );
+
+    if (accesses.length === 0) {
+      logger.logInfo(`${name} access absent or already cancelled, skipping`, {
+        visitId,
+        uidPerson,
+      });
+    }
+
+    for (const access of accesses) {
+      await oneIdentity.cancelPersonWantsOrg(access.UID_PersonWantsOrg);
+
+      logger.logInfo(`${name} access cancelled in One Identity`, {
+        UID_PersonWantsOrg: access.UID_PersonWantsOrg,
+      });
+    }
   }
-
-  await oneIdentity.cancelPersonWantsOrg(siteAccess.UID_PersonWantsOrg);
-
-  logger.logInfo('Site access cancelled in One Identity', {
-    UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
-  });
-
-  // Find system access for the site access (CustomProperty04 is the visit ID)
-  const systemAccess = personWantsOrgs.find(
-    (pwo) =>
-      pwo.CustomProperty04 === visitId &&
-      pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
-      pwo.OrderState !== OrderState.UNSUBSCRIBED
-  );
-
-  if (!systemAccess) {
-    throw new Error(
-      'System access not found in One Identity, cannot remove access'
-    );
-  }
-
-  await oneIdentity.cancelPersonWantsOrg(systemAccess.UID_PersonWantsOrg);
-
-  logger.logInfo('System access cancelled in One Identity', {
-    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
-  });
 }
 
 async function createProposalConnection(

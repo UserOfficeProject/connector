@@ -15,9 +15,8 @@ The handler manages site and system access in One Identity based on visit creati
 - **System Access**: Digital access to systems, extends beyond the visit end date by a configurable number of days (default: 30)
 
 ### Key Relationships
-- System access is linked to site access via `CustomProperty04` which stores the site access UID
+- Both site and system access store the visit ID in `CustomProperty04`
 - Both access types are identified by specific roles in `PersonWantsOrgRole` enum
-- Proposal's short code is stored in `CustomProperty04` of the system access record
 
 ## Process Flow Chart
 
@@ -92,11 +91,13 @@ The handler manages site and system access in One Identity based on visit creati
 ### Access Creation
 - Site access matches exact visit dates
 - System access starts from the visit start date and extends beyond the visit end date by a configurable number of days (default: 30)
-- System access links to site access via `CustomProperty04`
+- Site and system access share the visit ID in `CustomProperty04`
 
 ### Access Cancellation
-- System access cancellation depends on finding the parent site access first
-- Both must be cancelled
+- Site and system access are matched independently by role and visit ID
+- All matching access records are cancelled, except those already `Aborted` or `Unsubscribed`
+- Missing or already-cancelled access is treated as successful cleanup, so retries can finish partial deletions
+- Actual API cancellation failures still propagate for retry
 
 ### Error Handling
 - Proper error messages when person or access records are not found

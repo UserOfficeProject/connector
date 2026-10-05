@@ -716,96 +716,172 @@ describe('syncVisitToOneIdentityHandler', () => {
       expect(mockOneIdentity.logout).toHaveBeenCalled();
     });
 
-    it('should throw error if site access not found', async () => {
+    describe('idempotent access cleanup', () => {
       const mockPerson = {
         UID_Person: 'visitor-uid',
         CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
       } as Person;
-      const mockPersonWantsOrgs = [
-        // No site access matching the dates
+      const siteAccess = {
+        UID_PersonWantsOrg: 'site-access-uid',
+        DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+        CustomProperty04: visitMessage.id,
+        OrderState: OrderState.GRANTED,
+      } as PersonWantsOrg;
+      const systemAccess = {
+        UID_PersonWantsOrg: 'system-access-uid',
+        DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
+        CustomProperty04: visitMessage.id,
+        OrderState: OrderState.GRANTED,
+      } as PersonWantsOrg;
+
+      beforeEach(() => {
+        mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+        mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+      });
+
+      it.each([
         {
-          UID_PersonWantsOrg: 'site-access-uid',
-          UID_PersonOrdered: 'visitor-uid',
-          DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
-          ValidFrom: '2023-01-02T00:00:00.000Z', // Different from message.startAt
-          ValidUntil: '2023-01-10T00:00:00.000Z',
-          OrderState: OrderState.GRANTED,
-        } as PersonWantsOrg,
-      ];
-
-      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
-      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
-      mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce(
-        mockPersonWantsOrgs
-      );
-
-      await expect(
-        syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
-      ).rejects.toThrow(
-        'Site access not found in One Identity, cannot remove access'
-      );
-
-      expect(mockOneIdentity.login).toHaveBeenCalled();
-      expect(mockOneIdentity.getPerson).toHaveBeenCalledWith(
-        'visitor-oidc-sub'
-      );
-      expect(mockOneIdentity.logout).toHaveBeenCalled();
-    });
-
-    it('should throw error if system access not found', async () => {
-      const mockPerson = {
-        UID_Person: 'visitor-uid',
-        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
-      } as Person;
-
-      const mockPersonWantsOrgs = [
+          scenario: 'site access is missing',
+          accesses: [
+            { ...siteAccess, CustomProperty04: 'other-visit' },
+            systemAccess,
+          ],
+          expectedUids: ['system-access-uid'],
+        },
         {
-          UID_PersonWantsOrg: 'site-access-uid',
-          UID_PersonOrdered: 'visitor-uid',
-          DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
-          ValidFrom: visitMessage.startAt,
-          ValidUntil: visitMessage.endAt,
-          CustomProperty04: visitMessage.id,
-          OrderState: OrderState.GRANTED,
-        } as PersonWantsOrg,
-        // No system access with CustomProperty04 matching visitMessage.id
+          scenario: 'system access is missing',
+          accesses: [
+            siteAccess,
+            { ...systemAccess, CustomProperty04: 'other-visit' },
+          ],
+          expectedUids: ['site-access-uid'],
+        },
         {
-          UID_PersonWantsOrg: 'system-access-uid',
-          UID_PersonOrdered: 'visitor-uid',
-          DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
-          ValidFrom: '2023-01-01T00:00:00.000Z',
-          ValidUntil: '2023-01-10T00:00:00.000Z',
-          CustomProperty04: 'different-visit-id',
-          OrderState: OrderState.GRANTED,
-        } as PersonWantsOrg,
-      ];
-
-      mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
-      mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
-      mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce(
-        mockPersonWantsOrgs
-      );
-
-      await expect(
-        syncVisitToOneIdentityHandler(visitMessage, Event.VISIT_DELETED)
-      ).rejects.toThrow(
-        'System access not found in One Identity, cannot remove access'
-      );
-
-      expect(mockOneIdentity.login).toHaveBeenCalled();
-      expect(mockOneIdentity.getPerson).toHaveBeenCalledWith(
-        'visitor-oidc-sub'
-      );
-      expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledWith(
-        'site-access-uid'
-      );
-      expect(logger.logInfo).toHaveBeenCalledWith(
-        'Site access cancelled in One Identity',
+          scenario: 'both access records are missing',
+          accesses: [],
+          expectedUids: [],
+        },
         {
-          UID_PersonWantsOrg: 'site-access-uid',
+          scenario: 'only records for another visit exist',
+          accesses: [
+            { ...siteAccess, CustomProperty04: 'other-visit' },
+            { ...systemAccess, CustomProperty04: 'other-visit' },
+          ],
+          expectedUids: [],
+        },
+        {
+          scenario: 'site access is already aborted',
+          accesses: [
+            { ...siteAccess, OrderState: OrderState.ABORTED },
+            systemAccess,
+          ],
+          expectedUids: ['system-access-uid'],
+        },
+        {
+          scenario: 'site access is already unsubscribed',
+          accesses: [
+            { ...siteAccess, OrderState: OrderState.UNSUBSCRIBED },
+            systemAccess,
+          ],
+          expectedUids: ['system-access-uid'],
+        },
+        {
+          scenario: 'system access is already aborted',
+          accesses: [
+            siteAccess,
+            { ...systemAccess, OrderState: OrderState.ABORTED },
+          ],
+          expectedUids: ['site-access-uid'],
+        },
+        {
+          scenario: 'system access is already unsubscribed',
+          accesses: [
+            siteAccess,
+            { ...systemAccess, OrderState: OrderState.UNSUBSCRIBED },
+          ],
+          expectedUids: ['site-access-uid'],
+        },
+        {
+          scenario: 'both access records are already cancelled',
+          accesses: [
+            { ...siteAccess, OrderState: OrderState.ABORTED },
+            { ...systemAccess, OrderState: OrderState.UNSUBSCRIBED },
+          ],
+          expectedUids: [],
+        },
+        {
+          scenario: 'multiple active records exist for the visit',
+          accesses: [
+            siteAccess,
+            { ...siteAccess, UID_PersonWantsOrg: 'second-site-access-uid' },
+            systemAccess,
+          ],
+          expectedUids: [
+            'site-access-uid',
+            'second-site-access-uid',
+            'system-access-uid',
+          ],
+        },
+      ])(
+        'should finish cleanup when $scenario',
+        async ({ accesses, expectedUids }) => {
+          mockOneIdentity.getPersonWantsOrg.mockResolvedValueOnce(accesses);
+
+          await syncVisitToOneIdentityHandler(
+            visitMessageVisitorNotMember,
+            Event.VISIT_DELETED
+          );
+
+          expect(mockOneIdentity.cancelPersonWantsOrg.mock.calls).toEqual(
+            expectedUids.map((uid) => [uid])
+          );
+          expect(
+            mockOneIdentity.removeConnectionBetweenPersonAndProposal
+          ).toHaveBeenCalledWith(mockUidESet, mockPerson.UID_Person);
+          expect(mockOneIdentity.logout).toHaveBeenCalledTimes(1);
         }
       );
-      expect(mockOneIdentity.logout).toHaveBeenCalled();
+
+      it('should retry system cancellation without cancelling site access again', async () => {
+        const error = new Error('System cancellation failed');
+        mockOneIdentity.getPerson.mockResolvedValueOnce(mockPerson);
+        mockOneIdentity.getProposal.mockResolvedValueOnce(mockUidESet);
+        mockOneIdentity.getPersonWantsOrg
+          .mockResolvedValueOnce([siteAccess, systemAccess])
+          .mockResolvedValueOnce([
+            { ...siteAccess, OrderState: OrderState.ABORTED },
+            systemAccess,
+          ]);
+        mockOneIdentity.cancelPersonWantsOrg
+          .mockResolvedValueOnce(undefined)
+          .mockRejectedValueOnce(error)
+          .mockResolvedValueOnce(undefined);
+
+        await expect(
+          syncVisitToOneIdentityHandler(
+            visitMessageVisitorNotMember,
+            Event.VISIT_DELETED
+          )
+        ).rejects.toBe(error);
+        expect(
+          mockOneIdentity.removeConnectionBetweenPersonAndProposal
+        ).not.toHaveBeenCalled();
+
+        await syncVisitToOneIdentityHandler(
+          visitMessageVisitorNotMember,
+          Event.VISIT_DELETED
+        );
+
+        expect(mockOneIdentity.cancelPersonWantsOrg.mock.calls).toEqual([
+          ['site-access-uid'],
+          ['system-access-uid'],
+          ['system-access-uid'],
+        ]);
+        expect(
+          mockOneIdentity.removeConnectionBetweenPersonAndProposal
+        ).toHaveBeenCalledTimes(1);
+        expect(mockOneIdentity.logout).toHaveBeenCalledTimes(2);
+      });
     });
   });
 
