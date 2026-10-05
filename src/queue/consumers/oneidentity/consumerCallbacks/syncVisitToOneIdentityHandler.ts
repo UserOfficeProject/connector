@@ -395,10 +395,13 @@ async function createProposalConnection(
   );
 
   if (exists) {
-    logger.logInfo('Connection already exists, skipping', {
-      uidPerson,
-      uidESet,
-    });
+    logger.logInfo(
+      'Visitor is already connected to proposal in One Identity, skipping connection creation',
+      {
+        uidPerson,
+        uidESet,
+      }
+    );
   } else {
     await oneIdentity.connectPersonToProposal(uidESet, uidPerson);
     logger.logInfo('Connection created between proposal and visitor', {

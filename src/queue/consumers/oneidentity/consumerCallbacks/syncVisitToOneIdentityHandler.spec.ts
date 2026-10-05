@@ -331,7 +331,7 @@ describe('syncVisitToOneIdentityHandler', () => {
 
       expect(mockOneIdentity.connectPersonToProposal).not.toHaveBeenCalled();
       expect(logger.logInfo).toHaveBeenCalledWith(
-        'Connection already exists, skipping',
+        'Visitor is already connected to proposal in One Identity, skipping connection creation',
         {
           uidPerson: mockPerson.UID_Person,
           uidESet: mockUidESet,
