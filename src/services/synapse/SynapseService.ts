@@ -1,15 +1,12 @@
 import { logger } from '@user-office-software/duo-logger';
-import {
+import type {
   MatrixClient,
   Method,
-  User,
-  Visibility,
-  createClient,
-  EventType,
-  MsgType,
   RoomMember,
-} from 'matrix-js-sdk';
+  User,
+} from 'matrix-js-sdk' with { 'resolution-mode': 'import' };
 
+import { loadMatrixSdk } from './matrixSdk';
 import { produceSynapseUserId } from './produceSynapseUserId';
 import { axiosFetch } from '../../config/utils';
 import {
@@ -40,7 +37,7 @@ const ADMIN_API_PREFIX_V1 = '/_synapse/admin/v1';
 const CLIENT_API_PREFIX_V1 = '/_matrix/client/api/v1';
 
 export class SynapseService {
-  private client: MatrixClient;
+  private readonly client: Promise<MatrixClient>;
   constructor() {
     if (!serverUrl) throw new Error('SYNAPSE_SERVER_NAME is not set');
     if (!serverName) throw new Error('SYNAPSE_SERVER_NAME is not set');
@@ -50,10 +47,12 @@ export class SynapseService {
     if (!serviceAccount.password)
       throw new Error('SYNAPSE_SERVICE_PASSWORD is not set');
 
-    this.client = createClient({
-      baseUrl: serverUrl,
-      fetchFn: axiosFetch,
-    });
+    this.client = loadMatrixSdk().then(({ createClient }) =>
+      createClient({
+        baseUrl: serverUrl,
+        fetchFn: axiosFetch,
+      })
+    );
     // TODO, If consumer service is started after downtime, and there are some pending messages in the queue
     // then it could be that queue handler will delegate handling of messages before connection to supabase is established
   }
@@ -65,7 +64,8 @@ export class SynapseService {
       throw new Error('SYNAPSE_SERVICE_PASSWORD is not set');
 
     try {
-      await this.client.loginWithPassword(
+      const client = await this.client;
+      await client.loginWithPassword(
         serviceAccount.userId,
         serviceAccount.password
       );
@@ -79,7 +79,8 @@ export class SynapseService {
 
   async logout() {
     try {
-      await this.client.logout();
+      const client = await this.client;
+      await client.logout();
     } catch (error) {
       logger.logError('Failed to logout from Synapse', { error });
       throw error;
@@ -87,18 +88,19 @@ export class SynapseService {
   }
 
   async createRoom(name: string, topic: string, members: ProposalUser[]) {
+    const client = await this.client;
     const membersList = await Promise.all(
       members.map(async (member) => await produceSynapseUserId(member, this))
     );
-    const room = await this.client.http
+    const room = await client.http
       .authedRequest(
-        Method.Post,
+        'POST' as Method,
         '/createRoom',
         undefined,
         {
           name: name,
           topic: topic,
-          visibility: Visibility.Private,
+          visibility: 'private',
           invite: membersList,
         },
         { prefix: CLIENT_API_PREFIX_V1 }
@@ -117,9 +119,10 @@ export class SynapseService {
   }
 
   async sendMessage(roomName: string, message: string) {
+    const client = await this.client;
     const messageContent = {
       body: message,
-      msgtype: MsgType.Text,
+      msgtype: 'm.text',
     };
     /**
      * Send messages to sciChat
@@ -131,7 +134,7 @@ export class SynapseService {
 
     const roomId = await this.getRoomIdByName(roomName);
 
-    const members = await this.client
+    const members = await client
       .getJoinedRoomMembers(roomId)
       .then((members) => members.joined);
 
@@ -148,8 +151,8 @@ export class SynapseService {
       await this.joinRoom(roomId);
     }
 
-    await this.client
-      .sendEvent(roomId, EventType.RoomMessage, messageContent, '')
+    await client
+      .sendEvent(roomId, 'm.room.message', messageContent as any, '')
       .catch((reason) => {
         logger.logError('Failed sending message to chatroom', {
           roomId: roomId,
@@ -161,14 +164,15 @@ export class SynapseService {
   }
 
   async invite(roomId: string, members: ProposalUser[]) {
+    const client = await this.client;
     const invitedUsers: { userId: string; invited: boolean }[] = [];
     const usersToBeRemoved = await this.getRoomMembers(roomId);
 
     for (const member of members) {
       const userId = await produceSynapseUserId(member, this);
-      await this.client.http
+      await client.http
         .authedRequest(
-          Method.Post,
+          'POST' as Method,
           `/join/${roomId}`,
           undefined,
           { user_id: userId },
@@ -201,10 +205,17 @@ export class SynapseService {
   }
 
   async getRoomByName(name: string) {
-    const result = await this.client.http
-      .authedRequest(Method.Get, '/rooms', { search_term: name }, undefined, {
-        prefix: ADMIN_API_PREFIX_V1,
-      })
+    const client = await this.client;
+    const result = await client.http
+      .authedRequest(
+        'GET' as Method,
+        '/rooms',
+        { search_term: name },
+        undefined,
+        {
+          prefix: ADMIN_API_PREFIX_V1,
+        }
+      )
       .catch((reason) => {
         logger.logError('Failed to get room by name', { reason, name });
         throw reason;
@@ -215,9 +226,10 @@ export class SynapseService {
     return response.rooms;
   }
   async getUserByOidcSub(oidcSub: string) {
-    const result = await this.client.http
+    const client = await this.client;
+    const result = await client.http
       .authedRequest<UserId>(
-        Method.Get,
+        'GET' as Method,
         `/auth_providers/${oauthIssuer}/users/${oidcSub}`,
         {},
         undefined,
@@ -240,9 +252,10 @@ export class SynapseService {
 
   async getUserByEmail(email: string) {
     const lowerCaseEmail = email.toLowerCase();
-    const result = await this.client.http
+    const client = await this.client;
+    const result = await client.http
       .authedRequest<UserId>(
-        Method.Get,
+        'GET' as Method,
         `/threepid/${thirdPartyId}/users/${lowerCaseEmail}`,
         {},
         undefined,
@@ -264,12 +277,13 @@ export class SynapseService {
   }
 
   async getRoomMembers(roomId: string): Promise<Set<string>> {
+    const client = await this.client;
     // Get all joined room members except service account
     const serviceAccountSynapseId = `@${serviceAccount.userId}:${serverName}`;
 
-    const joinedRoomMembers = await this.client.http
+    const joinedRoomMembers = await client.http
       .authedRequest<{ joined: Record<string, RoomMember> }>(
-        Method.Get,
+        'GET' as Method,
         `/rooms/${roomId}/joined_members`,
         {},
         undefined,
@@ -294,9 +308,9 @@ export class SynapseService {
   }
 
   async removeUserFromRoom(roomId: string, userId: string) {
-    return this.client.http
+    return (await this.client).http
       .authedRequest(
-        Method.Post,
+        'POST' as Method,
         `/rooms/${roomId}/kick`,
         {},
         { user_id: userId },
@@ -318,9 +332,10 @@ export class SynapseService {
   }
 
   async getUserInfo(userId: string) {
-    const result = await this.client.http
+    const client = await this.client;
+    const result = await client.http
       .authedRequest<SynapseUser>(
-        Method.Get,
+        'GET' as Method,
         `/users/${userId}`,
         {},
         undefined,
@@ -352,7 +367,8 @@ export class SynapseService {
   async joinRoom(roomName: string) {
     const roomId = await this.getRoomIdByName(roomName);
     try {
-      await this.client.joinRoom(roomId);
+      const client = await this.client;
+      await client.joinRoom(roomId);
       logger.logInfo('Joined room', { roomId });
     } catch (reason) {
       logger.logError('Failed to join room', { reason, roomId });
@@ -362,9 +378,10 @@ export class SynapseService {
 
   async updateUser(member: ProposalUser): Promise<User> {
     const userid = await produceSynapseUserId(member, this);
-    const result = await this.client.http
+    const client = await this.client;
+    const result = await client.http
       .authedRequest(
-        Method.Put,
+        'PUT' as Method,
         `/users/${userid}`,
         undefined,
         {
@@ -406,9 +423,10 @@ export class SynapseService {
 
   async createUser(member: ProposalUser, password: string) {
     const userid = await produceSynapseUserId(member, this);
-    const result = await this.client.http
+    const client = await this.client;
+    const result = await client.http
       .authedRequest(
-        Method.Put,
+        'PUT' as Method,
         `/users/${userid}`,
         undefined,
         {
