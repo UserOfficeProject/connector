@@ -2,17 +2,17 @@ import { ConsumerCallback } from '@user-office-software/duo-message-broker';
 
 import { Event } from '../../../../../models/Event';
 import { QueueConsumer } from '../../../QueueConsumer';
-import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
+import { hasTriggeringProposalStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
 import { validateProposalMessage } from '../../../utils/validateProposalMessage';
 import { upsertProposalInScicat } from '../consumerCallbacks/upsertProposalInScicat';
 
-const EVENT_TYPES = [
+const PROPOSAL_EVENT_TYPES = [
   Event.PROPOSAL_STATUS_ACTION_EXECUTED,
   Event.PROPOSAL_UPDATED,
 ];
 
-const triggeringStatuses =
+const proposalTriggeringStatuses =
   process.env.SCICAT_PROPOSAL_TRIGGERING_STATUSES?.split(', ');
 
 export class ProposalCreationQueueConsumer extends QueueConsumer {
@@ -25,20 +25,22 @@ export class ProposalCreationQueueConsumer extends QueueConsumer {
   }
 
   onMessage: ConsumerCallback = async (type, message) => {
-    const hasType = hasTriggeringType(type, EVENT_TYPES);
+    const hasProposalType = hasTriggeringType(type, PROPOSAL_EVENT_TYPES);
 
-    if (!hasType) {
+    if (!hasProposalType) {
       return;
     }
 
-    const hasStatus = hasTriggeringStatus(message, triggeringStatuses);
+    const hasProposalStatus = hasTriggeringProposalStatus(
+      message,
+      proposalTriggeringStatuses
+    );
 
-    if (!hasStatus) {
+    if (!hasProposalStatus) {
       return;
     }
 
     const proposalMessage = validateProposalMessage(message);
-
-    upsertProposalInScicat(proposalMessage);
+    await upsertProposalInScicat(proposalMessage);
   };
 }

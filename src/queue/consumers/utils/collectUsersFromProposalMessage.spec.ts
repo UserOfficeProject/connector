@@ -21,6 +21,8 @@ describe('collectUsersFromProposalMessage', () => {
     callId: 2,
     submitted: true,
     members: [],
+    dataAccessUsers: [],
+    visitors: [],
     ...overrides,
   });
 
