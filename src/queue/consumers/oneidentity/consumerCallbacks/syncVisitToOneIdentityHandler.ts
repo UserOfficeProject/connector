@@ -115,7 +115,7 @@ async function createAccessInOneIdentity(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
     toStartOfDayIsoString(startAt),
-    toEndOfDayIsoString(endAt),
+    toStartOfNextDayIsoString(endAt),
     visitId // CustomProperty04 - We store the visit ID for the site access to be able to find it later
   );
 
@@ -134,7 +134,7 @@ async function createAccessInOneIdentity(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
     toStartOfDayIsoString(validFrom),
-    toEndOfDayIsoString(validUntil),
+    toStartOfNextDayIsoString(validUntil),
     visitId // CustomProperty04 - We store the visit ID for the system access to be able to find it later
   );
 
@@ -181,7 +181,7 @@ async function updateAccessInOneIdentity(
   }
 
   const validFrom = toStartOfDayIsoString(startAt);
-  const validUntil = toEndOfDayIsoString(endAt);
+  const validUntil = toStartOfNextDayIsoString(endAt);
 
   // Find system access for the site access (CustomProperty04 is the visit ID)
   const systemAccess = personWantsOrgs.find(
@@ -226,7 +226,7 @@ async function updateAccessInOneIdentity(
   });
 
   const systemAccessValidFrom = toStartOfDayIsoString(Date.now());
-  const systemAccessValidUntil = toEndOfDayIsoString(
+  const systemAccessValidUntil = toStartOfNextDayIsoString(
     new Date(endAt).setUTCDate(
       new Date(endAt).getUTCDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
     )
@@ -368,9 +368,10 @@ function toStartOfDayIsoString(date: string | number) {
   return parsedDate.toISOString();
 }
 
-function toEndOfDayIsoString(date: string | number) {
+function toStartOfNextDayIsoString(date: string | number) {
   const parsedDate = new Date(toIsoString(date));
-  parsedDate.setUTCHours(23, 59, 59, 999);
+  parsedDate.setUTCHours(0, 0, 0, 0);
+  parsedDate.setUTCDate(parsedDate.getUTCDate() + 1);
 
   return parsedDate.toISOString();
 }

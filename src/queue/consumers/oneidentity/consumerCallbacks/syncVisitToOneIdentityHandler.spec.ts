@@ -169,7 +169,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         PersonWantsOrgRole.SITE_ACCESS,
         visitMessageWithTimes.visitorId,
         '2023-01-01T00:00:00.000Z',
-        '2023-01-10T23:59:59.999Z',
+        '2023-01-11T00:00:00.000Z',
         visitMessageWithTimes.id
       );
 
@@ -179,9 +179,10 @@ describe('syncVisitToOneIdentityHandler', () => {
       const expectedEndDate = new Date(visitMessageWithTimes.endAt);
       expectedEndDate.setUTCDate(
         expectedEndDate.getUTCDate() +
-          parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
+          parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS) +
+          1
       );
-      expectedEndDate.setUTCHours(23, 59, 59, 999);
+      expectedEndDate.setUTCHours(0, 0, 0, 0);
 
       // Verify system access creation
       expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
@@ -763,7 +764,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         PersonWantsOrgRole.SITE_ACCESS,
         'visitor-oidc-sub',
         '2023-02-01T00:00:00.000Z',
-        '2023-02-15T23:59:59.999Z',
+        '2023-02-16T00:00:00.000Z',
         '1',
         'site-access-uid'
       );
@@ -780,9 +781,10 @@ describe('syncVisitToOneIdentityHandler', () => {
       );
       expectedSystemAccessValidUntil.setUTCDate(
         expectedSystemAccessValidUntil.getUTCDate() +
-          parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS)
+          parseInt(ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS) +
+          1
       );
-      expectedSystemAccessValidUntil.setUTCHours(23, 59, 59, 999);
+      expectedSystemAccessValidUntil.setUTCHours(0, 0, 0, 0);
       const expectedSystemAccessValidFrom = new Date(mockNowDate);
       expectedSystemAccessValidFrom.setUTCHours(0, 0, 0, 0);
       expect(mockOneIdentity.upsertPersonWantsOrg).toHaveBeenNthCalledWith(
@@ -819,7 +821,7 @@ describe('syncVisitToOneIdentityHandler', () => {
         UID_PersonOrdered: 'visitor-uid',
         DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
         ValidFrom: visitMessage.startAt,
-        ValidUntil: '2023-01-10T23:59:59.999Z',
+        ValidUntil: '2023-01-11T00:00:00.000Z',
         CustomProperty04: '1',
         OrderState: OrderState.GRANTED,
       } as PersonWantsOrg;
