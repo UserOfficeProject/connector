@@ -26,6 +26,7 @@ export type CreateScicatProposalDto = {
   instrumentIds: string[];
   MeasurementPeriodList: any[];
   metadata?: Record<string, unknown>;
+  keywords?: string[];
 };
 
 export type UpdateScicatProposalDto = {
