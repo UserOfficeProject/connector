@@ -294,15 +294,15 @@ describe('ESSOneIdentity', () => {
     const centralAccount = 'visitor-oidc-sub';
     const externalAllowanceId = '1e94c2d1-743b-48b5-99ae-f8c2d5f34e2b';
 
-    it('should upsert a PEJ allowance with the visit dates', async () => {
+    it('should upsert a PEJ allowance with inclusive date-only visit dates', async () => {
       mockOneIdentityApi.callScript.mockResolvedValueOnce('allowance-uid');
 
       const result = await essOneIdentity.syncPEJAllowance(
         centralAccount,
         externalAllowanceId,
         'upsert',
-        '2026-08-24T08:00:00.000Z',
-        '2026-08-24T16:00:00.000Z'
+        '2026-08-24',
+        '2026-08-24'
       );
 
       expect(mockOneIdentityApi.callScript).toHaveBeenCalledWith(
@@ -311,8 +311,8 @@ describe('ESSOneIdentity', () => {
           centralAccount,
           externalAllowanceId,
           'upsert',
-          '2026-08-24T08:00:00.000Z',
-          '2026-08-24T16:00:00.000Z',
+          '2026-08-24',
+          '2026-08-24',
         ]
       );
       expect(result).toBe('allowance-uid');

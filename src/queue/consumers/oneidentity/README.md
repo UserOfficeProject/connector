@@ -94,7 +94,9 @@ The handler manages site and system access in One Identity based on visit creati
 - Site and system access share the visit ID in `CustomProperty04`
 
 ### Daily Allowance Dates
-- Approved PEJ allowance upserts use the same full-day UTC boundaries as site access, on both visit creation and update
+- Approved PEJ allowance upserts send the visit's start and end calendar dates as `YYYY-MM-DD`, on both visit creation and update
+- PEJ's `GuestValidityFrom` and `GuestValidityTo` are inclusive and cover the full day in the organization's configured timezone; do not add a day to the allowance end date
+- For a visit on 15–16 October, allowance validity is `2026-10-15` through `2026-10-16`, while site access retains its exclusive end of `2026-10-17T00:00:00.000Z`
 - Allowance deletion continues to send empty date parameters
 
 ### Access Cancellation

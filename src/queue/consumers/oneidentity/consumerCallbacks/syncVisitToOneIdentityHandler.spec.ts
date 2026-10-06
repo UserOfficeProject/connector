@@ -242,28 +242,51 @@ describe('syncVisitToOneIdentityHandler', () => {
         '2023-01-10T00:00:00.000Z',
         '2023-01-01T00:00:00.000Z',
         '2023-01-11T00:00:00.000Z',
+        '2023-01-01',
+        '2023-01-10',
       ],
       [
         '2023-01-01T10:30:00.000Z',
         '2023-01-10T14:45:00.000Z',
         '2023-01-01T00:00:00.000Z',
         '2023-01-11T00:00:00.000Z',
+        '2023-01-01',
+        '2023-01-10',
       ],
       [
         '2023-02-28T10:30:00.000Z',
         '2023-02-28T14:45:00.000Z',
         '2023-02-28T00:00:00.000Z',
         '2023-03-01T00:00:00.000Z',
+        '2023-02-28',
+        '2023-02-28',
       ],
       [
         '2023-12-31T10:30:00.000Z',
         '2023-12-31T14:45:00.000Z',
         '2023-12-31T00:00:00.000Z',
         '2024-01-01T00:00:00.000Z',
+        '2023-12-31',
+        '2023-12-31',
+      ],
+      [
+        '2026-10-15T00:00:00.000Z',
+        '2026-10-16T00:00:00.000Z',
+        '2026-10-15T00:00:00.000Z',
+        '2026-10-17T00:00:00.000Z',
+        '2026-10-15',
+        '2026-10-16',
       ],
     ])(
-      'should create an approved PEJ allowance with the same dates as site access (%s to %s)',
-      async (startAt, endAt, expectedFrom, expectedTo) => {
+      'should create an approved PEJ allowance with inclusive date-only validity (%s to %s)',
+      async (
+        startAt,
+        endAt,
+        expectedFrom,
+        expectedTo,
+        allowanceFrom,
+        allowanceTo
+      ) => {
         const mockPerson = {
           UID_Person: 'visitor-uid',
           CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
@@ -304,8 +327,18 @@ describe('syncVisitToOneIdentityHandler', () => {
           allowanceVisitMessage.visitorId,
           allowanceVisitMessage.id,
           'upsert',
-          expectedFrom,
-          expectedTo
+          allowanceFrom,
+          allowanceTo
+        );
+        expect(logger.logInfo).toHaveBeenCalledWith(
+          'PEJ allowance synchronized in One Identity',
+          {
+            visitId: allowanceVisitMessage.id,
+            centralAccount: allowanceVisitMessage.visitorId,
+            operation: 'upsert',
+            dateFrom: allowanceFrom,
+            dateTo: allowanceTo,
+          }
         );
       }
     );
@@ -598,6 +631,16 @@ describe('syncVisitToOneIdentityHandler', () => {
         'delete',
         '',
         ''
+      );
+      expect(logger.logInfo).toHaveBeenCalledWith(
+        'PEJ allowance synchronized in One Identity',
+        {
+          visitId: visitMessageWithApprovedDailyAllowance.id,
+          centralAccount: visitMessageWithApprovedDailyAllowance.visitorId,
+          operation: 'delete',
+          dateFrom: '',
+          dateTo: '',
+        }
       );
     });
 
@@ -1049,7 +1092,7 @@ describe('syncVisitToOneIdentityHandler', () => {
     });
 
     it.each(['missing', 'changed', 'unchanged'])(
-      'should upsert an approved PEJ allowance with full-day dates when site access is %s on visit update',
+      'should upsert an approved PEJ allowance with inclusive date-only validity when site access is %s on visit update',
       async (scenario) => {
         const mockPerson = {
           UID_Person: 'visitor-uid',
@@ -1118,8 +1161,18 @@ describe('syncVisitToOneIdentityHandler', () => {
           updatedVisitMessage.visitorId,
           updatedVisitMessage.id,
           'upsert',
-          expectedFrom,
-          expectedTo
+          '2023-02-01',
+          '2023-02-15'
+        );
+        expect(logger.logInfo).toHaveBeenCalledWith(
+          'PEJ allowance synchronized in One Identity',
+          {
+            visitId: updatedVisitMessage.id,
+            centralAccount: updatedVisitMessage.visitorId,
+            operation: 'upsert',
+            dateFrom: '2023-02-01',
+            dateTo: '2023-02-15',
+          }
         );
       }
     );

@@ -149,18 +149,25 @@ async function syncDailyAllowance(
 
   if (!operation) return;
 
+  // PEJ requires ISO 8601 date format (YYYY-MM-DD) for the allowance dates.
+  // Both dateFrom and dateTo are inclusive.
+  const dateFrom = operation === 'delete' ? '' : toIsoDateString(startAt);
+  const dateTo = operation === 'delete' ? '' : toIsoDateString(endAt);
+
   await oneIdentity.syncPEJAllowance(
     centralAccount,
     visitId,
     operation,
-    operation === 'delete' ? '' : toStartOfDayIsoString(startAt),
-    operation === 'delete' ? '' : toStartOfNextDayIsoString(endAt)
+    dateFrom,
+    dateTo
   );
 
   logger.logInfo('PEJ allowance synchronized in One Identity', {
     visitId,
     centralAccount,
     operation,
+    dateFrom,
+    dateTo,
   });
 }
 
@@ -448,6 +455,10 @@ function toIsoString(date: string | number) {
   }
 
   return parsedDate.toISOString();
+}
+
+function toIsoDateString(date: string | number): string {
+  return toIsoString(date).slice(0, 10);
 }
 
 function toStartOfDayIsoString(date: string | number) {
