@@ -1,4 +1,11 @@
-import { cleanEnv, str, bool, port } from 'envalid';
+import { cleanEnv, str, bool, port, makeValidator } from 'envalid';
+
+const timeZone = makeValidator<string>((value) => {
+  // Fail on invalid timezone identifiers rather than silently using another timezone.
+  new Intl.DateTimeFormat('en-GB', { timeZone: value });
+
+  return value;
+});
 
 function validateEnv() {
   cleanEnv(process.env, {
@@ -6,6 +13,7 @@ function validateEnv() {
     RABBITMQ_USERNAME: str(),
     RABBITMQ_PASSWORD: str(),
     // NOTE: All variables are optional except RabbitMQ connection ones.
+    TZ: timeZone({ default: undefined }),
     KAFKA_CLIENTID: str({ default: undefined }),
     KAFKA_BROKERS: str({ default: undefined }),
     KAFKA_TOPIC: str({ default: undefined }),

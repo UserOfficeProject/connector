@@ -3,16 +3,17 @@
 ## Functional Specification
 
 ### Purpose
-The handler manages site and system access in One Identity based on visit creation and deletion events for science users.
+The handler manages site and system access in One Identity based on visit creation, update and deletion events for science users.
 
 ### Process Overview
 - When a visit is created, both site access and system access are provisioned in One Identity
+- When a visit is updated, each access period is reconciled independently and missing active access records are created
 - When a visit is deleted, both site access and system access are cancelled in One Identity
 - Only science users (users with `CCC_EmployeeSubType === ESSSCIENCEUSER`) are processed
 
 ### Access Types
 - **Site Access**: Physical access to facility for the exact visit duration
-- **System Access**: Digital access to systems, extends beyond the visit end date by a configurable number of days (default: 30)
+- **System Access**: Digital access to systems starting at the current time when provisioned, extending beyond the visit end date by a configurable number of days (default: 30)
 
 ### Key Relationships
 - Both site and system access store the visit ID in `CustomProperty04`
@@ -85,18 +86,29 @@ The handler manages site and system access in One Identity based on visit creati
 
 ## Key Implementation Details
 
+### Timezone Configuration
+- Set `TZ=Europe/Stockholm` in the dedicated OIM connector service/container environment before starting Node, or in its `.env` file
+
 ### System Access Duration
 - Extends beyond visit by `ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS` (default: 30 days)
 
 ### Access Creation
-- Site access starts at UTC midnight on the visit start date and ends at UTC midnight after the visit end date, covering both visit days in full
-- System access starts from the visit start date and extends beyond the visit end date by a configurable number of days (default: 30)
+- Site access starts at local midnight on the visit start date and ends at local midnight after the visit end date, covering both visit days in full
+- System access starts at the current instant when provisioned, serialized as a UTC ISO timestamp without rounding to midnight; it ends at local midnight after the visit end date plus the configured calendar-day extension (default: 30)
 - Site and system access share the visit ID in `CustomProperty04`
 
+### Access Updates
+- Access records are matched by role and visit ID in `CustomProperty04`; both `Aborted` and `Unsubscribed` records are excluded
+- Site access is updated only when its local-day start or end boundary differs from the visit's required validity
+- System access is updated only when its expiry differs from local midnight after the visit end date plus the configured calendar-day extension; its start is set to the current instant when that update is processed
+- The system start time is not compared against the current time; a correct existing system expiry preserves the original start, even if site access needs updating
+- Missing active site or system access is created independently, without recreating the other access
+- Both access periods must match before all access writes are skipped, allowing retries to repair system access after a successful site write followed by a failed system write
+
 ### Daily Allowance Dates
-- Approved PEJ allowance upserts send the visit's start and end calendar dates as `YYYY-MM-DD`, on both visit creation and update
+- Approved PEJ allowance upserts send the visit's local start and end calendar dates as `YYYY-MM-DD`, on both visit creation and update
 - PEJ's `GuestValidityFrom` and `GuestValidityTo` are inclusive and cover the full day in the organization's configured timezone; do not add a day to the allowance end date
-- For a visit on 15–16 October, allowance validity is `2026-10-15` through `2026-10-16`, while site access retains its exclusive end of `2026-10-17T00:00:00.000Z`
+- With `TZ=Europe/Stockholm`, a visit on 28–29 October 2026 has allowance validity `2026-10-28` through `2026-10-29`. Site access starts at `2026-10-27T23:00:00.000Z` and ends at `2026-10-29T23:00:00.000Z` (30 October at Swedish midnight)
 - Allowance deletion continues to send empty date parameters
 
 ### Access Cancellation

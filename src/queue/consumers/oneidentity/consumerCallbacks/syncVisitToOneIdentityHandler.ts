@@ -77,7 +77,7 @@ export async function syncVisitToOneIdentityHandler(
         type
       );
     } else if (type === Event.VISIT_UPDATED) {
-      // For simplicity, we will just update the access with the new dates. The update takes place only if the dates are changed.
+      // Reconcile each access independently so retries can finish partial updates.
       await updateAccessInOneIdentity(
         oneIdentity,
         visitId,
@@ -149,10 +149,15 @@ async function syncDailyAllowance(
 
   if (!operation) return;
 
-  // PEJ requires ISO 8601 date format (YYYY-MM-DD) for the allowance dates.
-  // Both dateFrom and dateTo are inclusive.
-  const dateFrom = operation === 'delete' ? '' : toIsoDateString(startAt);
-  const dateTo = operation === 'delete' ? '' : toIsoDateString(endAt);
+  // PEJ requires the ISO 8601 dates (YYYY-MM-DD).
+  const dateFrom =
+    operation === 'delete'
+      ? ''
+      : toLocalDate(startAt).toLocaleDateString('sv-SE');
+  const dateTo =
+    operation === 'delete'
+      ? ''
+      : toLocalDate(endAt).toLocaleDateString('sv-SE');
 
   await oneIdentity.syncPEJAllowance(
     centralAccount,
@@ -227,18 +232,15 @@ async function createAccessInOneIdentity(
     UID_PersonWantsOrg: pwoSite.UID_PersonWantsOrg,
   });
 
-  // validFrom in One Identity should be in the future so that the access is not immediately available
+  // System access starts at the current instant, without rounding to midnight.
   const validFrom = Date.now();
-  const validUntil = new Date(endAt).setUTCDate(
-    new Date(endAt).getUTCDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
-  );
 
   // Create system access
   const [pwoSystem] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
-    toStartOfDayIsoString(validFrom),
-    toStartOfNextDayIsoString(validUntil),
+    new Date(validFrom).toISOString(),
+    toStartOfNextDayIsoString(endAt, ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS),
     visitId // CustomProperty04 - We store the visit ID for the system access to be able to find it later
   );
 
@@ -255,56 +257,37 @@ async function updateAccessInOneIdentity(
   uidPerson: UID_Person,
   centralAccount: string
 ) {
-  // Find person wants orgs for the visitor
   const personWantsOrgs = await oneIdentity.getPersonWantsOrg(uidPerson);
-
-  // Find site access for the visitor
-  const siteAccess = personWantsOrgs.find(
-    (pwo) =>
-      pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
-      pwo.CustomProperty04 === visitId && // CustomProperty04 is the visit ID for the site access
-      pwo.OrderState !== OrderState.ABORTED
-  );
-
-  // If there is no existing siteAccess record, new one will be created for both siteAccess and systemAccess.
-  if (!siteAccess) {
-    logger.logInfo('Site access not found in One Identity, creating access', {
-      visitId,
-      uidPerson,
-    });
-
-    await createAccessInOneIdentity(
-      oneIdentity,
-      visitId,
-      startAt,
-      endAt,
-      centralAccount
-    );
-
-    return;
-  }
-
-  const validFrom = toStartOfDayIsoString(startAt);
-  const validUntil = toStartOfNextDayIsoString(endAt);
-
-  // Find system access for the site access (CustomProperty04 is the visit ID)
-  const systemAccess = personWantsOrgs.find(
+  const activeAccesses = personWantsOrgs.filter(
     (pwo) =>
       pwo.CustomProperty04 === visitId &&
-      pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
+      pwo.OrderState !== OrderState.ABORTED &&
       pwo.OrderState !== OrderState.UNSUBSCRIBED
   );
+  const siteAccess = activeAccesses.find(
+    (pwo) => pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS
+  );
+  const systemAccess = activeAccesses.find(
+    (pwo) => pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS
+  );
 
-  if (!systemAccess) {
-    throw new Error(
-      'System access not found in One Identity, cannot update access'
-    );
-  }
-
-  if (
+  // Calculate all date boundaries before making any changes.
+  const validFrom = toStartOfDayIsoString(startAt);
+  const validUntil = toStartOfNextDayIsoString(endAt);
+  const systemAccessValidUntil = toStartOfNextDayIsoString(
+    endAt,
+    ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
+  );
+  const siteDatesMatch =
+    siteAccess &&
     isSameDateTime(siteAccess.ValidFrom, validFrom) &&
-    isSameDateTime(siteAccess.ValidUntil, validUntil)
-  ) {
+    isSameDateTime(siteAccess.ValidUntil, validUntil);
+  // Never compare the stored system start time against the moving current time.
+  const systemExpiryMatches =
+    systemAccess &&
+    isSameDateTime(systemAccess.ValidUntil, systemAccessValidUntil);
+
+  if (siteDatesMatch && systemExpiryMatches) {
     logger.logInfo(
       'Visit dates unchanged, skipping access update in One Identity',
       {
@@ -316,38 +299,46 @@ async function updateAccessInOneIdentity(
     return;
   }
 
-  await oneIdentity.upsertPersonWantsOrg(
-    PersonWantsOrgRole.SITE_ACCESS,
-    centralAccount,
-    validFrom,
-    validUntil,
-    visitId,
-    siteAccess.UID_PersonWantsOrg
-  );
+  if (!siteDatesMatch) {
+    const siteAccessResult = await oneIdentity.upsertPersonWantsOrg(
+      PersonWantsOrgRole.SITE_ACCESS,
+      centralAccount,
+      validFrom,
+      validUntil,
+      visitId,
+      siteAccess?.UID_PersonWantsOrg ?? ''
+    );
 
-  logger.logInfo('Site access updated in One Identity', {
-    UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
-  });
+    logger.logInfo(
+      `Site access ${siteAccess ? 'updated' : 'created'} in One Identity`,
+      {
+        UID_PersonWantsOrg:
+          siteAccess?.UID_PersonWantsOrg ??
+          siteAccessResult[0].UID_PersonWantsOrg,
+      }
+    );
+  }
 
-  const systemAccessValidFrom = toStartOfDayIsoString(Date.now());
-  const systemAccessValidUntil = toStartOfNextDayIsoString(
-    new Date(endAt).setUTCDate(
-      new Date(endAt).getUTCDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
-    )
-  );
+  // A failed system update can be retried even if the site update already succeeded.
+  if (!systemExpiryMatches) {
+    const systemAccessResult = await oneIdentity.upsertPersonWantsOrg(
+      PersonWantsOrgRole.SYSTEM_ACCESS,
+      centralAccount,
+      new Date(Date.now()).toISOString(),
+      systemAccessValidUntil,
+      visitId,
+      systemAccess?.UID_PersonWantsOrg ?? ''
+    );
 
-  await oneIdentity.upsertPersonWantsOrg(
-    PersonWantsOrgRole.SYSTEM_ACCESS,
-    centralAccount,
-    systemAccessValidFrom,
-    systemAccessValidUntil,
-    visitId,
-    systemAccess.UID_PersonWantsOrg
-  );
-
-  logger.logInfo('System access updated in One Identity', {
-    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
-  });
+    logger.logInfo(
+      `System access ${systemAccess ? 'updated' : 'created'} in One Identity`,
+      {
+        UID_PersonWantsOrg:
+          systemAccess?.UID_PersonWantsOrg ??
+          systemAccessResult[0].UID_PersonWantsOrg,
+      }
+    );
+  }
 }
 
 async function removeAccessFromOneIdentity(
@@ -447,31 +438,27 @@ async function removeProposalConnection(
   }
 }
 
-function toIsoString(date: string | number) {
+function toLocalDate(date: string | number) {
   const parsedDate = new Date(date);
 
   if (isNaN(parsedDate.getTime())) {
-    throw new Error(`Invalid date provided to toIsoString: ${date}`);
+    throw new Error(`Invalid date provided: ${date}`);
   }
 
-  return parsedDate.toISOString();
-}
-
-function toIsoDateString(date: string | number): string {
-  return toIsoString(date).slice(0, 10);
+  return parsedDate;
 }
 
 function toStartOfDayIsoString(date: string | number) {
-  const parsedDate = new Date(toIsoString(date));
-  parsedDate.setUTCHours(0, 0, 0, 0);
+  const parsedDate = toLocalDate(date);
+  parsedDate.setHours(0, 0, 0, 0);
 
   return parsedDate.toISOString();
 }
 
-function toStartOfNextDayIsoString(date: string | number) {
-  const parsedDate = new Date(toIsoString(date));
-  parsedDate.setUTCHours(0, 0, 0, 0);
-  parsedDate.setUTCDate(parsedDate.getUTCDate() + 1);
+function toStartOfNextDayIsoString(date: string | number, additionalDays = 0) {
+  const parsedDate = toLocalDate(date);
+  parsedDate.setHours(0, 0, 0, 0);
+  parsedDate.setDate(parsedDate.getDate() + additionalDays + 1);
 
   return parsedDate.toISOString();
 }
