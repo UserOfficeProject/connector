@@ -138,16 +138,20 @@ async function syncDailyAllowance(
   registrationAnswers: VisitRegistrationAnswer[],
   type: Event
 ): Promise<void> {
-  if (!hasApprovedDailyAllowance(registrationAnswers)) return;
+  const isApproved = hasApprovedDailyAllowance(registrationAnswers);
+  let operation: 'upsert' | 'delete';
 
-  const operation =
-    type === Event.VISIT_DELETED
-      ? 'delete'
-      : type === Event.VISIT_CREATED || type === Event.VISIT_UPDATED
-        ? 'upsert'
-        : undefined;
-
-  if (!operation) return;
+  if (type === Event.VISIT_DELETED) {
+    // Current answers cannot tell us whether an allowance previously existed.
+    operation = 'delete';
+  } else if (type === Event.VISIT_UPDATED) {
+    // Reconcile the current state; deletion is safe even if no allowance exists.
+    operation = isApproved ? 'upsert' : 'delete';
+  } else if (type === Event.VISIT_CREATED && isApproved) {
+    operation = 'upsert';
+  } else {
+    return;
+  }
 
   // PEJ requires the ISO 8601 dates (YYYY-MM-DD).
   const dateFrom =

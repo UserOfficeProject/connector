@@ -131,6 +131,225 @@ describe('syncVisitToOneIdentityHandler', () => {
     });
   });
 
+  describe('daily allowance current-state reconciliation', () => {
+    const requestedKey = 'request_daily_allowance';
+    const approvedKey = 'daily_allowance_is_approved';
+    const allowanceMessage: VisitMessage = {
+      ...visitMessageWithApprovedDailyAllowance,
+      startAt: localMidnightIso('2026-10-28'),
+      endAt: localMidnightIso('2026-10-29'),
+    };
+    const answers = (requested: unknown, approved: unknown) => [
+      { questionNaturalKey: requestedKey, value: requested },
+      { questionNaturalKey: approvedKey, value: approved },
+    ];
+    const ineligibleStates: {
+      scenario: string;
+      registrationAnswers: VisitMessage['registrationAnswers'];
+    }[] = [
+      {
+        scenario: 'request withdrawn',
+        registrationAnswers: answers(false, true),
+      },
+      {
+        scenario: 'approval withdrawn',
+        registrationAnswers: answers(true, false),
+      },
+      {
+        scenario: 'both withdrawn',
+        registrationAnswers: answers(false, false),
+      },
+      {
+        scenario: 'approval missing',
+        registrationAnswers: [
+          { questionNaturalKey: requestedKey, value: true },
+        ],
+      },
+      {
+        scenario: 'request missing',
+        registrationAnswers: [{ questionNaturalKey: approvedKey, value: true }],
+      },
+      { scenario: 'answers empty', registrationAnswers: [] },
+      { scenario: 'answers omitted', registrationAnswers: undefined },
+      {
+        scenario: 'answers not boolean true',
+        registrationAnswers: answers('true', 'true'),
+      },
+    ];
+
+    beforeEach(() => {
+      Object.values(mockOneIdentity).forEach((mock) => mock.mockReset());
+      mockOneIdentity.getPerson.mockResolvedValue({
+        UID_Person: 'visitor-uid',
+        CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,
+      } as Person);
+      mockOneIdentity.getProposal.mockResolvedValue(mockUidESet);
+      mockOneIdentity.getProposalPersonConnections.mockResolvedValue([]);
+      mockOneIdentity.getPersonWantsOrg.mockResolvedValue([
+        {
+          UID_PersonWantsOrg: 'site-access-uid',
+          DisplayOrg: PersonWantsOrgRole.SITE_ACCESS,
+          CustomProperty04: allowanceMessage.id,
+          OrderState: OrderState.GRANTED,
+          ValidFrom: localMidnightIso('2026-10-28'),
+          ValidUntil: localMidnightIso('2026-10-30'),
+        } as PersonWantsOrg,
+        {
+          UID_PersonWantsOrg: 'system-access-uid',
+          DisplayOrg: PersonWantsOrgRole.SYSTEM_ACCESS,
+          CustomProperty04: allowanceMessage.id,
+          OrderState: OrderState.GRANTED,
+          ValidUntil: localMidnightIso('2026-11-29'),
+        } as PersonWantsOrg,
+      ]);
+      mockOneIdentity.upsertPersonWantsOrg.mockImplementation(async (role) => [
+        {
+          UID_PersonWantsOrg:
+            role === PersonWantsOrgRole.SITE_ACCESS
+              ? 'site-access-uid'
+              : 'system-access-uid',
+        } as PersonWantsOrg,
+      ]);
+    });
+
+    afterEach(() => {
+      Object.values(mockOneIdentity).forEach((mock) => mock.mockReset());
+    });
+
+    it.each(ineligibleStates)(
+      'should skip allowance creation when $scenario',
+      async ({ registrationAnswers }) => {
+        await syncVisitToOneIdentityHandler(
+          { ...allowanceMessage, registrationAnswers },
+          Event.VISIT_CREATED
+        );
+
+        expect(mockOneIdentity.syncPEJAllowance).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(ineligibleStates)(
+      'should delete allowance on update when $scenario even if visit dates are unchanged',
+      async ({ registrationAnswers }) => {
+        await syncVisitToOneIdentityHandler(
+          { ...allowanceMessage, registrationAnswers },
+          Event.VISIT_UPDATED
+        );
+
+        expect(mockOneIdentity.upsertPersonWantsOrg).not.toHaveBeenCalled();
+        expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledTimes(1);
+        expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledWith(
+          allowanceMessage.visitorId,
+          allowanceMessage.id,
+          'delete',
+          '',
+          ''
+        );
+        expect(logger.logInfo).toHaveBeenCalledWith(
+          'PEJ allowance synchronized in One Identity',
+          {
+            visitId: allowanceMessage.id,
+            centralAccount: allowanceMessage.visitorId,
+            operation: 'delete',
+            dateFrom: '',
+            dateTo: '',
+          }
+        );
+      }
+    );
+
+    it.each(ineligibleStates)(
+      'should delete allowance before visit cleanup when $scenario',
+      async ({ registrationAnswers }) => {
+        await syncVisitToOneIdentityHandler(
+          {
+            ...allowanceMessage,
+            registrationAnswers,
+            startAt: 'invalid-date',
+            endAt: 'invalid-date',
+          },
+          Event.VISIT_DELETED
+        );
+
+        expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledWith(
+          allowanceMessage.visitorId,
+          allowanceMessage.id,
+          'delete',
+          '',
+          ''
+        );
+        expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledTimes(2);
+        expect(
+          mockOneIdentity.syncPEJAllowance.mock.invocationCallOrder[0]
+        ).toBeLessThan(
+          mockOneIdentity.cancelPersonWantsOrg.mock.invocationCallOrder[0]
+        );
+      }
+    );
+
+    it.each(['request', 'approval'])(
+      'should remove a previously approved allowance after %s withdrawal and repeat the delete safely',
+      async (withdrawn) => {
+        await syncVisitToOneIdentityHandler(
+          allowanceMessage,
+          Event.VISIT_UPDATED
+        );
+        const withdrawnMessage: VisitMessage = {
+          ...allowanceMessage,
+          registrationAnswers: answers(
+            withdrawn !== 'request',
+            withdrawn !== 'approval'
+          ),
+        };
+
+        await syncVisitToOneIdentityHandler(
+          withdrawnMessage,
+          Event.VISIT_UPDATED
+        );
+        await syncVisitToOneIdentityHandler(
+          withdrawnMessage,
+          Event.VISIT_UPDATED
+        );
+
+        expect(mockOneIdentity.syncPEJAllowance.mock.calls).toEqual([
+          [
+            allowanceMessage.visitorId,
+            allowanceMessage.id,
+            'upsert',
+            '2026-10-28',
+            '2026-10-29',
+          ],
+          [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
+          [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
+        ]);
+        expect(mockOneIdentity.upsertPersonWantsOrg).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should propagate allowance delete failures and retry deletion on the next update', async () => {
+      const error = new Error('PEJ delete failed');
+      const withdrawnMessage: VisitMessage = {
+        ...allowanceMessage,
+        registrationAnswers: answers(true, false),
+      };
+      mockOneIdentity.syncPEJAllowance.mockRejectedValueOnce(error);
+
+      await expect(
+        syncVisitToOneIdentityHandler(withdrawnMessage, Event.VISIT_UPDATED)
+      ).rejects.toBe(error);
+      await syncVisitToOneIdentityHandler(
+        withdrawnMessage,
+        Event.VISIT_UPDATED
+      );
+
+      expect(mockOneIdentity.syncPEJAllowance.mock.calls).toEqual([
+        [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
+        [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
+      ]);
+      expect(mockOneIdentity.logout).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('VISIT_CREATED', () => {
     it('should create site access and system access in One Identity for science users and connect to proposal', async () => {
       // Mock the current time to a fixed value for testing

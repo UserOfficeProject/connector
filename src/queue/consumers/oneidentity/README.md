@@ -105,7 +105,12 @@ The handler manages site and system access in One Identity based on visit creati
 - Missing active site or system access is created independently, without recreating the other access
 - Both access periods must match before all access writes are skipped, allowing retries to repair system access after a successful site write followed by a failed system write
 
-### Daily Allowance Dates
+### Daily Allowance Synchronization
+- Allowance eligibility requires both `request_daily_allowance` and `daily_allowance_is_approved` to be boolean `true`
+- Visit creation upserts an eligible allowance; otherwise it skips allowance synchronization
+- Visit updates treat the current registration answers as the authoritative state: upsert an eligible allowance, otherwise issue an idempotent delete by visitor and visit ID, even when visit dates are unchanged
+- Missing answers or missing approval/request values are treated as ineligible on updates; the previous allowance state is not required
+- Visit deletion always issues an idempotent allowance delete regardless of the current answers, before cancelling visit access
 - Approved PEJ allowance upserts send the visit's local start and end calendar dates as `YYYY-MM-DD`, on both visit creation and update
 - PEJ's `GuestValidityFrom` and `GuestValidityTo` are inclusive and cover the full day in the organization's configured timezone; do not add a day to the allowance end date
 - With `TZ=Europe/Stockholm`, a visit on 28–29 October 2026 has allowance validity `2026-10-28` through `2026-10-29`. Site access starts at `2026-10-27T23:00:00.000Z` and ends at `2026-10-29T23:00:00.000Z` (30 October at Swedish midnight)
