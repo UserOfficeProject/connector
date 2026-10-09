@@ -3,21 +3,21 @@
 ## Functional Specification
 
 ### Purpose
-The handler manages site and system access in One Identity based on visit creation and deletion events for science users.
+The handler manages site and system access in One Identity based on visit creation, update and deletion events for science users.
 
 ### Process Overview
 - When a visit is created, both site access and system access are provisioned in One Identity
+- When a visit is updated, each access period is reconciled independently and missing active access records are created
 - When a visit is deleted, both site access and system access are cancelled in One Identity
 - Only science users (users with `CCC_EmployeeSubType === ESSSCIENCEUSER`) are processed
 
 ### Access Types
 - **Site Access**: Physical access to facility for the exact visit duration
-- **System Access**: Digital access to systems, extends beyond the visit end date by a configurable number of days (default: 30)
+- **System Access**: Digital access to systems starting at the current time when provisioned, extending beyond the visit end date by a configurable number of days (default: 30)
 
 ### Key Relationships
-- System access is linked to site access via `CustomProperty04` which stores the site access UID
+- Both site and system access store the visit ID in `CustomProperty04`
 - Both access types are identified by specific roles in `PersonWantsOrgRole` enum
-- Proposal's short code is stored in `CustomProperty04` of the system access record
 
 ## Process Flow Chart
 
@@ -86,21 +86,46 @@ The handler manages site and system access in One Identity based on visit creati
 
 ## Key Implementation Details
 
+### Timezone Configuration
+- Set `TZ=Europe/Stockholm` in the dedicated OIM connector service/container environment before starting Node, or in its `.env` file
+
 ### System Access Duration
 - Extends beyond visit by `ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS` (default: 30 days)
 
 ### Access Creation
-- Site access matches exact visit dates
-- System access starts from the visit start date and extends beyond the visit end date by a configurable number of days (default: 30)
-- System access links to site access via `CustomProperty04`
+- Site access starts at local midnight on the visit start date and ends at local midnight after the visit end date, covering both visit days in full
+- System access starts at the current instant when provisioned, serialized as a UTC ISO timestamp without rounding to midnight; it ends at local midnight after the visit end date plus the configured calendar-day extension (default: 30)
+- Site and system access share the visit ID in `CustomProperty04`
+
+### Access Updates
+- Access records are matched by role and visit ID in `CustomProperty04`; both `Aborted` and `Unsubscribed` records are excluded
+- Site access is updated only when its local-day start or end boundary differs from the visit's required validity
+- System access is updated only when its expiry differs from local midnight after the visit end date plus the configured calendar-day extension; its start is set to the current instant when that update is processed
+- The system start time is not compared against the current time; a correct existing system expiry preserves the original start, even if site access needs updating
+- Missing active site or system access is created independently, without recreating the other access
+- Both access periods must match before all access writes are skipped, allowing retries to repair system access after a successful site write followed by a failed system write
+
+### Daily Allowance Synchronization
+- Allowance eligibility requires both `request_daily_allowance` and `daily_allowance_is_approved` to be boolean `true`
+- Visit creation upserts an eligible allowance; otherwise it skips allowance synchronization
+- Visit updates treat the current registration answers as the authoritative state: upsert an eligible allowance, otherwise issue an idempotent delete by visitor and visit ID, even when visit dates are unchanged
+- Missing answers or missing approval/request values are treated as ineligible on updates; the previous allowance state is not required
+- Visit deletion always issues an idempotent allowance delete regardless of the current answers, before cancelling visit access
+- Approved PEJ allowance upserts send the visit's local start and end calendar dates as `YYYY-MM-DD`, on both visit creation and update
+- PEJ's `GuestValidityFrom` and `GuestValidityTo` are inclusive and cover the full day in the organization's configured timezone; do not add a day to the allowance end date
+- With `TZ=Europe/Stockholm`, a visit on 28–29 October 2026 has allowance validity `2026-10-28` through `2026-10-29`. Site access starts at `2026-10-27T23:00:00.000Z` and ends at `2026-10-29T23:00:00.000Z` (30 October at Swedish midnight)
+- Allowance deletion continues to send empty date parameters
 
 ### Access Cancellation
-- System access cancellation depends on finding the parent site access first
-- Both must be cancelled
+- Site and system access are matched independently by role and visit ID
+- All matching access records are cancelled, except those already `Aborted` or `Unsubscribed`
+- Missing or already-cancelled access is treated as successful cleanup, so retries can finish partial deletions
+- Actual API cancellation failures still propagate for retry
 
 ### Error Handling
 - Proper error messages when person or access records are not found
 - Always performs logout in finally block to ensure clean session management
+- HTTP error logs include the request method, base URL and path, plus the response status, headers and full body (without request credentials)
 
 ---
 

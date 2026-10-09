@@ -139,6 +139,22 @@ export class ESSOneIdentity {
     return entities.map(({ values }) => values);
   }
 
+  public async syncPEJAllowance(
+    centralAccount: string,
+    externalAllowanceId: string,
+    operation: 'upsert' | 'delete',
+    dateFrom: string = '',
+    dateTo: string = ''
+  ): Promise<string> {
+    return this.oneIdentityApi.callScript<string>('SCPEJAllowance', [
+      centralAccount,
+      externalAllowanceId,
+      operation,
+      dateFrom,
+      dateTo,
+    ]);
+  }
+
   public async upsertPersonWantsOrg(
     role: PersonWantsOrgRole,
     centralAccount: string,
