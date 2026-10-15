@@ -106,7 +106,7 @@ The handler manages site and system access in One Identity based on visit creati
 - Both access periods must match before all access writes are skipped, allowing retries to repair system access after a successful site write followed by a failed system write
 
 ### Daily Allowance Synchronization
-- Allowance eligibility requires both `request_daily_allowance` and `daily_allowance_is_approved` to be boolean `true`
+- Allowance eligibility requires both the questions with natural key `request_daily_allowance` and `daily_allowance_is_approved` to be boolean `true`
 - Visit creation upserts an eligible allowance; otherwise it skips allowance synchronization
 - Visit updates treat the current registration answers as the authoritative state: upsert an eligible allowance, otherwise issue an idempotent delete by visitor and visit ID, even when visit dates are unchanged
 - Missing answers or missing approval/request values are treated as ineligible on updates; the previous allowance state is not required
