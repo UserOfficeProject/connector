@@ -109,10 +109,11 @@ The handler manages site and system access in One Identity based on visit creati
 - Allowance eligibility requires only the answer with natural key `daily_allowance_is_approved` to be boolean `true`
 - `request_daily_allowance` is ignored: a User Officer can approve allowance even when the visitor did not request it
 - Visit creation upserts an eligible allowance; otherwise it skips allowance synchronization
-- Visit updates treat the current registration answers as the authoritative state: upsert an eligible allowance, otherwise issue an idempotent delete by visitor and visit ID, even when visit dates are unchanged
-- Missing answers or missing/non-true approval values are treated as ineligible on updates; the previous allowance state is not required
+- If the `daily_allowance_is_approved` key is absent, skip allowance synchronization for all visit events for backward compatibility; existing allowances remain untouched and normal visit access processing continues
+- When the approval key is present, visit updates upsert an allowance for boolean `true`; any other value issues an idempotent delete by visitor and visit ID, even when visit dates are unchanged
+- A present approval answer with a missing/non-true value is distinct from an absent key; the previous allowance state is not required
 - Withdrawing a request does not remove an approved allowance; withdrawing approval triggers deletion on the next visit update
-- Visit deletion always issues an idempotent allowance delete regardless of the current answers, before cancelling visit access
+- When the approval key is present, visit deletion issues an idempotent allowance delete regardless of its value, before cancelling visit access
 - Approved PEJ allowance upserts send the visit's local start and end calendar dates as `YYYY-MM-DD`, on both visit creation and update
 - PEJ's `GuestValidityFrom` and `GuestValidityTo` are inclusive and cover the full day in the organization's configured timezone; do not add a day to the allowance end date
 - With `TZ=Europe/Stockholm`, a visit on 28–29 October 2026 has allowance validity `2026-10-28` through `2026-10-29`. Site access starts at `2026-10-27T23:00:00.000Z` and ends at `2026-10-29T23:00:00.000Z` (30 October at Swedish midnight)

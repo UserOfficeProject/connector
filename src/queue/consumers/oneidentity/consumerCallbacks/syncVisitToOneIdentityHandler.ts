@@ -137,7 +137,15 @@ async function syncDailyAllowance(
   registrationAnswers: VisitRegistrationAnswer[],
   type: Event
 ): Promise<void> {
-  const isApproved = hasApprovedDailyAllowance(registrationAnswers);
+  const approvalAnswer = registrationAnswers.find(
+    (answer) =>
+      answer.questionNaturalKey ===
+      DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY
+  );
+  // Legacy messages do not carry approval information; leave allowances untouched.
+  if (!approvalAnswer) return;
+
+  const isApproved = approvalAnswer.value === true;
   let operation: 'upsert' | 'delete';
 
   if (type === Event.VISIT_DELETED) {
@@ -177,17 +185,6 @@ async function syncDailyAllowance(
     dateFrom,
     dateTo,
   });
-}
-
-function hasApprovedDailyAllowance(
-  registrationAnswers: VisitRegistrationAnswer[]
-): boolean {
-  return registrationAnswers.some(
-    (answer) =>
-      answer.questionNaturalKey ===
-        DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY &&
-      answer.value === true
-  );
 }
 
 // Find person UID from oidcSub

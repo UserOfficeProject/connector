@@ -155,6 +155,25 @@ describe('syncVisitToOneIdentityHandler', () => {
         registrationAnswers: answers('false', true),
       },
     ];
+    const legacyStates: {
+      scenario: string;
+      registrationAnswers: VisitMessage['registrationAnswers'];
+    }[] = [
+      {
+        scenario: 'approval key missing',
+        registrationAnswers: [
+          { questionNaturalKey: requestedKey, value: true },
+        ],
+      },
+      { scenario: 'answers empty', registrationAnswers: [] },
+      { scenario: 'answers omitted', registrationAnswers: undefined },
+      {
+        scenario: 'only unrelated answers present',
+        registrationAnswers: [
+          { questionNaturalKey: 'another_question', value: true },
+        ],
+      },
+    ];
     const ineligibleStates: {
       scenario: string;
       registrationAnswers: VisitMessage['registrationAnswers'];
@@ -167,16 +186,12 @@ describe('syncVisitToOneIdentityHandler', () => {
         scenario: 'both withdrawn',
         registrationAnswers: answers(false, false),
       },
-      {
-        scenario: 'approval missing',
-        registrationAnswers: [
-          { questionNaturalKey: requestedKey, value: true },
-        ],
-      },
       { scenario: 'approval null', registrationAnswers: answers(true, null) },
       { scenario: 'approval numeric', registrationAnswers: answers(true, 1) },
-      { scenario: 'answers empty', registrationAnswers: [] },
-      { scenario: 'answers omitted', registrationAnswers: undefined },
+      {
+        scenario: 'approval undefined',
+        registrationAnswers: answers(true, undefined),
+      },
       {
         scenario: 'approval not boolean true',
         registrationAnswers: answers(true, 'true'),
@@ -242,6 +257,69 @@ describe('syncVisitToOneIdentityHandler', () => {
         }
       );
     });
+
+    describe.each([
+      Event.VISIT_CREATED,
+      Event.VISIT_UPDATED,
+      Event.VISIT_DELETED,
+    ])('legacy message on %s', (type) => {
+      it.each(legacyStates)(
+        'should skip allowance sync when $scenario without skipping visit processing',
+        async ({ registrationAnswers }) => {
+          await syncVisitToOneIdentityHandler(
+            { ...allowanceMessage, registrationAnswers },
+            type
+          );
+
+          expect(mockOneIdentity.syncPEJAllowance).not.toHaveBeenCalled();
+          expect(mockOneIdentity.cancelPersonWantsOrg).toHaveBeenCalledTimes(
+            type === Event.VISIT_DELETED ? 2 : 0
+          );
+          expect(
+            mockOneIdentity.getProposalPersonConnections
+          ).toHaveBeenCalledTimes(type === Event.VISIT_DELETED ? 0 : 1);
+          expect(mockOneIdentity.logout).toHaveBeenCalledTimes(1);
+        }
+      );
+    });
+
+    it.each(legacyStates)(
+      'should preserve an existing allowance when $scenario and still delete on explicit withdrawal',
+      async ({ registrationAnswers }) => {
+        await syncVisitToOneIdentityHandler(
+          allowanceMessage,
+          Event.VISIT_UPDATED
+        );
+        await syncVisitToOneIdentityHandler(
+          { ...allowanceMessage, registrationAnswers },
+          Event.VISIT_UPDATED
+        );
+        expect(mockOneIdentity.syncPEJAllowance.mock.calls).toEqual([
+          [
+            allowanceMessage.visitorId,
+            allowanceMessage.id,
+            'upsert',
+            '2026-10-28',
+            '2026-10-29',
+          ],
+        ]);
+
+        await syncVisitToOneIdentityHandler(
+          { ...allowanceMessage, registrationAnswers: answers(true, false) },
+          Event.VISIT_UPDATED
+        );
+        expect(mockOneIdentity.syncPEJAllowance.mock.calls).toEqual([
+          [
+            allowanceMessage.visitorId,
+            allowanceMessage.id,
+            'upsert',
+            '2026-10-28',
+            '2026-10-29',
+          ],
+          [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
+        ]);
+      }
+    );
 
     it.each(ineligibleStates)(
       'should skip allowance creation when $scenario',
