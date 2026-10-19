@@ -26,6 +26,7 @@ async function bootstrap() {
   logger.logInfo('Server information: ', {
     nodeVersion: process.version,
     env: process.env.NODE_ENV,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
   const PORT = process.env.PORT || 4010;
