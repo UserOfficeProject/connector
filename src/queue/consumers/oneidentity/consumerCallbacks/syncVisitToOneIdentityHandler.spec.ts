@@ -67,7 +67,6 @@ const visitMessageWithApprovedDailyAllowance: VisitMessage = {
   ...visitMessage,
   id: '1e94c2d1-743b-48b5-99ae-f8c2d5f34e2b',
   registrationAnswers: [
-    { questionNaturalKey: 'request_daily_allowance', value: true },
     { questionNaturalKey: 'daily_allowance_is_approved', value: true },
   ],
 };
@@ -143,14 +142,23 @@ describe('syncVisitToOneIdentityHandler', () => {
       { questionNaturalKey: requestedKey, value: requested },
       { questionNaturalKey: approvedKey, value: approved },
     ];
+    const eligibleStates = [
+      { scenario: 'request true', registrationAnswers: answers(true, true) },
+      { scenario: 'request false', registrationAnswers: answers(false, true) },
+      {
+        scenario: 'request missing',
+        registrationAnswers: [{ questionNaturalKey: approvedKey, value: true }],
+      },
+      { scenario: 'request null', registrationAnswers: answers(null, true) },
+      {
+        scenario: 'request non-boolean',
+        registrationAnswers: answers('false', true),
+      },
+    ];
     const ineligibleStates: {
       scenario: string;
       registrationAnswers: VisitMessage['registrationAnswers'];
     }[] = [
-      {
-        scenario: 'request withdrawn',
-        registrationAnswers: answers(false, true),
-      },
       {
         scenario: 'approval withdrawn',
         registrationAnswers: answers(true, false),
@@ -165,15 +173,13 @@ describe('syncVisitToOneIdentityHandler', () => {
           { questionNaturalKey: requestedKey, value: true },
         ],
       },
-      {
-        scenario: 'request missing',
-        registrationAnswers: [{ questionNaturalKey: approvedKey, value: true }],
-      },
+      { scenario: 'approval null', registrationAnswers: answers(true, null) },
+      { scenario: 'approval numeric', registrationAnswers: answers(true, 1) },
       { scenario: 'answers empty', registrationAnswers: [] },
       { scenario: 'answers omitted', registrationAnswers: undefined },
       {
-        scenario: 'answers not boolean true',
-        registrationAnswers: answers('true', 'true'),
+        scenario: 'approval not boolean true',
+        registrationAnswers: answers(true, 'true'),
       },
     ];
 
@@ -214,6 +220,27 @@ describe('syncVisitToOneIdentityHandler', () => {
 
     afterEach(() => {
       Object.values(mockOneIdentity).forEach((mock) => mock.mockReset());
+    });
+
+    describe.each([Event.VISIT_CREATED, Event.VISIT_UPDATED])('%s', (type) => {
+      it.each(eligibleStates)(
+        'should upsert an approved allowance with $scenario',
+        async ({ registrationAnswers }) => {
+          await syncVisitToOneIdentityHandler(
+            { ...allowanceMessage, registrationAnswers },
+            type
+          );
+
+          expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledTimes(1);
+          expect(mockOneIdentity.syncPEJAllowance).toHaveBeenCalledWith(
+            allowanceMessage.visitorId,
+            allowanceMessage.id,
+            'upsert',
+            '2026-10-28',
+            '2026-10-29'
+          );
+        }
+      );
     });
 
     it.each(ineligibleStates)(
@@ -258,7 +285,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       }
     );
 
-    it.each(ineligibleStates)(
+    it.each([...ineligibleStates, ...eligibleStates])(
       'should delete allowance before visit cleanup when $scenario',
       async ({ registrationAnswers }) => {
         await syncVisitToOneIdentityHandler(
@@ -288,7 +315,7 @@ describe('syncVisitToOneIdentityHandler', () => {
     );
 
     it.each(['request', 'approval'])(
-      'should remove a previously approved allowance after %s withdrawal and repeat the delete safely',
+      'should reconcile a previously approved allowance after %s withdrawal on repeated updates',
       async (withdrawn) => {
         await syncVisitToOneIdentityHandler(
           allowanceMessage,
@@ -311,16 +338,27 @@ describe('syncVisitToOneIdentityHandler', () => {
           Event.VISIT_UPDATED
         );
 
+        const approvedCall = [
+          allowanceMessage.visitorId,
+          allowanceMessage.id,
+          'upsert',
+          '2026-10-28',
+          '2026-10-29',
+        ];
+        const expectedCall =
+          withdrawn === 'request'
+            ? approvedCall
+            : [
+                allowanceMessage.visitorId,
+                allowanceMessage.id,
+                'delete',
+                '',
+                '',
+              ];
         expect(mockOneIdentity.syncPEJAllowance.mock.calls).toEqual([
-          [
-            allowanceMessage.visitorId,
-            allowanceMessage.id,
-            'upsert',
-            '2026-10-28',
-            '2026-10-29',
-          ],
-          [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
-          [allowanceMessage.visitorId, allowanceMessage.id, 'delete', '', ''],
+          approvedCall,
+          expectedCall,
+          expectedCall,
         ]);
         expect(mockOneIdentity.upsertPersonWantsOrg).not.toHaveBeenCalled();
       }
@@ -679,7 +717,7 @@ describe('syncVisitToOneIdentityHandler', () => {
       }
     );
 
-    it('should not upsert a PEJ allowance unless it is both requested and approved', async () => {
+    it('should not upsert a PEJ allowance unless it is approved', async () => {
       const mockPerson = {
         UID_Person: 'visitor-uid',
         CCC_EmployeeSubType: IdentityType.ESSSCIENCEUSER,

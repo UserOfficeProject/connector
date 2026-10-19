@@ -16,7 +16,6 @@ import {
   VisitRegistrationAnswer,
 } from '../utils/interfaces/VisitMessage';
 
-const REQUEST_DAILY_ALLOWANCE_QUESTION_NATURAL_KEY = 'request_daily_allowance';
 const DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY =
   'daily_allowance_is_approved';
 
@@ -183,16 +182,11 @@ async function syncDailyAllowance(
 function hasApprovedDailyAllowance(
   registrationAnswers: VisitRegistrationAnswer[]
 ): boolean {
-  const hasAffirmativeAnswer = (questionNaturalKey: string) =>
-    registrationAnswers.some(
-      (answer) =>
-        answer.questionNaturalKey === questionNaturalKey &&
-        answer.value === true
-    );
-
-  return (
-    hasAffirmativeAnswer(REQUEST_DAILY_ALLOWANCE_QUESTION_NATURAL_KEY) &&
-    hasAffirmativeAnswer(DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY)
+  return registrationAnswers.some(
+    (answer) =>
+      answer.questionNaturalKey ===
+        DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY &&
+      answer.value === true
   );
 }
 
