@@ -33,7 +33,7 @@ export function validateProposalMessage(
     throw new Error('Proposal CallId is missing');
   }
 
-  if (!proposalMessage.submitted) {
+  if (typeof proposalMessage.submitted !== 'boolean') {
     throw new Error('Proposal Submitted status is missing');
   }
 

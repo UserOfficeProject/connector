@@ -1,14 +1,15 @@
 import { container } from 'tsyringe';
 
+import { Tokens } from '../config/Tokens';
+import { str2Bool } from '../config/utils';
 import { MoodleFolderCreationQueueConsumer } from './consumers/moodle/MoodleFolderCreationQueueConsumer';
 import { OneIdentityIntegrationQueueConsumer } from './consumers/oneidentity/OneIdentityIntegrationQueueConsumer';
 import { ChatroomCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/ChatroomCreationQueueConsumer';
+import { ExperimentCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/ExperimentCreationQueueConsumer';
 import { FolderCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/FolderCreationQueueConsumer';
 import { ProposalCreationQueueConsumer } from './consumers/scicat/scicatProposal/consumers/ProposalCreationQueueConsumer';
 import { SyncProposalQueueConsumer } from './consumers/visa/consumers/syncProposalQueueConsumer';
 import { GetMessageBroker } from './messageBroker/getMessageBroker';
-import { Tokens } from '../config/Tokens';
-import { str2Bool } from '../config/utils';
 
 const getMessageBroker: GetMessageBroker = container.resolve(
   Tokens.ProvideMessageBroker
@@ -16,6 +17,7 @@ const getMessageBroker: GetMessageBroker = container.resolve(
 
 const queueConsumers = {
   ENABLE_SCICAT_PROPOSAL_UPSERT: ProposalCreationQueueConsumer,
+  ENABLE_SCICAT_EXPERIMENT_UPSERT: ExperimentCreationQueueConsumer,
   ENABLE_SCICHAT_ROOM_CREATION: ChatroomCreationQueueConsumer,
   ENABLE_PROPOSAL_FOLDERS_CREATION: FolderCreationQueueConsumer,
   ENABLE_MOODLE_FOLDERS_CREATION: MoodleFolderCreationQueueConsumer,
