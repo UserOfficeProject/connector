@@ -12,8 +12,6 @@ import { UserDataSource, UserUpdationEventPayload } from '../UserDataSource';
 export default class PostgresUserDataSource implements UserDataSource {
   private TABLE_NAME = 'users';
   private EMPLOYER_TABLE_NAME = 'employer';
-  private USER_ROLE = 'user_role';
-  private ROLE = 'role';
 
   async create(user: ProposalUser): Promise<User | null> {
     if (!user.email || !user.institution || !user.oidcSub) return null;
@@ -78,20 +76,7 @@ export default class PostgresUserDataSource implements UserDataSource {
           affiliation_id: employer.id,
         })
         .returning(['*'])
-        .then(async (user: UserRecord[]) => {
-          const scientificComputingRole = await database(this.ROLE)
-            .where({
-              name: 'SCIENTIFIC_COMPUTING',
-            })
-            .first();
-
-          if (scientificComputingRole) {
-            await database(this.USER_ROLE).insert({
-              user_id: user[0].id,
-              role_id: scientificComputingRole.id,
-            });
-          }
-
+        .then((user: UserRecord[]) => {
           return createUserObject(user[0]);
         });
     }
