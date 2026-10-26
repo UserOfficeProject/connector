@@ -135,6 +135,7 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         const axiosError = new Error('Axios Error');
         const mockResponse = {
           status: 400,
+          statusText: 'Bad Request',
           headers: { 'content-type': 'application/json' },
           data: { message: 'Bad Request' },
         };
@@ -142,6 +143,11 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         Object.assign(axiosError, {
           isAxiosError: true,
           response: mockResponse,
+          config: {
+            method: 'post',
+            baseURL: 'https://one-identity.example.org/api',
+            url: '/entity/ESET',
+          },
         });
 
         (isAxiosError as unknown as jest.Mock).mockReturnValueOnce(true);
@@ -159,8 +165,14 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
           {
             type,
             message,
+            request: {
+              method: 'POST',
+              baseURL: 'https://one-identity.example.org/api',
+              url: '/entity/ESET',
+            },
             response: {
               status: mockResponse.status,
+              statusText: mockResponse.statusText,
               headers: mockResponse.headers,
               data: mockResponse.data,
             },
@@ -222,6 +234,7 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         const axiosError = new Error('Axios Error');
         const mockResponse = {
           status: 500,
+          statusText: 'Internal Server Error',
           headers: { 'content-type': 'application/json' },
           data: { message: 'Internal Server Error' },
         };
@@ -229,6 +242,11 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
         Object.assign(axiosError, {
           isAxiosError: true,
           response: mockResponse,
+          config: {
+            method: 'put',
+            baseURL: 'https://one-identity.example.org/api',
+            url: '/script/SCPEJAllowance',
+          },
         });
 
         (isVisitMessage as unknown as jest.Mock).mockReturnValue(true);
@@ -248,8 +266,14 @@ describe('OneIdentityIntegrationQueueConsumer', () => {
           {
             type,
             message,
+            request: {
+              method: 'PUT',
+              baseURL: 'https://one-identity.example.org/api',
+              url: '/script/SCPEJAllowance',
+            },
             response: {
               status: mockResponse.status,
+              statusText: mockResponse.statusText,
               headers: mockResponse.headers,
               data: mockResponse.data,
             },

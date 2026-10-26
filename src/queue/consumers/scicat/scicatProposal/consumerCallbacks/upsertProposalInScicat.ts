@@ -1,256 +1,52 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import { upsertSamplesInScicat } from './upsertSampleInScicat';
 import {
-  Instrument,
-  InstrumentDto,
+  ExperimentMessageData,
+  ProposalMessageData,
 } from '../../../../../models/ProposalMessage';
-import { ValidProposalMessageData } from '../../../utils/validateProposalMessage';
-import { CreateProposalDto, UpdateProposalDto } from '../dto';
+import {
+  fetchUoExperiment,
+  fetchUoProposal,
+} from '../../../../../services/userOfficeApi/uoApi';
+import { scicatApi } from '../utils/scicatApi';
 
-const sciCatBaseUrl = process.env.SCICAT_BASE_URL;
-const sciCatLoginEndpoint = process.env.SCICAT_LOGIN_ENDPOINT || '/Users/login';
-const sciCatUsername = process.env.SCICAT_USERNAME;
-const sciCatPassword = process.env.SCICAT_PASSWORD;
-
-async function request<TResponse>(
-  url: string,
-  config: RequestInit
-): Promise<TResponse> {
-  // NOTE: Node v18 comes with fetch API by default
-  const response = await fetch(url, config);
-
-  if (!response.ok) {
-    return response.text().then((errorDetail) => {
-      throw new Error(errorDetail);
-    });
-  }
-
-  return (await response.json()) as TResponse;
-}
-
-const getSciCatAccessToken = async () => {
-  const loginCredentials = {
-    username: sciCatUsername,
-    password: sciCatPassword,
-  };
-
-  // NOTE: We login every time when there is new message to get the access_token
-  const { access_token: sciCatAccessToken } = await request<{
-    access_token: string;
-  }>(`${sciCatBaseUrl}${sciCatLoginEndpoint}`, {
-    method: 'POST',
-    body: JSON.stringify(loginCredentials),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!sciCatAccessToken) {
-    throw new Error('No access token found');
-  }
-
-  return sciCatAccessToken;
-};
-
-const getCreateProposalDto = (proposalMessage: ValidProposalMessageData) => {
-  const createProposalDto: CreateProposalDto = {
-    proposalId: proposalMessage.shortCode,
-    title: proposalMessage.title,
-    pi_email: proposalMessage.proposer.email,
-    pi_firstname: proposalMessage.proposer.firstName,
-    pi_lastname: proposalMessage.proposer.lastName,
-    email: proposalMessage.proposer.email,
-    firstname: proposalMessage.proposer.firstName,
-    lastname: proposalMessage.proposer.lastName,
-    abstract: proposalMessage.abstract,
-    ownerGroup: proposalMessage.shortCode,
-    instrumentIds: [],
-    accessGroups: [],
-    startTime: new Date(),
-    endTime: new Date(),
-    MeasurementPeriodList: [],
-    metadata: {},
-  };
-
-  return createProposalDto;
-};
-
-const getUpdateProposalDto = (proposalMessage: ValidProposalMessageData) => {
-  const updateProposalDto: UpdateProposalDto = {
-    title: proposalMessage.title,
-    pi_email: proposalMessage.proposer.email,
-    pi_firstname: proposalMessage.proposer.firstName,
-    pi_lastname: proposalMessage.proposer.lastName,
-    email: proposalMessage.proposer.email,
-    firstname: proposalMessage.proposer.firstName,
-    lastname: proposalMessage.proposer.lastName,
-    abstract: proposalMessage.abstract,
-    ownerGroup: proposalMessage.shortCode,
-    instrumentIds: [],
-    accessGroups: [],
-    startTime: new Date(),
-    endTime: new Date(),
-    MeasurementPeriodList: [],
-    metadata: {},
-  };
-
-  return updateProposalDto;
-};
-
-const createProposal = async (
-  proposalMessage: ValidProposalMessageData,
-  sciCatAccessToken: string
+export const upsertProposalInScicat = async (
+  proposalMessage: ProposalMessageData
 ) => {
-  const url = `${sciCatBaseUrl}/Proposals`;
-  const createProposalDto = getCreateProposalDto(proposalMessage);
+  const proposal = await fetchUoProposal(proposalMessage.proposalPk);
+  const exists = await scicatApi.checkProposalExists(proposal.proposalId);
 
-  logger.logInfo('POST', { url });
-  logger.logInfo('Proposal data', { proposalData: createProposalDto });
-
-  // RabbitMQ message only provides shortCodes (instrument names).
-  // To persist proposals with proper references, we resolve those shortCodes to
-  // actual Instrument IDs from SciCat and store the instrumentIds in the record.
-  createProposalDto.instrumentIds = await getInstrumentIds(
-    proposalMessage.instruments
-  );
-
-  const createProposalResponse = await request<string>(url, {
-    method: 'POST',
-    body: JSON.stringify(createProposalDto),
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sciCatAccessToken}`,
-    },
-  });
-
-  logger.logInfo('createProposalResponse', { createProposalResponse });
-
-  logger.logInfo('Proposal was created in scicat', {
-    proposalId: createProposalDto.proposalId,
-  });
-};
-
-const updateProposal = async (
-  proposalMessage: ValidProposalMessageData,
-  sciCatAccessToken: string
-) => {
-  const url = `${sciCatBaseUrl}/Proposals/${proposalMessage.shortCode}`;
-  const updateProposalDto = getUpdateProposalDto(proposalMessage);
-
-  // RabbitMQ message only provides shortCodes (instrument names).
-  // To persist proposals with proper references, we resolve those shortCodes to
-  // actual Instrument IDs from SciCat and store the instrumentIds in the record.
-  updateProposalDto.instrumentIds = await getInstrumentIds(
-    proposalMessage.instruments
-  );
-  const updateProposalResponse = await request(url, {
-    method: 'PATCH',
-    body: JSON.stringify(updateProposalDto),
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sciCatAccessToken}`,
-    },
-  });
-
-  logger.logInfo('Patch', { url });
-  logger.logInfo('Proposal data', { proposalData: updateProposalDto });
-  logger.logInfo('updateProposalResponse', { updateProposalResponse });
-
-  logger.logInfo('Proposal was updated in scicat', {
-    proposalId: proposalMessage.shortCode,
-  });
-};
-
-const checkProposalExists = async (
-  proposalId: string,
-  sciCatAccessToken: string
-) => {
-  const url = `${sciCatBaseUrl}/Proposals/${proposalId}`;
-  const response = await request<string>(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sciCatAccessToken}`,
-    },
-  }).catch((error) => {
-    try {
-      const parsedError = JSON.parse(error.message);
-      if (parsedError.statusCode === 404) {
-        return false;
-      }
-    } catch (reason) {
-      logger.logError('Error parsing error message', {
-        error,
-        reason,
-      });
-    }
-    throw error;
-  });
-
-  if (response) {
-    return true;
-  } else {
-    return false;
-  }
-};
-
-const getInstrumentIds = async (instruments: Instrument[]) => {
-  const sciCatAccessToken = await getSciCatAccessToken();
-  const instrumentNames = instruments.map((inst) => inst.shortCode);
-
-  const instrumentIds = [];
-
-  for (const name of instrumentNames) {
-    const instrumentNameLowerCase = name.toLowerCase();
-
-    const filterString = JSON.stringify({
-      where: { name: { ilike: instrumentNameLowerCase } },
-    });
-
-    const url = `${sciCatBaseUrl}/Instruments?filter=${encodeURIComponent(filterString)}`;
-
-    try {
-      const res = await request<InstrumentDto[]>(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${sciCatAccessToken}`,
-        },
-      });
-
-      instrumentIds.push(res[0].pid);
-    } catch (error) {
-      logger.logError(`Error fetching instrument ID from scicat for ${name}`, {
-        error,
-      });
-    }
-  }
-
-  return instrumentIds;
-};
-
-const upsertProposalInScicat = async (
-  proposalMessage: ValidProposalMessageData
-) => {
-  const sciCatAccessToken = await getSciCatAccessToken();
-
-  const proposalExists = await checkProposalExists(
-    proposalMessage.shortCode,
-    sciCatAccessToken
-  );
-
-  if (proposalExists) {
+  if (exists) {
     logger.logInfo('Proposal already exists, updating...', {
-      proposalId: proposalMessage.shortCode,
+      proposalId: proposal.proposalId,
     });
-
-    updateProposal(proposalMessage, sciCatAccessToken);
+    await scicatApi.updateProposal(proposal);
   } else {
     logger.logInfo('Proposal does not exist yet, creating...', {
-      proposalId: proposalMessage.shortCode,
+      proposalId: proposal.proposalId,
     });
-
-    createProposal(proposalMessage, sciCatAccessToken);
+    await scicatApi.createProposal(proposal);
   }
 };
 
-export { upsertProposalInScicat };
+export const upsertExperimentInScicat = async (
+  experimentMessage: ExperimentMessageData
+) => {
+  const experiment = await fetchUoExperiment(experimentMessage.experimentPk);
+  const exists = await scicatApi.checkProposalExists(experiment.experimentId);
+
+  if (exists) {
+    logger.logInfo('Experiment already exists, updating...', {
+      proposalId: experiment.experimentId,
+    });
+    await scicatApi.updateExperiment(experiment);
+  } else {
+    logger.logInfo('Experiment does not exist yet, creating...', {
+      proposalId: experiment.experimentId,
+    });
+    await scicatApi.createExperiment(experiment);
+  }
+
+  await upsertSamplesInScicat(experiment);
+};

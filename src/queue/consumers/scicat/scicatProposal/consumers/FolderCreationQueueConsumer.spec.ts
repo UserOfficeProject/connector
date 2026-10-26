@@ -9,13 +9,13 @@ jest.mock('../../../QueueConsumer', () => ({
 import { MessageBroker } from '@user-office-software/duo-message-broker';
 
 import { FolderCreationQueueConsumer } from './FolderCreationQueueConsumer';
-import { hasTriggeringStatus } from '../../../utils/hasTriggeringStatus';
+import { hasTriggeringProposalStatus } from '../../../utils/hasTriggeringStatus';
 import { hasTriggeringType } from '../../../utils/hasTriggeringType';
 
 describe('FolderCreationQueueConsumer', () => {
   it('should not throw an error when message does not have the correct type and status', async () => {
     (hasTriggeringType as jest.Mock).mockReturnValueOnce(false);
-    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(false);
+    (hasTriggeringProposalStatus as jest.Mock).mockReturnValueOnce(false);
 
     const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
 
@@ -28,7 +28,7 @@ describe('FolderCreationQueueConsumer', () => {
 
   it('should not throw an error when message does have the incorrect type and correct status', async () => {
     (hasTriggeringType as jest.Mock).mockReturnValueOnce(false);
-    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(true);
+    (hasTriggeringProposalStatus as jest.Mock).mockReturnValueOnce(true);
 
     const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
 
@@ -41,7 +41,7 @@ describe('FolderCreationQueueConsumer', () => {
 
   it('should not throw an error when message does have the correct type and incorrect status', async () => {
     (hasTriggeringType as jest.Mock).mockReturnValueOnce(true);
-    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(false);
+    (hasTriggeringProposalStatus as jest.Mock).mockReturnValueOnce(false);
 
     const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
 
@@ -53,7 +53,7 @@ describe('FolderCreationQueueConsumer', () => {
   });
 
   it('should throw error when invalid message does have the correct type or status', async () => {
-    (hasTriggeringStatus as jest.Mock).mockReturnValueOnce(true);
+    (hasTriggeringProposalStatus as jest.Mock).mockReturnValueOnce(true);
     (hasTriggeringType as jest.Mock).mockReturnValueOnce(true);
 
     const consumer = new FolderCreationQueueConsumer({} as MessageBroker);
