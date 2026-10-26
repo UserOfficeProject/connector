@@ -139,12 +139,29 @@ export class ESSOneIdentity {
     return entities.map(({ values }) => values);
   }
 
-  public async createPersonWantsOrg(
+  public async syncPEJAllowance(
+    centralAccount: string,
+    externalAllowanceId: string,
+    operation: 'upsert' | 'delete',
+    dateFrom: string = '',
+    dateTo: string = ''
+  ): Promise<string> {
+    return this.oneIdentityApi.callScript<string>('SCPEJAllowance', [
+      centralAccount,
+      externalAllowanceId,
+      operation,
+      dateFrom,
+      dateTo,
+    ]);
+  }
+
+  public async upsertPersonWantsOrg(
     role: PersonWantsOrgRole,
     centralAccount: string,
     startDate: string,
     endDate: string,
-    customData: string = ''
+    customData: string = '',
+    uidPersonWantsOrg: string = ''
   ): Promise<PersonWantsOrg[]> {
     const res =
       await this.oneIdentityApi.callScript<SCProposalSiteAccessResponse>(
@@ -156,7 +173,7 @@ export class ESSOneIdentity {
           startDate,
           endDate,
           customData, // PersonWantsOrg.CustomProperty04
-          '', // UID_PersonWantsOrg (empty for new)
+          uidPersonWantsOrg, // UID_PersonWantsOrg (empty for new, provided for update)
         ]
       );
 

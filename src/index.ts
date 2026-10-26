@@ -26,6 +26,7 @@ async function bootstrap() {
   logger.logInfo('Server information: ', {
     nodeVersion: process.version,
     env: process.env.NODE_ENV,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
   const PORT = process.env.PORT || 4010;
@@ -33,6 +34,9 @@ async function bootstrap() {
 
   const enableScicatProposalUpsert = str2Bool(
     process.env.ENABLE_SCICAT_PROPOSAL_UPSERT as string
+  );
+  const enableScicatExperimentUpsert = str2Bool(
+    process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT as string
   );
   const enableScichatRoomCreation = str2Bool(
     process.env.ENABLE_SCICHAT_ROOM_CREATION as string
@@ -55,6 +59,7 @@ async function bootstrap() {
 
   logger.logInfo('Services configuration', {
     SciCat_Proposal_Upsert: enableScicatProposalUpsert,
+    SciCat_Experiment_Upsert: enableScicatExperimentUpsert,
     Scichat_Room_Creation: enableScichatRoomCreation,
     Proposal_Folders_Creation: enableProposalFoldersCreation,
     Nicos_to_Scichat_Messages: enableNicosToScichatMessages,
@@ -75,6 +80,7 @@ async function bootstrap() {
 
   if (
     enableScicatProposalUpsert ||
+    enableScicatExperimentUpsert ||
     enableScichatRoomCreation ||
     enableProposalFoldersCreation ||
     enableMoodleFoldersCreation ||

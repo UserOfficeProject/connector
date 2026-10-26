@@ -1,10 +1,10 @@
 import { logger } from '@user-office-software/duo-logger';
 import { ConsumerCallback } from '@user-office-software/duo-message-broker';
-import { isAxiosError } from 'axios';
 
 import { QueueConsumer } from '../QueueConsumer';
 import { syncProposalAndMembersToOneIdentityHandler } from './consumerCallbacks/syncProposalAndMembersToOneIdentityHandler';
 import { syncVisitToOneIdentityHandler } from './consumerCallbacks/syncVisitToOneIdentityHandler';
+import { getAxiosErrorDetails } from './utils/getAxiosErrorDetails';
 import { isVisitMessage } from './utils/isVisitMessage';
 import { validateProposalMessage } from './utils/validateProposalMessage';
 import { Event } from '../../../models/Event';
@@ -25,6 +25,7 @@ const SYNC_PROPOSAL_AND_MEMBERS_EVENTS_FOR_HANDLING = [
 const SYNC_VISIT_EVENTS_FOR_HANDLING = [
   Event.VISIT_CREATED,
   Event.VISIT_DELETED,
+  Event.VISIT_UPDATED,
 ];
 
 // Class for consuming messages from the ESS One Identity Integration Queue
@@ -82,15 +83,13 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
         message,
       });
     } catch (error) {
-      const response = extractAxiosErrorResponse(error);
-
       logger.logException(
         'Error while handling message in OneIdentityIntegrationQueueConsumer',
         error,
         {
           type,
           message,
-          response,
+          ...getAxiosErrorDetails(error),
         }
       );
 
@@ -98,16 +97,4 @@ export class OneIdentityIntegrationQueueConsumer extends QueueConsumer {
       throw error;
     }
   };
-}
-
-function extractAxiosErrorResponse(error: unknown) {
-  if (isAxiosError(error)) {
-    return {
-      status: error.response?.status,
-      headers: error.response?.headers,
-      data: error.response?.data,
-    };
-  }
-
-  return undefined;
 }

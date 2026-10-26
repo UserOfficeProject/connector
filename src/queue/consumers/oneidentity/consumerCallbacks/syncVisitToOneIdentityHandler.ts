@@ -11,14 +11,27 @@ import {
   OrderState,
   PersonWantsOrgRole,
 } from '../utils/interfaces/PersonWantsOrg';
-import { VisitMessage } from '../utils/interfaces/VisitMessage';
+import {
+  VisitMessage,
+  VisitRegistrationAnswer,
+} from '../utils/interfaces/VisitMessage';
+
+const DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY =
+  'daily_allowance_is_approved';
 
 const ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS = parseInt(
   process.env.ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS || '30'
 );
 
 export async function syncVisitToOneIdentityHandler(
-  { startAt, endAt, visitorId: oidcSub, proposal }: VisitMessage,
+  {
+    id: visitId,
+    startAt,
+    endAt,
+    visitorId: oidcSub,
+    proposal,
+    registrationAnswers = [],
+  }: VisitMessage,
   type: Event
 ): Promise<void> {
   const oneIdentity = new ESSOneIdentity();
@@ -44,16 +57,61 @@ export async function syncVisitToOneIdentityHandler(
     if (type === Event.VISIT_CREATED) {
       await createAccessInOneIdentity(
         oneIdentity,
+        visitId,
         startAt,
         endAt,
-        oidcSub,
-        proposal
+        oidcSub
       );
 
       // Every visitor should have access to the proposal folders
       await createProposalConnection(oneIdentity, uidESet, uidPerson);
+
+      await syncDailyAllowance(
+        oneIdentity,
+        visitId,
+        oidcSub,
+        startAt,
+        endAt,
+        registrationAnswers,
+        type
+      );
+    } else if (type === Event.VISIT_UPDATED) {
+      // Reconcile each access independently so retries can finish partial updates.
+      await updateAccessInOneIdentity(
+        oneIdentity,
+        visitId,
+        startAt,
+        endAt,
+        uidPerson,
+        oidcSub
+      );
+
+      // If the Proposal connection has not been established during Visit Creation, this will be a backup
+      await createProposalConnection(oneIdentity, uidESet, uidPerson);
+
+      await syncDailyAllowance(
+        oneIdentity,
+        visitId,
+        oidcSub,
+        startAt,
+        endAt,
+        registrationAnswers,
+        type
+      );
     } else if (type === Event.VISIT_DELETED) {
-      await removeAccessFromOneIdentity(oneIdentity, startAt, endAt, uidPerson);
+      // Delete the allowance first. Its idempotent delete keeps message retries
+      // safe if one of the remaining visit cleanup operations fails.
+      await syncDailyAllowance(
+        oneIdentity,
+        visitId,
+        oidcSub,
+        startAt,
+        endAt,
+        registrationAnswers,
+        type
+      );
+
+      await removeAccessFromOneIdentity(oneIdentity, visitId, uidPerson);
 
       // Remove the connection between the proposal and the visitor
       await removeProposalConnection(
@@ -70,6 +128,65 @@ export async function syncVisitToOneIdentityHandler(
   }
 }
 
+async function syncDailyAllowance(
+  oneIdentity: ESSOneIdentity,
+  visitId: string,
+  centralAccount: string,
+  startAt: string,
+  endAt: string,
+  registrationAnswers: VisitRegistrationAnswer[],
+  type: Event
+): Promise<void> {
+  const approvalAnswer = registrationAnswers.find(
+    (answer) =>
+      answer.questionNaturalKey ===
+      DAILY_ALLOWANCE_IS_APPROVED_QUESTION_NATURAL_KEY
+  );
+  // Legacy messages do not carry approval information; leave allowances untouched.
+  if (!approvalAnswer) return;
+
+  const isApproved = approvalAnswer.value === true;
+  let operation: 'upsert' | 'delete';
+
+  if (type === Event.VISIT_DELETED) {
+    // Current answers cannot tell us whether an allowance previously existed.
+    operation = 'delete';
+  } else if (type === Event.VISIT_UPDATED) {
+    // Reconcile the current state; deletion is safe even if no allowance exists.
+    operation = isApproved ? 'upsert' : 'delete';
+  } else if (type === Event.VISIT_CREATED && isApproved) {
+    operation = 'upsert';
+  } else {
+    return;
+  }
+
+  // PEJ requires the ISO 8601 dates (YYYY-MM-DD).
+  const dateFrom =
+    operation === 'delete'
+      ? ''
+      : toLocalDate(startAt).toLocaleDateString('sv-SE');
+  const dateTo =
+    operation === 'delete'
+      ? ''
+      : toLocalDate(endAt).toLocaleDateString('sv-SE');
+
+  await oneIdentity.syncPEJAllowance(
+    centralAccount,
+    visitId,
+    operation,
+    dateFrom,
+    dateTo
+  );
+
+  logger.logInfo('PEJ allowance synchronized in One Identity', {
+    visitId,
+    centralAccount,
+    operation,
+    dateFrom,
+    dateTo,
+  });
+}
+
 // Find person UID from oidcSub
 // If the person is not a science user, return undefined
 async function getScienceUser(
@@ -80,7 +197,9 @@ async function getScienceUser(
   const person = await oneIdentity.getPerson(centralAccount);
 
   if (!person) {
-    throw new Error('Person not found in One Identity');
+    throw new Error(
+      `Person with central account "${centralAccount}" not found in One Identity`
+    );
   }
 
   if (person.CCC_EmployeeSubType === IdentityType.ESSSCIENCEUSER)
@@ -90,37 +209,34 @@ async function getScienceUser(
 
 async function createAccessInOneIdentity(
   oneIdentity: ESSOneIdentity,
+  visitId: string,
   startAt: string,
   endAt: string,
-  centralAccount: string,
-  proposal: ProposalMessageData
+  centralAccount: string
 ) {
   // Create site access
-  const [pwoSite] = await oneIdentity.createPersonWantsOrg(
+  const [pwoSite] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SITE_ACCESS,
     centralAccount,
-    toIsoString(startAt),
-    toIsoString(endAt),
-    proposal.shortCode // CustomProperty04 - We store the proposal short code for the site access to be able to find it later
+    toStartOfDayIsoString(startAt),
+    toStartOfNextDayIsoString(endAt),
+    visitId // CustomProperty04 - We store the visit ID for the site access to be able to find it later
   );
 
   logger.logInfo('Site access created in One Identity', {
     UID_PersonWantsOrg: pwoSite.UID_PersonWantsOrg,
   });
 
-  // validFrom in One Identity should be in the future so that the access is not immediately available
+  // System access starts at the current instant, without rounding to midnight.
   const validFrom = Date.now();
-  const validUntil = new Date(endAt).setDate(
-    new Date(endAt).getDate() + ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
-  );
 
   // Create system access
-  const [pwoSystem] = await oneIdentity.createPersonWantsOrg(
+  const [pwoSystem] = await oneIdentity.upsertPersonWantsOrg(
     PersonWantsOrgRole.SYSTEM_ACCESS,
     centralAccount,
-    toIsoString(validFrom),
-    toIsoString(validUntil),
-    pwoSite.UID_PersonWantsOrg // CustomProperty04 - We store the site access UID for the system access to be able to find it later
+    new Date(validFrom).toISOString(),
+    toStartOfNextDayIsoString(endAt, ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS),
+    visitId // CustomProperty04 - We store the visit ID for the system access to be able to find it later
   );
 
   logger.logInfo('System access created in One Identity', {
@@ -128,55 +244,134 @@ async function createAccessInOneIdentity(
   });
 }
 
-async function removeAccessFromOneIdentity(
+async function updateAccessInOneIdentity(
   oneIdentity: ESSOneIdentity,
+  visitId: string,
   startAt: string,
   endAt: string,
-  uidPerson: UID_Person
+  uidPerson: UID_Person,
+  centralAccount: string
 ) {
-  // Find person wants orgs for the visitor
   const personWantsOrgs = await oneIdentity.getPersonWantsOrg(uidPerson);
-
-  // Find site access for the visitor
-  const siteAccess = personWantsOrgs.find(
+  const activeAccesses = personWantsOrgs.filter(
     (pwo) =>
-      pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS &&
-      toIsoString(pwo.ValidFrom) === toIsoString(startAt) &&
-      toIsoString(pwo.ValidUntil) === toIsoString(endAt) &&
-      pwo.OrderState !== OrderState.ABORTED
-  );
-
-  if (!siteAccess) {
-    throw new Error(
-      'Site access not found in One Identity, cannot remove access'
-    );
-  }
-
-  await oneIdentity.cancelPersonWantsOrg(siteAccess.UID_PersonWantsOrg);
-
-  logger.logInfo('Site access cancelled in One Identity', {
-    UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
-  });
-
-  // Find system access for the site access (CustomProperty04 is the site access UID)
-  const systemAccess = personWantsOrgs.find(
-    (pwo) =>
-      pwo.CustomProperty04 === siteAccess.UID_PersonWantsOrg &&
-      pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS &&
+      pwo.CustomProperty04 === visitId &&
+      pwo.OrderState !== OrderState.ABORTED &&
       pwo.OrderState !== OrderState.UNSUBSCRIBED
   );
+  const siteAccess = activeAccesses.find(
+    (pwo) => pwo.DisplayOrg === PersonWantsOrgRole.SITE_ACCESS
+  );
+  const systemAccess = activeAccesses.find(
+    (pwo) => pwo.DisplayOrg === PersonWantsOrgRole.SYSTEM_ACCESS
+  );
 
-  if (!systemAccess) {
-    throw new Error(
-      'System access not found in One Identity, cannot remove access'
+  // Calculate all date boundaries before making any changes.
+  const validFrom = toStartOfDayIsoString(startAt);
+  const validUntil = toStartOfNextDayIsoString(endAt);
+  const systemAccessValidUntil = toStartOfNextDayIsoString(
+    endAt,
+    ONE_IDENTITY_SYSTEM_ACCESS_LASTS_FOR_DAYS
+  );
+  const siteDatesMatch =
+    siteAccess &&
+    isSameDateTime(siteAccess.ValidFrom, validFrom) &&
+    isSameDateTime(siteAccess.ValidUntil, validUntil);
+  // Never compare the stored system start time against the moving current time.
+  const systemExpiryMatches =
+    systemAccess &&
+    isSameDateTime(systemAccess.ValidUntil, systemAccessValidUntil);
+
+  if (siteDatesMatch && systemExpiryMatches) {
+    logger.logInfo(
+      'Visit dates unchanged, skipping access update in One Identity',
+      {
+        UID_PersonWantsOrg: siteAccess.UID_PersonWantsOrg,
+        visitId,
+      }
+    );
+
+    return;
+  }
+
+  if (!siteDatesMatch) {
+    const siteAccessResult = await oneIdentity.upsertPersonWantsOrg(
+      PersonWantsOrgRole.SITE_ACCESS,
+      centralAccount,
+      validFrom,
+      validUntil,
+      visitId,
+      siteAccess?.UID_PersonWantsOrg ?? ''
+    );
+
+    logger.logInfo(
+      `Site access ${siteAccess ? 'updated' : 'created'} in One Identity`,
+      {
+        UID_PersonWantsOrg:
+          siteAccess?.UID_PersonWantsOrg ??
+          siteAccessResult[0].UID_PersonWantsOrg,
+      }
     );
   }
 
-  await oneIdentity.cancelPersonWantsOrg(systemAccess.UID_PersonWantsOrg);
+  // A failed system update can be retried even if the site update already succeeded.
+  if (!systemExpiryMatches) {
+    const systemAccessResult = await oneIdentity.upsertPersonWantsOrg(
+      PersonWantsOrgRole.SYSTEM_ACCESS,
+      centralAccount,
+      new Date(Date.now()).toISOString(),
+      systemAccessValidUntil,
+      visitId,
+      systemAccess?.UID_PersonWantsOrg ?? ''
+    );
 
-  logger.logInfo('System access cancelled in One Identity', {
-    UID_PersonWantsOrg: systemAccess.UID_PersonWantsOrg,
-  });
+    logger.logInfo(
+      `System access ${systemAccess ? 'updated' : 'created'} in One Identity`,
+      {
+        UID_PersonWantsOrg:
+          systemAccess?.UID_PersonWantsOrg ??
+          systemAccessResult[0].UID_PersonWantsOrg,
+      }
+    );
+  }
+}
+
+async function removeAccessFromOneIdentity(
+  oneIdentity: ESSOneIdentity,
+  visitId: string,
+  uidPerson: UID_Person
+) {
+  const personWantsOrgs = await oneIdentity.getPersonWantsOrg(uidPerson);
+  const accessTypes = [
+    { role: PersonWantsOrgRole.SITE_ACCESS, name: 'Site' },
+    { role: PersonWantsOrgRole.SYSTEM_ACCESS, name: 'System' },
+  ];
+
+  // Clean up each access type independently so retries can finish partial deletions.
+  for (const { role, name } of accessTypes) {
+    const accesses = personWantsOrgs.filter(
+      (pwo) =>
+        pwo.DisplayOrg === role &&
+        pwo.CustomProperty04 === visitId &&
+        pwo.OrderState !== OrderState.ABORTED &&
+        pwo.OrderState !== OrderState.UNSUBSCRIBED
+    );
+
+    if (accesses.length === 0) {
+      logger.logInfo(`${name} access absent or already cancelled, skipping`, {
+        visitId,
+        uidPerson,
+      });
+    }
+
+    for (const access of accesses) {
+      await oneIdentity.cancelPersonWantsOrg(access.UID_PersonWantsOrg);
+
+      logger.logInfo(`${name} access cancelled in One Identity`, {
+        UID_PersonWantsOrg: access.UID_PersonWantsOrg,
+      });
+    }
+  }
 }
 
 async function createProposalConnection(
@@ -193,10 +388,13 @@ async function createProposalConnection(
   );
 
   if (exists) {
-    logger.logInfo('Connection already exists, skipping', {
-      uidPerson,
-      uidESet,
-    });
+    logger.logInfo(
+      'Visitor is already connected to proposal in One Identity, skipping connection creation',
+      {
+        uidPerson,
+        uidESet,
+      }
+    );
   } else {
     await oneIdentity.connectPersonToProposal(uidESet, uidPerson);
     logger.logInfo('Connection created between proposal and visitor', {
@@ -235,12 +433,38 @@ async function removeProposalConnection(
   }
 }
 
-function toIsoString(date: string | number) {
+function toLocalDate(date: string | number) {
   const parsedDate = new Date(date);
 
   if (isNaN(parsedDate.getTime())) {
-    throw new Error(`Invalid date provided to toIsoString: ${date}`);
+    throw new Error(`Invalid date provided: ${date}`);
   }
 
+  return parsedDate;
+}
+
+function toStartOfDayIsoString(date: string | number) {
+  const parsedDate = toLocalDate(date);
+  parsedDate.setHours(0, 0, 0, 0);
+
   return parsedDate.toISOString();
+}
+
+function toStartOfNextDayIsoString(date: string | number, additionalDays = 0) {
+  const parsedDate = toLocalDate(date);
+  parsedDate.setHours(0, 0, 0, 0);
+  parsedDate.setDate(parsedDate.getDate() + additionalDays + 1);
+
+  return parsedDate.toISOString();
+}
+
+function isSameDateTime(left: string, right: string) {
+  const leftTime = new Date(left).getTime();
+  const rightTime = new Date(right).getTime();
+
+  if (isNaN(leftTime) || isNaN(rightTime)) {
+    return left === right;
+  }
+
+  return leftTime === rightTime;
 }
