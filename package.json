@@ -55,7 +55,7 @@
     "envalid": "^8.2.0",
     "express": "^5.2.1",
     "kafkajs": "^2.2.4",
-    "knex": "^3.2.4",
+    "knex": "^3.3.0",
     "matrix-js-sdk": "24.1.0",
     "pg": "^8.20.0",
     "prom-client": "^15.1.3",
