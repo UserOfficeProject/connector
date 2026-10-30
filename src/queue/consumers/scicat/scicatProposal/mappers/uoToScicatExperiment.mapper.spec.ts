@@ -3,6 +3,9 @@ jest.mock('../utils/scicatApi', () => ({
     serviceUsername: 'testuser',
   },
 }));
+jest.mock('@user-office-software/duo-logger');
+
+import { logger } from '@user-office-software/duo-logger';
 
 import {
   getCreateScicatExperimentDto,
@@ -282,5 +285,13 @@ describe('getCreateScicatSampleDto', () => {
     expect(sampleCharacteristics).toHaveProperty('q1');
     expect(sampleCharacteristics).not.toHaveProperty('q2');
     expect(sampleCharacteristics).toHaveProperty('questionary_length.value', 1);
+    expect(logger.logInfo).toHaveBeenCalledWith(
+      'Skipping sample questionary fields',
+      expect.objectContaining({
+        skippedFields: [
+          { questionId: 'q2', naturalKey: 'skip_metadata_notes', value: 'b' },
+        ],
+      })
+    );
   });
 });
