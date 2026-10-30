@@ -189,7 +189,9 @@ const buildSampleCharacteristics = (
   sample: UOExperimentSafetySample,
   experiment: UOExperimentDto
 ): Record<string, MdEntryValue> => {
-  const fields = sample.questionary.steps.flatMap((step) => step.fields);
+  const fields = sample.questionary.steps
+    .flatMap((step) => step.fields)
+    .filter((field) => !field.question.naturalKey?.startsWith('skip_metadata'));
   const sampleLookup = `${experiment.experimentId}-${sample.sampleId}`;
 
   const rows: [string, MdEntryValue][] = [

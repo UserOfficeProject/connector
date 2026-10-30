@@ -6,9 +6,13 @@ jest.mock('../utils/scicatApi', () => ({
 
 import {
   getCreateScicatExperimentDto,
+  getCreateScicatSampleDto,
   getUpdateScicatExperimentDto,
 } from './uoToScicatExperiment.mapper';
-import { UOExperimentDto } from '../../../../../services/userOfficeApi/type/uoExperiment.type';
+import {
+  UOExperimentDto,
+  UOExperimentSafetySample,
+} from '../../../../../services/userOfficeApi/type/uoExperiment.type';
 
 const createBaseUoExperiment = (
   overrides: Partial<UOExperimentDto> = {}
@@ -240,5 +244,43 @@ describe('getUpdateScicatExperimentDto', () => {
     );
 
     expect((dto as any).proposalId).toBeUndefined();
+  });
+});
+
+describe('getCreateScicatSampleDto', () => {
+  it('skips fields whose natural key starts with skip_metadata', () => {
+    const sample: UOExperimentSafetySample = {
+      sampleId: 1,
+      sample: { id: 1, title: 'Sample 1' },
+      questionary: {
+        steps: [
+          {
+            fields: [
+              {
+                question: { id: 'q1', question: 'Kept', naturalKey: 'kept' },
+                value: 'a',
+              },
+              {
+                question: {
+                  id: 'q2',
+                  question: 'Skipped',
+                  naturalKey: 'skip_metadata_notes',
+                },
+                value: 'b',
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    const { sampleCharacteristics } = getCreateScicatSampleDto(
+      sample,
+      createBaseUoExperiment()
+    );
+
+    expect(sampleCharacteristics).toHaveProperty('q1');
+    expect(sampleCharacteristics).not.toHaveProperty('q2');
+    expect(sampleCharacteristics).toHaveProperty('questionary_length.value', 1);
   });
 });

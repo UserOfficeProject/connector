@@ -8,6 +8,7 @@ export interface UOExperimentSafetySample {
         question: {
           id: string;
           question: string;
+          naturalKey: string;
         };
         value: string | number | boolean | null;
       }[];
