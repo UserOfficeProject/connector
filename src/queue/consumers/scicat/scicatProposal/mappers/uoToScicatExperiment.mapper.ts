@@ -1,8 +1,11 @@
 import { createHash } from 'crypto';
 
+import { logger } from '@user-office-software/duo-logger';
+
 import {
   UOExperimentDto,
   UOExperimentSafetySample,
+  UOSampleQuestionaryField,
 } from '../../../../../services/userOfficeApi/type/uoExperiment.type';
 import {
   CreateScicatProposalDto,
@@ -185,14 +188,40 @@ const buildSampleHash = (dto: CreateScicatSampleDto): string => {
   return createHash('md5').update(JSON.stringify(hashableData)).digest('hex');
 };
 
+// Questionary fields with this natural key prefix are not sent to SciCat
+const SKIP_METADATA_PREFIX = 'skip_metadata';
+
+const removeSkippedFields = (
+  fields: UOSampleQuestionaryField[],
+  sampleLookup: string
+): UOSampleQuestionaryField[] => {
+  const skippedFields = fields.filter((field) =>
+    field.question.naturalKey?.startsWith(SKIP_METADATA_PREFIX)
+  );
+
+  if (skippedFields.length > 0) {
+    logger.logInfo('Skipping sample questionary fields', {
+      sampleLookup,
+      skippedFields: skippedFields.map((field) => ({
+        questionId: field.question.id,
+        naturalKey: field.question.naturalKey,
+        value: field.value,
+      })),
+    });
+  }
+
+  return fields.filter((field) => !skippedFields.includes(field));
+};
+
 const buildSampleCharacteristics = (
   sample: UOExperimentSafetySample,
   experiment: UOExperimentDto
 ): Record<string, MdEntryValue> => {
-  const fields = sample.questionary.steps
-    .flatMap((step) => step.fields)
-    .filter((field) => !field.question.naturalKey?.startsWith('skip_metadata'));
   const sampleLookup = `${experiment.experimentId}-${sample.sampleId}`;
+  const fields = removeSkippedFields(
+    sample.questionary.steps.flatMap((step) => step.fields),
+    sampleLookup
+  );
 
   const rows: [string, MdEntryValue][] = [
     metadataEntry('uos_sample_id', 'UOS Sample ID', sample.sampleId),

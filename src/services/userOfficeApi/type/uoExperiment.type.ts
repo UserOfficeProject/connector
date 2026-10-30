@@ -1,17 +1,19 @@
 import { UOProposalDto, UOUser } from './uoProposal.type';
 
+export interface UOSampleQuestionaryField {
+  question: {
+    id: string;
+    question: string;
+    naturalKey: string;
+  };
+  value: string | number | boolean | null;
+}
+
 export interface UOExperimentSafetySample {
   sampleId: number;
   questionary: {
     steps: {
-      fields: {
-        question: {
-          id: string;
-          question: string;
-          naturalKey: string;
-        };
-        value: string | number | boolean | null;
-      }[];
+      fields: UOSampleQuestionaryField[];
     }[];
   };
   sample: {
