@@ -21,6 +21,11 @@ import {
   UpdateScicatSampleDto,
 } from '../type/scicatProposal.type';
 
+const PRESERVED_SCICAT_METADATA_KEYS = [
+  'published_data_doi',
+  'embargo_end_date',
+];
+
 class ScicatApi {
   readonly baseUrl = process.env.SCICAT_BASE_URL;
   readonly scicatToken = process.env.SCICAT_JWT;
@@ -152,6 +157,28 @@ class ScicatApi {
     return Boolean(response);
   }
 
+  async getPreservedMetadata(
+    proposalId: string
+  ): Promise<Record<string, unknown>> {
+    const url = `${this.baseUrl}/Proposals/${proposalId}`;
+    const proposal = await this.request<{
+      metadata?: Record<string, unknown> | null;
+    }>(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.scicatToken}`,
+      },
+    });
+
+    const metadata = proposal?.metadata ?? {};
+
+    return Object.fromEntries(
+      PRESERVED_SCICAT_METADATA_KEYS.filter((key) => key in metadata).map(
+        (key) => [key, metadata[key]]
+      )
+    );
+  }
+
   async findSampleByLookup(
     sampleLookup: string
   ): Promise<UpdateScicatSampleDto | null> {
@@ -228,6 +255,10 @@ class ScicatApi {
       UOProposal,
       scicatInstrumentIds
     );
+    updateProposalDto.metadata = {
+      ...(await this.getPreservedMetadata(UOProposal.proposalId)),
+      ...updateProposalDto.metadata,
+    };
 
     const updateProposalResponse = await this.request<UpdateScicatProposalDto>(
       url,
@@ -293,6 +324,10 @@ class ScicatApi {
       UOExperiment,
       scicatInstrumentIds
     );
+    updateExperimentDto.metadata = {
+      ...(await this.getPreservedMetadata(UOExperiment.experimentId)),
+      ...updateExperimentDto.metadata,
+    };
 
     const updateExperimentResponse =
       await this.request<UpdateScicatProposalDto>(url, {
