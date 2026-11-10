@@ -52,7 +52,7 @@
     "@user-office-software/duo-message-broker": "^1.9.0",
     "axios": "^1.20.0",
     "dotenv": "^17.4.2",
-    "envalid": "^8.2.0",
+    "envalid": "^9.0.0",
     "express": "^5.2.1",
     "kafkajs": "^2.2.4",
     "knex": "^3.3.0",
