@@ -3,10 +3,6 @@ jest.mock('../utils/scicatApi', () => ({
     serviceUsername: 'testuser',
   },
 }));
-jest.mock('@user-office-software/duo-logger');
-
-import { logger } from '@user-office-software/duo-logger';
-
 import {
   getCreateScicatExperimentDto,
   getCreateScicatSampleDto,
@@ -251,47 +247,68 @@ describe('getUpdateScicatExperimentDto', () => {
 });
 
 describe('getCreateScicatSampleDto', () => {
-  it('skips fields whose natural key starts with skip_metadata', () => {
-    const sample: UOExperimentSafetySample = {
-      sampleId: 1,
-      sample: { id: 1, title: 'Sample 1' },
-      questionary: {
-        steps: [
-          {
-            fields: [
-              {
-                question: { id: 'q1', question: 'Kept', naturalKey: 'kept' },
-                value: 'a',
+  const sample: UOExperimentSafetySample = {
+    sampleId: 1,
+    sample: { id: 1, title: 'Sample 1' },
+    questionary: {
+      steps: [
+        {
+          fields: [
+            {
+              question: {
+                id: 'q1',
+                question: 'Formula',
+                naturalKey: 'formula',
               },
-              {
-                question: {
-                  id: 'q2',
-                  question: 'Skipped',
-                  naturalKey: 'skip_metadata_notes',
-                },
-                value: 'b',
+              value: 'H2O',
+            },
+            {
+              question: {
+                id: 'q2',
+                question: 'Notes',
+                naturalKey: 'skip_metadata_notes',
               },
-            ],
-          },
-        ],
-      },
-    };
+              value: 'b',
+            },
+          ],
+        },
+      ],
+    },
+  };
 
-    const { sampleCharacteristics } = getCreateScicatSampleDto(
-      sample,
-      createBaseUoExperiment()
-    );
+  const { sampleCharacteristics } = getCreateScicatSampleDto(
+    sample,
+    createBaseUoExperiment()
+  );
 
-    expect(sampleCharacteristics).toHaveProperty('q1');
-    expect(sampleCharacteristics).not.toHaveProperty('q2');
-    expect(sampleCharacteristics).toHaveProperty('questionary_length.value', 1);
-    expect(logger.logInfo).toHaveBeenCalledWith(
-      'Skipping sample questionary fields',
-      expect.objectContaining({
-        skippedFields: [
-          { questionId: 'q2', naturalKey: 'skip_metadata_notes', value: 'b' },
-        ],
-      })
-    );
+  it('marks answers as scientific metadata', () => {
+    expect(sampleCharacteristics).toHaveProperty('q1', {
+      human_name: 'Formula',
+      value: '"H2O"',
+      is_scientific_metadata: true,
+    });
+  });
+
+  it('keeps skip_metadata answers but marks them as not scientific metadata', () => {
+    expect(sampleCharacteristics).toHaveProperty('q2', {
+      human_name: 'Notes',
+      value: '"b"',
+      is_scientific_metadata: false,
+    });
+    expect(sampleCharacteristics).toHaveProperty('questionary_length.value', 2);
+  });
+
+  it('marks connector-added fields as not scientific metadata', () => {
+    for (const key of [
+      'uos_sample_id',
+      'uos_sample_lookup',
+      'questionary_length',
+      'sample_hash',
+    ]) {
+      expect(sampleCharacteristics).toHaveProperty(
+        `${key}.is_scientific_metadata`,
+        false
+      );
+    }
   });
 });
