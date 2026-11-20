@@ -23,6 +23,10 @@ Test Abstract",
       "human_name": "Instrument Name",
       "value": "YMIR",
     },
+    "local_contact_affiliation": {
+      "human_name": "Local contact affiliation",
+      "value": "Other",
+    },
     "local_contact_email": {
       "human_name": "Local contact email",
       "value": "junjie.quan@ess.eu",
@@ -34,6 +38,10 @@ Test Abstract",
     "local_contact_lastname": {
       "human_name": "Local contact surname",
       "value": "Quan",
+    },
+    "local_contact_orcid": {
+      "human_name": "Local contact ORCID",
+      "value": "junjiequan",
     },
     "number_of_visitors": {
       "human_name": "Number of Visitors",
@@ -123,6 +131,10 @@ Test Abstract",
       "human_name": "Instrument Name",
       "value": "YMIR",
     },
+    "local_contact_affiliation": {
+      "human_name": "Local contact affiliation",
+      "value": "Other",
+    },
     "local_contact_email": {
       "human_name": "Local contact email",
       "value": "junjie.quan@ess.eu",
@@ -134,6 +146,10 @@ Test Abstract",
     "local_contact_lastname": {
       "human_name": "Local contact surname",
       "value": "Quan",
+    },
+    "local_contact_orcid": {
+      "human_name": "Local contact ORCID",
+      "value": "junjiequan",
     },
     "number_of_visitors": {
       "human_name": "Number of Visitors",
@@ -200,6 +216,10 @@ Test Abstract",
       "human_name": "Instrument Name",
       "value": "YMIR",
     },
+    "local_contact_affiliation": {
+      "human_name": "Local contact affiliation",
+      "value": "Other",
+    },
     "local_contact_email": {
       "human_name": "Local contact email",
       "value": "junjie.quan@ess.eu",
@@ -211,6 +231,10 @@ Test Abstract",
     "local_contact_lastname": {
       "human_name": "Local contact surname",
       "value": "Quan",
+    },
+    "local_contact_orcid": {
+      "human_name": "Local contact ORCID",
+      "value": "junjiequan",
     },
     "number_of_visitors": {
       "human_name": "Number of Visitors",
