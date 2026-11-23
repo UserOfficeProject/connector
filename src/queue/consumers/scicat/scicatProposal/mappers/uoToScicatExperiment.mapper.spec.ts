@@ -130,6 +130,14 @@ describe('getCreateScicatExperimentDto', () => {
       human_name: 'Local contact email',
       value: 'junjie.quan@ess.eu',
     });
+    expect(dto.metadata?.['local_contact_orcid']).toEqual({
+      human_name: 'Local contact ORCID',
+      value: 'junjiequan',
+    });
+    expect(dto.metadata?.['local_contact_affiliation']).toEqual({
+      human_name: 'Local contact affiliation',
+      value: 'Other',
+    });
   });
 
   it('falls back to null local contact entries when no local contact is assigned', () => {
@@ -140,6 +148,14 @@ describe('getCreateScicatExperimentDto', () => {
 
     expect(dto.metadata?.['local_contact_firstname']).toEqual({
       human_name: 'Local contact name',
+      value: null,
+    });
+    expect(dto.metadata?.['local_contact_orcid']).toEqual({
+      human_name: 'Local contact ORCID',
+      value: null,
+    });
+    expect(dto.metadata?.['local_contact_affiliation']).toEqual({
+      human_name: 'Local contact affiliation',
       value: null,
     });
   });
