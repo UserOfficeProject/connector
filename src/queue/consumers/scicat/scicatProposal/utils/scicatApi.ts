@@ -1,5 +1,6 @@
 import { logger } from '@user-office-software/duo-logger';
 
+import { str2Bool } from '../../../../../config/utils';
 import { InstrumentDto } from '../../../../../models/ProposalMessage';
 import { UOExperimentDto } from '../../../../../services/userOfficeApi/type/uoExperiment.type';
 import {
@@ -28,8 +29,8 @@ class ScicatApi {
 
   constructor() {
     if (
-      !process.env.ENABLE_SCICAT_PROPOSAL_UPSERT &&
-      !process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT
+      !str2Bool(process.env.ENABLE_SCICAT_PROPOSAL_UPSERT as string) &&
+      !str2Bool(process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT as string)
     ) {
       return;
     }
