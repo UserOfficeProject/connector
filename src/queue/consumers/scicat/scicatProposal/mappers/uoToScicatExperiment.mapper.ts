@@ -1,7 +1,5 @@
 import { createHash } from 'crypto';
 
-import { logger } from '@user-office-software/duo-logger';
-
 import {
   UOExperimentDto,
   UOExperimentSafetySample,
@@ -198,54 +196,40 @@ const buildSampleHash = (dto: CreateScicatSampleDto): string => {
   return createHash('md5').update(JSON.stringify(hashableData)).digest('hex');
 };
 
-// Questionary fields with this natural key prefix are not sent to SciCat
-const SKIP_METADATA_PREFIX = 'skip_metadata';
+// Questionary fields with this natural key prefix are stored in SciCat but marked
+// as not scientific metadata, so consumers such as NICOS can leave them out
+const NON_SCIENTIFIC_METADATA_PREFIX = 'skip_metadata';
 
-const removeSkippedFields = (
-  fields: UOSampleQuestionaryField[],
-  sampleLookup: string
-): UOSampleQuestionaryField[] => {
-  const skippedFields = fields.filter((field) =>
-    field.question.naturalKey?.startsWith(SKIP_METADATA_PREFIX)
-  );
-
-  if (skippedFields.length > 0) {
-    logger.logInfo('Skipping sample questionary fields', {
-      sampleLookup,
-      skippedFields: skippedFields.map((field) => ({
-        questionId: field.question.id,
-        naturalKey: field.question.naturalKey,
-        value: field.value,
-      })),
-    });
-  }
-
-  return fields.filter((field) => !skippedFields.includes(field));
-};
+const isScientificMetadataField = (field: UOSampleQuestionaryField): boolean =>
+  !field.question.naturalKey?.startsWith(NON_SCIENTIFIC_METADATA_PREFIX);
 
 const buildSampleCharacteristics = (
   sample: UOExperimentSafetySample,
   experiment: UOExperimentDto
 ): Record<string, MdEntryValue> => {
   const sampleLookup = `${experiment.experimentId}-${sample.sampleId}`;
-  const fields = removeSkippedFields(
-    sample.questionary.steps.flatMap((step) => step.fields),
-    sampleLookup
-  );
+  const fields = sample.questionary.steps.flatMap((step) => step.fields);
 
   const rows: [string, MdEntryValue][] = [
-    metadataEntry('uos_sample_id', 'UOS Sample ID', sample.sampleId),
-    metadataEntry('uos_sample_lookup', 'UOS Sample Lookup', sampleLookup),
+    metadataEntry('uos_sample_id', 'UOS Sample ID', sample.sampleId, false),
+    metadataEntry(
+      'uos_sample_lookup',
+      'UOS Sample Lookup',
+      sampleLookup,
+      false
+    ),
     metadataEntry(
       'questionary_length',
       'Number of questions in Questionary',
-      fields.length
+      fields.length,
+      false
     ),
     ...fields.map((field) =>
       metadataEntry(
         field.question.id,
         field.question.question,
-        JSON.stringify(field.value)
+        JSON.stringify(field.value),
+        isScientificMetadataField(field)
       )
     ),
   ];
@@ -270,6 +254,7 @@ export const getCreateScicatSampleDto = (
   dto.sampleCharacteristics['sample_hash'] = {
     human_name: 'Sample Hash',
     value: buildSampleHash(dto),
+    is_scientific_metadata: false,
   };
 
   return dto;
@@ -291,6 +276,7 @@ export const getUpdateScicatSampleDto = (
   dto.sampleCharacteristics['sample_hash'] = {
     human_name: 'Sample Hash',
     value: buildSampleHash(dto),
+    is_scientific_metadata: false,
   };
 
   return dto;

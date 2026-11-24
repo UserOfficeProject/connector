@@ -1,6 +1,7 @@
 export interface MdEntryValue {
   human_name?: string;
   value: string | number | boolean | null | undefined;
+  is_scientific_metadata?: boolean;
 }
 
 export interface MdEntry {
