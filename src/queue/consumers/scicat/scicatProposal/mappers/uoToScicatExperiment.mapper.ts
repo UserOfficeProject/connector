@@ -72,6 +72,16 @@ const buildMetadata = (experiment: UOExperimentDto): MdEntry => {
       localContact?.email || null
     ),
     metadataEntry(
+      'local_contact_orcid',
+      'Local contact ORCID',
+      localContact?.oidcSub || null
+    ),
+    metadataEntry(
+      'local_contact_affiliation',
+      'Local contact affiliation',
+      localContact?.institution || null
+    ),
+    metadataEntry(
       'number_of_visitors',
       'Number of Visitors',
       registrations.length
