@@ -15,6 +15,19 @@ describe('ScicatApi', () => {
     delete process.env.SCICAT_JWT;
   });
 
+  it('should not require SCICAT_BASE_URL when the upserts are set to false', () => {
+    process.env.ENABLE_SCICAT_PROPOSAL_UPSERT = 'false';
+    process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT = 'FALSE';
+    delete process.env.SCICAT_BASE_URL;
+
+    jest.isolateModules(() => {
+      expect(() => require('./scicatApi')).not.toThrow();
+    });
+
+    process.env.ENABLE_SCICAT_PROPOSAL_UPSERT = 'true';
+    process.env.ENABLE_SCICAT_EXPERIMENT_UPSERT = 'true';
+  });
+
   it('should throw if SCICAT_JWT is not defined', () => {
     process.env.SCICAT_BASE_URL = 'http://localhost:3000';
 
